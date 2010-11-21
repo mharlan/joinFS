@@ -5,6 +5,7 @@
 
 #include "include/sqlitedb.h"
 #include "include/result.h"
+#include "include/sglib.h"
 
 SGLIB_DEFINE_LIST_FUNCTIONS(jfs_list_t, JFS_LIST_CMP, next)
 

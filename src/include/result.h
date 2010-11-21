@@ -1,6 +1,9 @@
 #ifndef JOINFS_RESULT_H
 #define JOINFS_RESULT_H
 
+#include "sqlitedb.h"
+#include "sglib.h"
+
 #define JFS_FILENAME_MAX 1024
 #define JFS_KEY_MAX      1024
 #define JFS_VALUE_MAX    1024
