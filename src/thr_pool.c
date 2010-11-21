@@ -1,7 +1,6 @@
 /*
- * Code taken from:
+ * Code modified from:
  * http://docs.sun.com/app/docs/doc/816-5137/ggedd?l=en&a=view
- *
  */
 
 /*
@@ -23,12 +22,12 @@
 
 /*
  * FIFO queued job
+ * Modified to just hold a jfs_db_op
  */
 typedef struct job job_t;
 struct job {
-	job_t	*job_next;		/* linked list of jobs */
-	void	*(*job_func)(void *);	/* function to call */
-	void	*job_arg;		/* its argument */
+	job_t	         *job_next;		/* linked list of jobs */
+    struct jfs_db_op *db_op;
 };
 
 /*
@@ -44,22 +43,22 @@ struct active {
  * The thread pool, opaque to the clients.
  */
 struct thr_pool {
-	thr_pool_t	*pool_forw;	/* circular linked list */
-	thr_pool_t	*pool_back;	/* of all thread pools */
-	pthread_mutex_t	pool_mutex;	/* protects the pool data */
-	pthread_cond_t	pool_busycv;	/* synchronization in pool_queue */
-	pthread_cond_t	pool_workcv;	/* synchronization with workers */
-	pthread_cond_t	pool_waitcv;	/* synchronization in pool_wait() */
-	active_t	*pool_active;	/* list of threads performing work */
-	job_t		*pool_head;	/* head of FIFO job queue */
-	job_t		*pool_tail;	/* tail of FIFO job queue */
-	pthread_attr_t	pool_attr;	/* attributes of the workers */
-	int		pool_flags;	/* see below */
-	uint_t		pool_linger;	/* seconds before idle workers exit */
-	int		pool_minimum;	/* minimum number of worker threads */
-	int		pool_maximum;	/* maximum number of worker threads */
-	int		pool_nthreads;	/* current number of worker threads */
-	int		pool_idle;	/* number of idle workers */
+	thr_pool_t	    *pool_forw;	/* circular linked list */
+	thr_pool_t	    *pool_back;	/* of all thread pools */
+	pthread_mutex_t	 pool_mutex;	/* protects the pool data */
+    pthread_cond_t	 pool_busycv;	/* synchronization in pool_queue */
+	pthread_cond_t	 pool_workcv;	/* synchronization with workers */
+	pthread_cond_t   pool_waitcv;	/* synchronization in pool_wait() */
+	active_t	    *pool_active;	/* list of threads performing work */
+	job_t		    *pool_head;	/* head of FIFO job queue */
+	job_t		    *pool_tail;	/* tail of FIFO job queue */
+	pthread_attr_t   pool_attr;	/* attributes of the workers */
+	int		         pool_flags;	/* see below */
+	uint_t		     pool_linger;	/* seconds before idle workers exit */
+	int		         pool_minimum;	/* minimum number of worker threads */
+	int		         pool_maximum;	/* maximum number of worker threads */
+	int		         pool_nthreads;	/* current number of worker threads */
+	int		         pool_idle;	/* number of idle workers */
 };
 
 /* pool_flags */
@@ -150,10 +149,11 @@ worker_thread(void *arg)
 	thr_pool_t *pool = (thr_pool_t *)arg;
 	int timedout;
 	job_t *job;
-	void *(*func)(void *);
 	active_t active;
 	timestruc_t ts;
 	sqlite3 *db;
+	jfs_db_op db_op;
+	int rc;
 
 	/*
 	 * Get a db connection object before performing jobs.
@@ -202,8 +202,7 @@ worker_thread(void *arg)
 			break;
 		if ((job = pool->pool_head) != NULL) {
 			timedout = 0;
-			func = job->job_func;
-			arg = job->job_arg;
+			db_op = job->db_op;
 			pool->pool_head = job->job_next;
 			if (job == pool->pool_tail)
 				pool->pool_tail = NULL;
@@ -215,7 +214,11 @@ worker_thread(void *arg)
 			/*
 			 * Call the specified job function.
 			 */
-			(void) func(arg);
+			db_op->db = db;
+			rc = jfs_query(db_op);
+			if(rc) {
+			  log_error("db connection: %d, query failed\n", db);
+			}
 			/*
 			 * If the job function calls pthread_exit(), the thread
 			 * calls job_cleanup(pool) and worker_cleanup(pool);
@@ -278,8 +281,8 @@ clone_attributes(pthread_attr_t *new_attr, pthread_attr_t *old_attr)
 }
 
 thr_pool_t *
-thr_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
-	pthread_attr_t *attr)
+jfs_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
+				pthread_attr_t *attr)
 {
 	thr_pool_t	*pool;
 
@@ -335,7 +338,7 @@ thr_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
 }
 
 int
-thr_pool_queue(thr_pool_t *pool, void *(*func)(void *), void *arg)
+jfs_pool_queue(thr_pool_t *pool, void *(*func)(void *), void *arg)
 {
 	job_t *job;
 
@@ -366,7 +369,7 @@ thr_pool_queue(thr_pool_t *pool, void *(*func)(void *), void *arg)
 }
 
 void
-thr_pool_wait(thr_pool_t *pool)
+jfs_pool_wait(thr_pool_t *pool)
 {
 	(void) pthread_mutex_lock(&pool->pool_mutex);
 	pthread_cleanup_push(pthread_mutex_unlock, &pool->pool_mutex);
@@ -378,7 +381,7 @@ thr_pool_wait(thr_pool_t *pool)
 }
 
 void
-thr_pool_destroy(thr_pool_t *pool)
+jfs_pool_destroy(thr_pool_t *pool)
 {
 	active_t *activep;
 	job_t *job;

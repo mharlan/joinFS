@@ -1,7 +1,6 @@
 /*
- * Code taken from:
+ * Code modified from::
  * http://docs.sun.com/app/docs/doc/816-5137/ggedd?l=en&a=view
- *
  */
 
 /*
@@ -29,8 +28,8 @@ typedef	struct thr_pool	thr_pool_t;
  *			can be destroyed after calling thr_pool_create().
  * On error, thr_pool_create() returns NULL with errno set to the error code.
  */
-extern	thr_pool_t	*thr_pool_create(uint_t min_threads, uint_t max_threads,
-				uint_t linger, pthread_attr_t *attr);
+extern	thr_pool_t	*jfs_pool_create(uint_t min_threads, uint_t max_threads,
+									 uint_t linger, pthread_attr_t *attr);
 
 /*
  * Enqueue a work request to the thread pool job queue.
@@ -46,15 +45,14 @@ extern	thr_pool_t	*thr_pool_create(uint_t min_threads, uint_t max_threads,
  *
  * On error, thr_pool_queue() returns -1 with errno set to the error code.
  */
-extern	int	thr_pool_queue(thr_pool_t *pool,
-			void *(*func)(void *), void *arg);
+extern	int	jfs_pool_queue(thr_pool_t *pool, struct jfs_db_op *db_op);
 
 /*
  * Wait for all queued jobs to complete.
  */
-extern	void	thr_pool_wait(thr_pool_t *pool);
+extern	void	jfs_pool_wait(thr_pool_t *pool);
 
 /*
  * Cancel all queued jobs and destroy the pool.
  */
-extern	void	thr_pool_destroy(thr_pool_t *pool);
+extern	void	jfs_pool_destroy(thr_pool_t *pool);;

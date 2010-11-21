@@ -2,12 +2,7 @@
   joinFS: Relational filesystem for FUSE
   Matthew Harlan <mharlan@gwmail.gwu.edu>
 
-  @version October 4th, 2010
-
-  Bootcamp Demo 1:
-  Proof of concept filesystem. Uses a sqlite database to store
-  the path to a file stored within the VFS. The current
-  implementation is non hierarchical.
+  30% Demo
 
   Note: No directory support.
 
@@ -37,9 +32,9 @@
 #include <sys/xattr.h>
 #endif
 
-#include "qf.h"
-#include "error_log.h"
-#include "sqlitedb.h"
+#include "include/qf.h"
+#include "include/error_log.h"
+#include "include/sqlitedb.h"
 
 static int jfs_init(struct fuse_conn_info *conn)
 {
@@ -88,7 +83,7 @@ static int jfs_readlink(const char *path, char *buf, size_t size)
 
 
 static int jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-		       off_t offset, struct fuse_file_info *fi)
+					   off_t offset, struct fuse_file_info *fi)
 {
   DIR *dp;
   struct dirent *de;
@@ -321,7 +316,7 @@ static int jfs_release(const char *path, struct fuse_file_info *fi)
 }
 
 static int jfs_fsync(const char *path, int isdatasync,
-		     struct fuse_file_info *fi)
+					 struct fuse_file_info *fi)
 {
   /* Just a stub.	 This method is optional and can safely be left
      unimplemented */
@@ -335,7 +330,7 @@ static int jfs_fsync(const char *path, int isdatasync,
 #ifdef HAVE_SETXATTR
 /* xattr operations are optional and can safely be left unimplemented */
 static int jfs_setxattr(const char *path, const char *name, const char *value,
-			size_t size, int flags)
+						size_t size, int flags)
 {
   int res = lsetxattr(path, name, value, size, flags);
   if (res == -1)
@@ -344,7 +339,7 @@ static int jfs_setxattr(const char *path, const char *name, const char *value,
 }
 
 static int jfs_getxattr(const char *path, const char *name, char *value,
-			size_t size)
+						size_t size)
 {
   int res = lgetxattr(path, name, value, size);
   if (res == -1)
@@ -370,31 +365,31 @@ static int jfs_removexattr(const char *path, const char *name)
 #endif /* HAVE_SETXATTR */
 
 static struct fuse_operations jfs_oper = {
-  .getattr	= jfs_getattr,
-  .access	= jfs_access,
-  .readlink	= jfs_readlink,
-  .readdir	= jfs_readdir,
-  .mknod	= jfs_mknod,
-  .mkdir	= jfs_mkdir,
-  .symlink	= jfs_symlink,
-  .unlink      	= jfs_unlink,
-  .rmdir       	= jfs_rmdir,
-  .rename      	= jfs_rename,
-  .link		= jfs_link,
-  .chmod       	= jfs_chmod,
-  .chown       	= jfs_chown,
-  .truncate	= jfs_truncate,
-  .utimens	= jfs_utimens,
-  .open		= jfs_open,
-  .read		= jfs_read,
-  .write       	= jfs_write,
-  .statfs      	= jfs_statfs,
-  .release	= jfs_release,
-  .fsync       	= jfs_fsync,
+  .getattr	    = jfs_getattr,
+  .access	    = jfs_access,
+  .readlink	    = jfs_readlink,
+  .readdir	    = jfs_readdir,
+  .mknod	    = jfs_mknod,
+  .mkdir	    = jfs_mkdir,
+  .symlink	    = jfs_symlink,
+  .unlink       = jfs_unlink,
+  .rmdir        = jfs_rmdir,
+  .rename       = jfs_rename,
+  .link		    = jfs_link,
+  .chmod        = jfs_chmod,
+  .chown        = jfs_chown,
+  .truncate	    = jfs_truncate,
+  .utimens	    = jfs_utimens,
+  .open		    = jfs_open,
+  .read		    = jfs_read,
+  .write        = jfs_write,
+  .statfs       = jfs_statfs,
+  .release	    = jfs_release,
+  .fsync        = jfs_fsync,
   .init         = jfs_init,
 #ifdef HAVE_SETXATTR
-  .setxattr	= jfs_setxattr,
-  .getxattr	= jfs_getxattr,
+  .setxattr	    = jfs_setxattr,
+  .getxattr	    = jfs_getxattr,
   .listxattr	= jfs_listxattr,
   .removexattr	= jfs_removexattr,
 #endif

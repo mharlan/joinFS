@@ -1,11 +1,13 @@
 /*
-  joinFS: Sqlite database component
-  Matthew Harlan <mharlan@gwmail.gwu.edu>
+ * joinFS: SQLite interface module
+ * Matthew Harlan <mharlan@gwmail.gwu.edu>
+ *
+ * 30% Demo
+ */
 
-  @version October 4th, 2010
-
-  Uses a query to match a query file to a folder in the VFS.
-*/
+#include "include/error_log.h"
+#include "include/sqlitedb.h"
+#include "include/result.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -13,25 +15,23 @@
 #include <string.h>
 #include <sqlite3.h>
 
-#include "error_log.h"
-#include "sqlitedb.h"
-
-#define DB_FILE "/home/matt/joinFS/bootcamp/joinfs.db"
+#define JFSDB   "/home/joinFS/demo/joinfs.db"
 #define ERR_MAX 256
 
+//does not need to be public, prepares queries
 static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
 
 /*
-  Open a database connection.
+ * Open a connection to joinfs.db
  */
-sqlite3 *start_db()
+sqlite3 *jfs_open_db()
 {
   sqlite3 *db;
   int rc;
 
-  rc = sqlite3_open(DB_FILE, &db);
+  rc = sqlite3_open(JFSDB, &db);
   if(rc) {
-    log_error("Failed to open database file at: %s\n", DB_FILE);
+    log_error("Failed to open database file at: %s\n", JFSDB);
     sqlite3_close(db);
     exit(1);
   }
@@ -40,15 +40,15 @@ sqlite3 *start_db()
 }
 
 /*
-  Close a database connection.
+ * Close a database connection.
  */
-void close_db(sqlite3 *db)
+void jfs_close_db(sqlite3 *db)
 {
   sqlite3_close(db);
 }
 
 /*
-  Setup a sqlite prepared statement.
+ * Setup a sqlite prepared statement.
  */
 static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 {
@@ -58,7 +58,7 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
   rc = sqlite3_prepare_v2(db, query, strlen(query), stmt, &zTail);
   if(rc != SQLITE_OK) {
     log_error("Sqlite prepare failed, query:%s, rc:%d\n",
-	      query, rc);
+			  query, rc);
     return rc;
   }
 
@@ -66,33 +66,26 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 }
 
 /*
-  Get the path from a query.
+ * Perform a query.
  */
-const unsigned char* path_query(sqlite3 *db, const char* query)
+int jfs_query(jfs_db_op *db)
 {
   sqlite3_stmt *stmt;
-  unsigned char* path = 0;
   int rc;
 
-  rc = setup_stmt(db, &stmt, query);
+  rc = setup_stmt(db_op->db, &stmt, db_op->query);
   if(rc) {
-    return 0;
+	log_error("Setup statement failed for query=%s\n",
+			  db_op->query);
+    return rc;
   }
 
-  rc = sqlite3_step(stmt);
-
-  if(rc == SQLITE_ROW) {
-    memcpy(path, sqlite3_column_text(stmt, 0), sqlite3_column_bytes(stmt, 0));
-  }
-  else {
-    log_error("No file path returned from query:%s, rc:%d\n",
-	      query, rc);
+  db_op->stmt = stmt;
+  rc = jfs_result(db_op);
+  if(rc) {
+	log_error("Get result failed for db_op->jfs_type=%d\n",
+			  db_op->res_t);
   }
 
-  rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    log_error("Finalizing failed, rc:%d\n", rc);
-  }
-
-  return path;
+  return rc;
 }
