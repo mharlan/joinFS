@@ -20,6 +20,10 @@
 #define _XOPEN_SOURCE 500
 #endif
 
+#include "qf.h"
+#include "error_log.h"
+#include "sqlitedb.h"
+
 #include <fuse.h>
 #include <stdio.h>
 #include <string.h>
@@ -31,10 +35,6 @@
 #ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
 #endif
-
-#include "include/qf.h"
-#include "include/error_log.h"
-#include "include/sqlitedb.h"
 
 static int jfs_init(struct fuse_conn_info *conn)
 {

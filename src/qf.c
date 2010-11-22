@@ -5,12 +5,13 @@
   Version: 30% Demo
   Uses a query to match a query file to a folder in the VFS.
 */
+
+#include "error_log.h"
+#include "sqlitedb.h"
+#include "qf.h"
+
 #include <stdio.h>
 #include <sqlite3.h>
-
-#include "include/error_log.h"
-#include "include/sqlitedb.h"
-#include "include/qf.h"
 
 #define QUERY_MAX 4096
 

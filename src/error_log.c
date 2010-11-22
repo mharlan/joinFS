@@ -5,11 +5,15 @@
   Sends all errors to a log file.
 */
 
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
+#include "error_log.h"
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <pthread.h>
-
-#include "include/error_log.h"
 
 static const char *log_path = "/home/joinfs/demo/error_log.txt";
 static FILE *log;
@@ -18,8 +22,11 @@ static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 void log_init(void)
 {
   log = fopen(log_path, "w+");
-  if(log == 0) {
-    printf("Open log file failed, path:%s\n", log_path);
+  if(log) {
+	printf("Opened log file at path:%s\n", log_path);
+  }
+  else {
+	printf("ERROR: Open log file failed, path:%s\n", log_path);
   }
 }
 

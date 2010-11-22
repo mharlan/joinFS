@@ -1,23 +1,27 @@
 #ifndef JOINFS_SQLITEDB_H
 #define JOINFS_SQLITEDB_H
 
-#include "include/result.h"
+#include "jfs_list.h"
 
+#include <pthread.h>
 #include <sqlite3.h>
 
 #define QUERY_MAX 1024
 
 /*
- * Structure for database operations.
+ * Structure for thread pool database operations.
  */
 struct jfs_db_op {
-  sqlite3      *db;
-  sqlite3_stmt *stmt;
-  char          query[QUERY_MAX];
+  sqlite3          *db;
+  sqlite3_stmt     *stmt;
 
-  enum jfs_t    res_t;
-  jfs_list_t   *result;
-  int           size;
+  pthread_cond_t   cond;
+  pthread_mutex_t  mut;
+
+  char             query[QUERY_MAX];
+  enum jfs_t       res_t;
+  jfs_list_t      *result;
+  int              size;
 };
 
 /*

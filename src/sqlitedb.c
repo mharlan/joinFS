@@ -5,9 +5,13 @@
  * 30% Demo
  */
 
-#include "include/error_log.h"
-#include "include/sqlitedb.h"
-#include "include/result.h"
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
+#include "error_log.h"
+#include "sqlitedb.h"
+#include "result.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -15,7 +19,7 @@
 #include <string.h>
 #include <sqlite3.h>
 
-#define JFSDB   "/home/joinFS/demo/joinfs.db"
+#define JFSDB   "/home/joinfs/demo/joinfs.db"
 #define ERR_MAX 256
 
 //does not need to be public, prepares queries
@@ -26,15 +30,19 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
  */
 sqlite3 *jfs_open_db()
 {
+  const char *dbfile = JFSDB;
   sqlite3 *db;
   int rc;
 
-  rc = sqlite3_open(JFSDB, &db);
+  printf("Opening db at:%s\n", dbfile);
+  rc = sqlite3_open_v2(dbfile, &db, SQLITE_OPEN_READONLY, NULL);
+  printf("RC:%d\n", rc);
   if(rc) {
-    log_error("Failed to open database file at: %s\n", JFSDB);
+    log_error("Failed to open database file at: %s\n", dbfile);
     sqlite3_close(db);
     exit(1);
   }
+  printf("Opened database connection.\n");
 
   return db;
 }
@@ -68,7 +76,7 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 /*
  * Perform a query.
  */
-int jfs_query(jfs_db_op *db)
+int jfs_query(struct jfs_db_op *db_op)
 {
   sqlite3_stmt *stmt;
   int rc;
@@ -81,7 +89,7 @@ int jfs_query(jfs_db_op *db)
   }
 
   db_op->stmt = stmt;
-  rc = jfs_result(db_op);
+  rc = jfs_db_result(db_op);
   if(rc) {
 	log_error("Get result failed for db_op->jfs_type=%d\n",
 			  db_op->res_t);
