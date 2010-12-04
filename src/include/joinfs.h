@@ -3,10 +3,7 @@
 
 #include "sqlitedb.h"
 
-#include <sqlite3.h>
-
 struct jfs_context {
-  sqlite3 *db;
   char *rootdir;
 };
 

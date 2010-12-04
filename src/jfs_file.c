@@ -9,6 +9,7 @@
 #include "jfs_file_cache.h"
 #include "thr_pool.h"
 #include "sqlitedb.h"
+#include "joinfs.h"
 
 #include <fuse.h>
 #include <string.h>
@@ -17,7 +18,22 @@
 
 static int get_file_inode(int q_inode);
 
-int jfs_s_file_open(const char *path, struct fuse_file_info *fi)
+int
+jfs_s_file_create(const char *path, int q_inode)
+{
+  struct jfs_db_op *db_op;
+
+  db_op = jfs_db_op_create();
+  snprintf(db_op->query, QUERY_MAX,
+		   "SELECT inode FROM symlinks WHERE linknode=\"%d\";",
+		   q_inode);
+
+  jfs_write_pool_queue(db_op);
+  jfs_db_op_wait(db_op);
+}
+
+int 
+jfs_s_file_open(const char *path, struct fuse_file_info *fi)
 {
   int inode;
 
@@ -26,29 +42,34 @@ int jfs_s_file_open(const char *path, struct fuse_file_info *fi)
   return get_file_inode(inode);
 }
 
-int jfs_s_file_read(const char *path, char *buf, size_t size, off_t offset,
-		    struct fuse_file_info *fi)
+int 
+jfs_s_file_read(const char *path, char *buf, size_t size, off_t offset,
+				struct fuse_file_info *fi)
 {
   return 0;
 }
 
-int jfs_s_file_write(const char *path, const char *buf, size_t size,
-		     off_t offset, struct fuse_file_info *fi)
+int 
+jfs_s_file_write(const char *path, const char *buf, size_t size,
+				 off_t offset, struct fuse_file_info *fi)
 {
   return 0;
 }
 
-int jfs_s_file_truncate(const char *path, off_t size)
+int 
+jfs_s_file_truncate(const char *path, off_t size)
 {
   return 0;
 }
 
-int jfs_s_file_access(const char *path, int mask)
+int 
+jfs_s_file_access(const char *path, int mask)
 {
   return 0;
 }
 
-static int get_file_inode(int q_inode)
+static int 
+get_file_inode(int q_inode)
 {
   struct jfs_db_op *db_op;
 
@@ -62,6 +83,9 @@ static int get_file_inode(int q_inode)
 			 "SELECT inode FROM symlinks WHERE linknode=\"%d\";",
 			 q_inode);
 
-	return 0;
+	jfs_read_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
   }
+
+  return 0;
 }

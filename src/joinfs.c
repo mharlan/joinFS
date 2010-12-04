@@ -195,6 +195,7 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
     res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
 
     if (res >= 0) {
+	  res = jfs_s_file_create(path, res);
       res = close(res);
 	}
   } 

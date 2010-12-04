@@ -8,17 +8,20 @@ FUSEFLAGS=`pkg-config fuse --cflags --libs`
 STDFLAGS=$(TIMEFLAGS) $(THRDFLAGS) $(SQLFLAGS) $(CFLAGS)
 ALLFLAGS=$(FUSEFLAGS) $(STDFLAGS)
 OBJS1=obj/error_log.o obj/sqlitedb.o obj/thr_pool.o obj/result.o obj/jfs_list.o
-OBJS2=obj/jfs_file.o obj/jfs_file_cache.o
+OBJS2=obj/jfs_file.o obj/jfs_file_cache.o obj/joinfs.o
 OBJS=$(OBJS1) $(OBJS2)
 TESTS=tests/jfs_pool_test
 
 all: joinfs $(TESTS)
 
 joinfs: $(OBJS)
-	$(CC) -g -O0 $(ALLFLAGS) joinfs joinfs.c $(OBJS)
+	$(CC) -g -O0 $(ALLFLAGS) joinfs $(OBJS)
 
-tests/jfs_pool_test: $(OBJS)
-	$(CC) -g -O0 $(STDFLAGS) tests/jfs_pool_test tests/jfs_pool_test.c $(OBJS)
+tests/jfs_pool_test: $(OBJS1)
+	$(CC) -g -O0 $(STDFLAGS) tests/jfs_pool_test tests/jfs_pool_test.c $(OBJS1)
+
+obj/joinfs.o:
+	$(CC) -c $(FUSEFLAGS) $(CFLAGS) obj/joinfs.o joinfs.c
 
 obj/jfs_file_cache.o:
 	$(CC) -c $(CFLAGS) obj/jfs_file_cache.o jfs_file_cache.c
