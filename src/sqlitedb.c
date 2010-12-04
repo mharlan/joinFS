@@ -20,7 +20,7 @@
 #include <sqlite3.h>
 #include <pthread.h>
 
-#define JFSDB   "/home/joinfs/demo/joinfs.db"
+#define JFSDB   "/home/joinfs/git/joinFS/demo/joinfs.db"
 #define ERR_MAX 256
 
 //does not need to be public, prepares queries

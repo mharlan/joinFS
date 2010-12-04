@@ -40,25 +40,63 @@
 #include <sys/xattr.h>
 #endif
 
-static thr_pool_t jfs_read_pool;
-static thr_pool_t jfs_write_pool;
+static thr_pool_t *jfs_read_pool;
+static thr_pool_t *jfs_write_pool;
 
 static int jfs_init(struct fuse_conn_info *conn)
 {
+  int rc;
+
+  log_error("Starting joinFS. FUSE Major=%d Minor=%d\n",
+			conn->proto_major, conn->proto_minor);
+
+  /* start sqlite in multithreaded mode */
+  rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+  if(rc != SQLITE_OK) {
+	log_error("Failed to configuring multithreading for SQLITE.\n");
+	return -1;
+  }
+
+  rc = sqlite3_initialize();
+  if(rc != SQLITE_OK) {
+	log_error("Failed to initialize SQLITE.\n");
+	return -1;
+  }
+
+  log_error("SQLITE started.\n");
+
   jfs_read_pool = jfs_pool_create(THREAD_MIN, THREAD_MAX, THREAD_LINGER, NULL, SQLITE_OPEN_READONLY);
-  jfs_write_pool = jfs_pool_create(1, 1, THREAD_LINGER, NULL, SQLITE_OPEN_READ_WRITE);
+  if(!jfs_read_pool) {
+	log_error("Failed to allocate READ pool.\n");
+	return -1;
+  }
+
+  jfs_write_pool = jfs_pool_create(1, 1, THREAD_LINGER, NULL, SQLITE_OPEN_READWRITE);
+  if(!jfs_write_pool) {
+	log_error("Failed to allocate WRITE pool.\n");
+	return -1;
+  }
+
+  log_error("Thread pools started.\n");
 
   return 0;
 }
 
-static void jfs_destroy(void *)
+static void jfs_destroy(void *arg)
 {
+  int rc;
+
   /* stop all reads */
   jfs_pool_destroy(jfs_read_pool);
   
   /* let writes propogate */
   jfs_pool_wait(jfs_read_pool);
   jfs_pool_destroy(jfs_write_pool);
+
+  rc = sqlite3_shutdown();
+  if(rc != SQLITE_OK) {
+	log_error("SQLITE shutdown FAILED!!!\n");
+  }
 }
 
 static int jfs_getattr(const char *path, struct stat *stbuf)

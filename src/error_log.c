@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-static const char *log_path = "/home/joinfs/demo/error_log.txt";
+static const char *log_path = "/home/joinfs/git/joinFS/demo/error_log.txt";
 static FILE *log;
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
