@@ -64,6 +64,7 @@ struct thr_pool {
 	int		         pool_maximum;	/* maximum number of worker threads */
 	int		         pool_nthreads;	/* current number of worker threads */
 	int		         pool_idle;	/* number of idle workers */
+    int              sqlite_attr; /* sqlite connection attributes */
 };
 
 /* pool_flags */
@@ -165,7 +166,7 @@ worker_thread(void *arg)
 	/*
 	 * Get a db connection object before performing jobs.
 	 */
-	db = jfs_open_db();
+	db = jfs_open_db(pool->sqlite_attr);
 
 	/*
 	 * This is the worker's main loop.  It will only be left
@@ -302,7 +303,7 @@ clone_attributes(pthread_attr_t *new_attr, pthread_attr_t *old_attr)
 
 thr_pool_t *
 jfs_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
-				pthread_attr_t *attr)
+				pthread_attr_t *attr, int sqlite_attr)
 {
 	thr_pool_t	*pool;
 
@@ -330,6 +331,7 @@ jfs_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
 	pool->pool_maximum = max_threads;
 	pool->pool_nthreads = 0;
 	pool->pool_idle = 0;
+	pool->sqlite_attr = sqlite_attr;
 
 	/*
 	 * We cannot just copy the attribute pointer.

@@ -33,7 +33,7 @@ typedef	struct thr_pool	thr_pool_t;
  * On error, thr_pool_create() returns NULL with errno set to the error code.
  */
 thr_pool_t *jfs_pool_create(uint_t min_threads, uint_t max_threads,
-							uint_t linger, pthread_attr_t *attr);
+							uint_t linger, pthread_attr_t *attr, int sqlite_attr);
 
 /*
  * Enqueue a work request to the thread pool job queue.

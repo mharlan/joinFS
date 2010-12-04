@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sqlite3.h>
+#include <pthread.h>
 
 #define JFSDB   "/home/joinfs/demo/joinfs.db"
 #define ERR_MAX 256
@@ -26,16 +27,69 @@
 static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
 
 /*
+ * Creates a database operation.
+ */
+struct jfs_db_op *
+jfs_db_op_create()
+{
+  struct jfs_db_op *db_op;
+
+  db_op = malloc(sizeof(*db_op));
+  if(!db_op) {
+	log_error("Failed to allocate memory for db_op.");
+	return 0;
+  }
+
+  memset(db_op, 0, sizeof(*db_op));
+  pthread_cond_init(&db_op->cond, NULL);
+  pthread_mutex_init(&db_op->mut, NULL);
+
+  return db_op;
+}
+
+/*
+ * Destroy a database operation.
+ *
+ * TODO: Cleanup code for the result.
+ */
+void
+jfs_db_op_destroy(struct jfs_db_op *db_op)
+{
+  free(db_op->result);
+  free(db_op);
+}
+
+/*
+ * Performs a database operation that blocks while waiting
+ * for the query result.
+ *
+ * Returns the size of the result or an error code if the
+ * query failed.
+ */
+int
+jfs_db_op_wait(struct jfs_db_op *db_op)
+{
+  pthread_mutex_lock(&db_op->mut);
+  while(!db_op->size) {
+	pthread_cond_wait(&db_op->cond, &db_op->mut);
+  }
+  pthread_mutex_unlock(&db_op->mut);
+
+  return db_op->size;
+}
+
+/*
  * Open a connection to joinfs.db
  */
-sqlite3 *jfs_open_db()
+sqlite3 *
+jfs_open_db(int sqlite_attr)
 {
   const char *dbfile = JFSDB;
   sqlite3 *db;
   int rc;
 
   printf("Opening db at:%s\n", dbfile);
-  rc = sqlite3_open_v2(dbfile, &db, SQLITE_OPEN_READONLY, NULL);
+  rc = sqlite3_open_v2(dbfile, &db, sqlite_attr, NULL);
   printf("RC:%d\n", rc);
   if(rc) {
     log_error("Failed to open database file at: %s\n", dbfile);
@@ -50,7 +104,8 @@ sqlite3 *jfs_open_db()
 /*
  * Close a database connection.
  */
-void jfs_close_db(sqlite3 *db)
+void 
+jfs_close_db(sqlite3 *db)
 {
   sqlite3_close(db);
 }
@@ -58,7 +113,8 @@ void jfs_close_db(sqlite3 *db)
 /*
  * Setup a sqlite prepared statement.
  */
-static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
+static int
+setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 {
   const char* zTail;
   int rc;
@@ -76,7 +132,8 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 /*
  * Perform a query.
  */
-int jfs_query(struct jfs_db_op *db_op)
+int
+jfs_query(struct jfs_db_op *db_op)
 {
   sqlite3_stmt *stmt;
   int rc;

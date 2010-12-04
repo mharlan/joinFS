@@ -25,6 +25,25 @@ struct jfs_db_op {
 };
 
 /*
+ * Creates a database operation.
+ */
+struct jfs_db_op *jfs_db_op_create();
+
+/*
+ * Destroy a database operation.
+ */
+void jfs_db_op_destroy(struct jfs_db_op *db_op);
+
+/*
+ * Performs a database operation that blocks while waiting
+ * for the query result.
+ *
+ * Returns the size of the result or an error code if the
+ * query failed.
+ */
+  int jfs_db_op_wait(struct jfs_db_op *db_op);
+
+/*
  * Create a jfsdb handle. The handle can not
  * be shared accross threads.
  */

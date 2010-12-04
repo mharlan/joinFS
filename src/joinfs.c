@@ -9,6 +9,9 @@
   gcc -Wall `pkg-config fuse --cflags --libs` joinfs.c -o joinfs
 */
 
+#define THREAD_MIN       10
+#define THREAD_MAX       200
+#define THREAD_LINGER    60
 #define FUSE_USE_VERSION 26
 
 #ifdef HAVE_CONFIG_H
@@ -20,10 +23,11 @@
 #define _XOPEN_SOURCE 500
 #endif
 
-#include "qf.h"
 #include "error_log.h"
-#include "sqlitedb.h"
+#include "jfs_file.h"
+#include "thr_pool.h"
 
+#include <sqlite3.h>
 #include <fuse.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,15 +40,25 @@
 #include <sys/xattr.h>
 #endif
 
+static thr_pool_t jfs_read_pool;
+static thr_pool_t jfs_write_pool;
+
 static int jfs_init(struct fuse_conn_info *conn)
 {
-  JFS_DATA->db = start_db();
-  return JFS_DATA;
+  jfs_read_pool = jfs_pool_create(THREAD_MIN, THREAD_MAX, THREAD_LINGER, NULL, SQLITE_OPEN_READONLY);
+  jfs_write_pool = jfs_pool_create(1, 1, THREAD_LINGER, NULL, SQLITE_OPEN_READ_WRITE);
+
+  return 0;
 }
 
 static void jfs_destroy(void *)
 {
-  close_db(JFS_DATA->db);
+  /* stop all reads */
+  jfs_pool_destroy(jfs_read_pool);
+  
+  /* let writes propogate */
+  jfs_pool_wait(jfs_read_pool);
+  jfs_pool_destroy(jfs_write_pool);
 }
 
 static int jfs_getattr(const char *path, struct stat *stbuf)
