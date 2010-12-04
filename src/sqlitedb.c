@@ -40,7 +40,12 @@ jfs_db_op_create()
 	return 0;
   }
 
-  memset(db_op, 0, sizeof(*db_op));
+  db_op->db = NULL;
+  db_op->stmt = NULL;
+  db_op->size = 0;
+
+  memset(db_op->query, 0, QUERY_MAX);
+
   pthread_cond_init(&db_op->cond, NULL);
   pthread_mutex_init(&db_op->mut, NULL);
 

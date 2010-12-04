@@ -62,7 +62,7 @@ jfs_init(struct fuse_conn_info *conn)
 
   log_error("Starting joinFS. FUSE Major=%d Minor=%d\n",
 			conn->proto_major, conn->proto_minor);
-
+  
   /* start sqlite in multithreaded mode */
   rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   if(rc != SQLITE_OK) {
@@ -89,9 +89,9 @@ jfs_init(struct fuse_conn_info *conn)
 	log_error("Failed to allocate WRITE pool.\n");
 	return -1;
   }
-
+  
   log_error("Thread pools started.\n");
-
+  
   return 0;
 }
 

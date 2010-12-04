@@ -27,13 +27,13 @@ int jfs_s_file_open(const char *path, struct fuse_file_info *fi)
 }
 
 int jfs_s_file_read(const char *path, char *buf, size_t size, off_t offset,
-					struct fuse_file_info *fi)
+		    struct fuse_file_info *fi)
 {
   return 0;
 }
 
 int jfs_s_file_write(const char *path, const char *buf, size_t size,
-					 off_t offset, struct fuse_file_info *fi)
+		     off_t offset, struct fuse_file_info *fi)
 {
   return 0;
 }

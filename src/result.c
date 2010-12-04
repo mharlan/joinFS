@@ -23,13 +23,17 @@ static int jfs_d_file_result(jfs_list_t **result,
 /*
  * Processes the result of a jfs_db_op.
  */
-int jfs_db_result(struct jfs_db_op *db_op)
+int
+jfs_db_result(struct jfs_db_op *db_op)
 {
   int rc;
 
   switch(db_op->res_t) {
   case(jfs_s_file):
 	rc = jfs_s_file_result(&db_op->result, db_op->stmt, &db_op->size);
+	if(!db_op->result->inode) {
+	  log_error("FAILED: Query='%s'\n", db_op->query);
+	}
 	break;
   case(jfs_d_file):
 	rc = jfs_d_file_result(&db_op->result, db_op->stmt, &db_op->size);
@@ -45,8 +49,9 @@ int jfs_db_result(struct jfs_db_op *db_op)
 /*
  * Result processing for static files.
  */
-static int jfs_s_file_result(jfs_list_t **result, 
-							 sqlite3_stmt *stmt, int *size)
+static int 
+jfs_s_file_result(jfs_list_t **result, 
+				  sqlite3_stmt *stmt, int *size)
 {
   jfs_list_t *row;
   int rc;
@@ -55,18 +60,18 @@ static int jfs_s_file_result(jfs_list_t **result,
 
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_ROW) {
-	log_error("Failed to get inode, rc:%d\n", rc);
-	row->inode = 0;
+    log_error("Failed to get inode, rc:%d\n", rc);
+    row->inode = 0;
   }
   else {
-	row->inode = sqlite3_column_int(stmt, 0);
+    row->inode = sqlite3_column_int(stmt, 0);
   }
   *result = row;
   *size = 1;
-
+  
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_DONE) {
-	log_error("A SQLite error has occured while stepping, rc:%d\n", 
+    log_error("A SQLite error has occured while stepping, rc:%d\n", 
 			  rc);
   }
 
@@ -81,13 +86,14 @@ static int jfs_s_file_result(jfs_list_t **result,
 /*
  * Result processing for dynamic files.
  */
-static int jfs_d_file_result(jfs_list_t **result, 
-							 sqlite3_stmt *stmt, int *size)
+static int
+jfs_d_file_result(jfs_list_t **result, 
+				  sqlite3_stmt *stmt, int *size)
 {
   jfs_list_t *row;
   int rows;
   int rc;
-
+  
   rows = 0;
   while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 	row = malloc(sizeof(*row));
@@ -96,7 +102,7 @@ static int jfs_d_file_result(jfs_list_t **result,
 	++rows;
   }
   *size = rows;
-
+  
   if(rc != SQLITE_DONE) {
 	log_error("A SQLite error has occured while stepping, rc:%d\n", 
 			  rc);
