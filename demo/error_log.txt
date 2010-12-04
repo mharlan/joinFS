@@ -1,0 +1,50 @@
+START OF LOG FOR JFS_POOL_TEST
+Thread created, id:-1967712496
+Thread created, id:-2127108336
+Thread created, id:-2001283312
+Thread created, id:-2088769776
+Thread created, id:-2105555184
+Thread created, id:-2113947888
+Thread created, id:-2143893744
+Thread created, id:2125895440
+Thread created, id:2109110032
+Thread created, id:1941321488
+Thread id:-2001283312 performing db query.
+Thread id:-2127108336 performing db query.
+Thread id:2125895440 performing db query.
+Thread id:-2105555184 performing db query.
+Thread created, id:2067146512
+Thread created, id:2050361104
+Thread created, id:2033575696
+Thread id:-1967712496 performing db query.
+Thread id:-2113947888 performing db query.
+Thread id:-2088769776 performing db query.
+Thread created, id:1924536080
+Thread id:-2143893744 performing db query.
+Thread created, id:1899357968
+Thread id:2109110032 performing db query.
+Thread created, id:1890965264
+Thread created, id:1865787152
+Thread created, id:1849001744
+Thread id:1941321488 performing db query.
+Thread id:1924536080 performing db query.
+Thread created, id:1832216336
+Thread created, id:1815430928
+Thread id:2067146512 performing db query.
+Thread id:2050361104 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2067146512 performing db query.
+Thread id:2125895440 performing db query.
