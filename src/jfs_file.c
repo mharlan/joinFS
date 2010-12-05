@@ -5,6 +5,7 @@
  * 30 % Demo
  */
 
+#include "jfs_uuid.h"
 #include "jfs_file.h"
 #include "jfs_file_cache.h"
 #include "thr_pool.h"
