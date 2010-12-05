@@ -17,7 +17,7 @@ jfs_file_cache_has(int key)
 int 
 jfs_file_cache_value(int key)
 {
-  
+  return 0;
 }
 
 void 
