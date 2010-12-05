@@ -10,7 +10,7 @@ int main()
   char *uuid;
   int i;
 
-  printf("JoinFS UUID test start.");
+  printf("JoinFS UUID test start.\n");
 
   uuid = jfs_create_uuid();
 
