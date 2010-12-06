@@ -1,6 +1,8 @@
 #ifndef JOINFS_JFS_UUID_H
 #define JOINFS_JFS_UUID_H
 
+#define JFS_UUID_LEN 37 /* 36 byte uuid + \0 */
+
 /*
  * Allocate the memory to store a uuid.
  */

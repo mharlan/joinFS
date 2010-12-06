@@ -5,9 +5,10 @@
 
 struct jfs_context {
   char *rootdir;
+  int rootlen;
 };
 
-#define JFS_DATA ((struct jfs_context *) fuse_get_context()->private_data)
+#define JFS_CONTEXT ((struct jfs_context *) fuse_get_context()->private_data)
 
 /*
  * Queue a database read operation.

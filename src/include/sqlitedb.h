@@ -6,19 +6,24 @@
 #include <pthread.h>
 #include <sqlite3.h>
 
-#define QUERY_MAX 1024
+#define JFS_QUERY_SUCCESS 1
+#define JFS_QUERY_FAILED  2
+#define JFS_QUERY_MAX     4096
 
 /*
  * Structure for thread pool database operations.
+ *
+ * Errors are stored in size.
  */
 struct jfs_db_op {
   sqlite3          *db;
   sqlite3_stmt     *stmt;
+  int               error;
 
   pthread_cond_t   cond;
   pthread_mutex_t  mut;
 
-  char             query[QUERY_MAX];
+  char             query[JFS_QUERY_MAX];
   enum jfs_t       res_t;
   jfs_list_t      *result;
   int              size;

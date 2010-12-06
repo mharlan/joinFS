@@ -7,10 +7,11 @@
  * Note: Static file support.
  */
 
-#define THREAD_MIN       10
-#define THREAD_MAX       200
-#define THREAD_LINGER    60
-#define FUSE_USE_VERSION 26
+#define JFS_THREAD_MIN    10
+#define JFS_THREAD_MAX    200
+#define JFS_THREAD_LINGER 100
+#define FUSE_USE_VERSION  26
+#define JFS_MOUNT_PATH    "/home/joinfs/git/joinFS/demo/"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -30,6 +31,7 @@
 #include <sqlite3.h>
 #include <fuse.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -55,7 +57,7 @@ jfs_write_pool_queue(struct jfs_db_op *db_op)
   return jfs_pool_queue(jfs_write_pool, db_op);
 }
 
-static int 
+static void * 
 jfs_init(struct fuse_conn_info *conn)
 {
   int rc;
@@ -67,27 +69,30 @@ jfs_init(struct fuse_conn_info *conn)
   rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   if(rc != SQLITE_OK) {
 	log_error("Failed to configuring multithreading for SQLITE.\n");
-	return -1;
+	exit(EXIT_FAILURE);
   }
 
   rc = sqlite3_initialize();
   if(rc != SQLITE_OK) {
 	log_error("Failed to initialize SQLITE.\n");
-	return -1;
+	exit(EXIT_FAILURE);
   }
 
   log_error("SQLITE started.\n");
 
-  jfs_read_pool = jfs_pool_create(THREAD_MIN, THREAD_MAX, THREAD_LINGER, NULL, SQLITE_OPEN_READONLY);
+  jfs_read_pool = jfs_pool_create(JFS_THREAD_MIN, JFS_THREAD_MAX, 
+								  JFS_THREAD_LINGER, NULL, 
+								  SQLITE_OPEN_READONLY);
   if(!jfs_read_pool) {
 	log_error("Failed to allocate READ pool.\n");
-	return -1;
+	exit(EXIT_FAILURE);
   }
 
-  jfs_write_pool = jfs_pool_create(1, 1, THREAD_LINGER, NULL, SQLITE_OPEN_READWRITE);
+  jfs_write_pool = jfs_pool_create(1, 1, JFS_THREAD_LINGER, 
+								   NULL, SQLITE_OPEN_READWRITE);
   if(!jfs_write_pool) {
 	log_error("Failed to allocate WRITE pool.\n");
-	return -1;
+	exit(EXIT_FAILURE);
   }
   
   log_error("Thread pools started.\n");
@@ -195,7 +200,7 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
     res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
 
     if (res >= 0) {
-	  res = jfs_s_file_create(path, res);
+	  res = jfs_s_file_create(path, res, mode);
       res = close(res);
 	}
   } 
@@ -542,6 +547,16 @@ static struct fuse_operations jfs_oper = {
 int 
 main(int argc, char *argv[])
 {
-  umask(0);
-  return fuse_main(argc, argv, &jfs_oper, NULL);
+  int rc;
+  struct jfs_context *jfs_context;
+
+  jfs_context = calloc(sizeof(jfs_context), 1);
+  jfs_context->rootdir = realpath(JFS_MOUNT_PATH, NULL);
+  jfs_context->rootlen = strlen(jfs_context->rootdir);
+  
+  log_error("Starting FUSE.\n");
+  rc = fuse_main(argc, argv, &jfs_oper, jfs_context);
+  log_error("Fuse returned, status=%s.\n", rc);
+
+  return rc;
 }

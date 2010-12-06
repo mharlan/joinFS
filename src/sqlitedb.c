@@ -43,8 +43,9 @@ jfs_db_op_create()
   db_op->db = NULL;
   db_op->stmt = NULL;
   db_op->size = 0;
+  db_op->error = 0;
 
-  memset(db_op->query, 0, QUERY_MAX);
+  memset(db_op->query, 0, JFS_QUERY_MAX);
 
   pthread_cond_init(&db_op->cond, NULL);
   pthread_mutex_init(&db_op->mut, NULL);
@@ -68,19 +69,19 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
  * Performs a database operation that blocks while waiting
  * for the query result.
  *
- * Returns the size of the result or an error code if the
+ * Returns the size of the result and an error code if the
  * query failed.
  */
 int
 jfs_db_op_wait(struct jfs_db_op *db_op)
 {
   pthread_mutex_lock(&db_op->mut);
-  while(!db_op->size) {
+  while(!db_op->error) {
 	pthread_cond_wait(&db_op->cond, &db_op->mut);
   }
   pthread_mutex_unlock(&db_op->mut);
 
-  return db_op->size;
+  return db_op->error;
 }
 
 /*
@@ -147,6 +148,7 @@ jfs_query(struct jfs_db_op *db_op)
   if(rc) {
 	log_error("Setup statement failed for query=%s\n",
 			  db_op->query);
+	db_op->error = JFS_QUERY_FAILED;
     return rc;
   }
 

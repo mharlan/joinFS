@@ -12,6 +12,7 @@
  * are set in a jfs_list node.
  */
 enum jfs_t {
+  jfs_write_op,
   jfs_s_file,
   jfs_d_file,
   jfs_s_folder,

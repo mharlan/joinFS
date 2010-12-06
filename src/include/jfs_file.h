@@ -6,10 +6,9 @@
  *
  * 30 % Demo
  */
-
 #include <fuse.h>
 
-int jfs_s_file_create(const char *path, int q_inode);
+int jfs_s_file_create(const char *path, int q_inode, mode_t mode);
 int jfs_s_file_open(const char *path, struct fuse_file_info *fi);
 int jfs_s_file_read(const char *path, char *buf, size_t size, off_t offset,
 					struct fuse_file_info *fi);

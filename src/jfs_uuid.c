@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <uuid/uuid.h>
 
-#define UUID_LEN 37 /* 36 byte uuid + \0 */
-
 /*
  * Allocate the memory to store a uuid.
  */
@@ -14,7 +12,7 @@ jfs_create_uuid()
 {
   char *uuid;
 
-  uuid = malloc(sizeof(*uuid) * UUID_LEN);
+  uuid = malloc(sizeof(*uuid) * JFS_UUID_LEN);
   if(!uuid) {
 	log_error("Failed to allocate memory for new uuid.\n");
   }

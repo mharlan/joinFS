@@ -65,7 +65,7 @@ void *thrd_func(void *arg)
   if(!db_op) return 0;
 
   db_op->res_t = jfs_s_file;
-  snprintf(db_op->query, QUERY_MAX,
+  snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT id FROM test_table WHERE name=\"%d\";",
 		   (q_val % 30) + 1);
   
