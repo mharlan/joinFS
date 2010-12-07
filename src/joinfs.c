@@ -11,7 +11,8 @@
 #define JFS_THREAD_MAX    200
 #define JFS_THREAD_LINGER 100
 #define FUSE_USE_VERSION  26
-#define JFS_MOUNT_PATH    "/home/joinfs/git/joinFS/demo/"
+#define JFS_DATAPATH      "/home/joinfs/git/joinFS/demo/.data/"
+#define JFS_MOUNTPATH     "/home/joinfs/git/joinFS/demo/.queries/"
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -72,6 +73,7 @@ jfs_init(struct fuse_conn_info *conn)
 {
   int rc;
 
+  log_init();
   log_error("Starting joinFS. FUSE Major=%d Minor=%d\n",
 			conn->proto_major, conn->proto_minor);
 
@@ -219,7 +221,7 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
     res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
 
     if (res >= 0) {
-	  datainode = jfs_s_file_create(path, res, mode);
+	  datainode = jfs_file_create(path, res, mode);
       res = close(res);
 	}
   } 
@@ -254,7 +256,7 @@ jfs_unlink(const char *path)
 {
   int res;
 
-  res = jfs_s_file_unlink(path);
+  res = jfs_file_unlink(path);
   if (res == -1) {
     return -errno;
   }
@@ -563,12 +565,20 @@ main(int argc, char *argv[])
   struct jfs_context *jfs_context;
 
   jfs_context = calloc(sizeof(jfs_context), 1);
-  jfs_context->rootdir = realpath(JFS_MOUNT_PATH, NULL);
-  jfs_context->rootlen = strlen(jfs_context->rootdir);
-  
-  log_error("Starting FUSE.\n");
-  rc = fuse_main(argc, argv, &jfs_oper, jfs_context);
-  log_error("Fuse returned, status=%s.\n", rc);
+
+  jfs_context->mountpath = realpath(JFS_MOUNTPATH, NULL);
+  jfs_context->mountpath_len = strlen(jfs_context->mountpath);
+
+  jfs_context->datapath = realpath(JFS_DATAPATH, NULL);
+  jfs_context->datapath_len = strlen(jfs_context->datapath);
+
+  argc = 2;
+  argv[0] = jfs_context->mountpath;
+  argv[1] = jfs_context->mountpath;
+
+  printf("Starting joinFS, mountpath:%s\n", argv[1]);
+  rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;
+  printf("joinFS stopped. Return code=%d.\n", rc);
 
   return rc;
 }

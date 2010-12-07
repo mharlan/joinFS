@@ -16,8 +16,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
 
-static int get_datainode(int syminode);
+static int get_datainode(const char *path);
 static char *get_datapath(int datainode);
 static char *create_datapath(char *uuid);
 static char *get_filename(const char *path);
@@ -31,11 +34,12 @@ static char *get_filename(const char *path);
 int
 jfs_file_create(const char *path, int syminode, mode_t mode)
 {
+  struct jfs_db_op *db_op;
   char *uuid;
   char *datapath;
   char *filename;
   int datainode;
-  struct jfs_db_op *db_op;
+  int rc;
 
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
@@ -44,7 +48,7 @@ jfs_file_create(const char *path, int syminode, mode_t mode)
   filename = get_filename(path);
   datainode = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
 
-  if(inode >= 0) {
+  if(datainode >= 0) {
 	rc = close(datainode);
 
 	db_op = jfs_db_op_create();
@@ -82,8 +86,8 @@ jfs_file_create(const char *path, int syminode, mode_t mode)
 int
 jfs_file_unlink(const char *path)
 {
-  int datatinode;
   char *datapath;
+  int datainode;
   int rc;
 
   datainode = get_datainode(path);
@@ -103,31 +107,29 @@ jfs_file_unlink(const char *path)
 int
 jfs_file_rename(const char *from, const char *to)
 {
-  int syminode;
   int datainode;
   char *filename;
   struct jfs_db_op *db_op;
 
-  syminode = open(from, O_RDONLY);
-  if(syminode >= 0) {
-	datainode = get_datainode(syminode);
-	if(datainode >= 0) {
-	  filename = get_filename(to);
+  datainode = get_datainode(from);
+  if(datainode >= 0) {
+	filename = get_filename(to);
+	
+	db_op = jfs_db_op_create();
+	db_op->res_t = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "UPDATE files SET filename=\"%s\" WHERE inode=%d;",
+			 filename, datainode);
+	
+	jfs_write_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
+	
+	jfs_db_op_destroy(db_op);
 
-	  db_op = jfs_db_op_create();
-	  db_op->res_t = jfs_write_op;
-	  snprintf(db_op->query, JFS_QUERY_MAX,
-			   "UPDATE files SET filename=\"%s\" WHERE inode=%d;",
-			   filename, datainode);
-	  
-	  jfs_write_pool_queue(db_op);
-	  jfs_db_op_wait(db_op);
-
-	  jfs_db_op_destroy(db_op);
-	}
+	return rename(from, to);
   }
   
-  return rename(from, to);
+  return -1;
 }
 
 /*
@@ -137,8 +139,10 @@ int
 jfs_file_truncate(const char *path, off_t size)
 {
   char *datapath;
+  int datainode;
 
-  datapath = get_datapath(path);
+  datainode = get_datainode(path);
+  datapath = get_datapath(datainode);
 
   return truncate(datapath, size);
 }
@@ -150,8 +154,10 @@ int
 jfs_file_open(const char *path, int flags)
 {
   char *datapath;
+  int datainode;
 
-  datapath = get_datapath(path);
+  datainode = get_datainode(path);
+  datapath = get_datapath(datainode);
   
   return open(datapath, flags);
 }
@@ -178,12 +184,12 @@ get_datainode(const char *path)
 	  db_op->res_t = jfs_s_file;
 	  snprintf(db_op->query, JFS_QUERY_MAX,
 			   "SELECT datainode FROM symlinks WHERE syminode=\"%d\";",
-			   q_inode);
+			   syminode);
 	  
 	  jfs_read_pool_queue(db_op);
 	  jfs_db_op_wait(db_op);
 	  
-	  datainode = db_op->inode;
+	  datainode = db_op->result->inode;
 	  if(!datainode) {
 		log_error("Failed to find inode. Query=%s.\n", db_op->query);
 		return -1;
@@ -211,7 +217,7 @@ get_datapath(int datainode)
   struct jfs_db_op *db_op;
 
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_datapath;
+  db_op->res_t = jfs_datapath_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT datapath FROM files WHERE inode=\"%d\";",
 		   datainode);
@@ -227,7 +233,7 @@ get_datapath(int datainode)
 
   jfs_db_op_destroy(db_op);
 
-  return result->datapath;
+  return datapath;
 }
 
 
@@ -242,10 +248,10 @@ create_datapath(char *uuid)
   int path_len;
   char *path;
 
-  path_len = JFS_CONTEXT->rootlen + JFS_UUID_LEN + 7;
+  path_len = JFS_CONTEXT->datapath_len + JFS_UUID_LEN + 1;
   path = malloc(sizeof(*path) * path_len);
   if(path) {
-	snprintf(path, path_len, "%s/.data/%s", JFS_CONTEXT->rootdir, uuid);
+	snprintf(path, path_len, "%s/%s", JFS_CONTEXT->datapath, uuid);
   }
   else {
 	log_error("Unable to allocate memory for a data path.\n");

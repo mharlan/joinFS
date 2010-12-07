@@ -62,11 +62,11 @@ jfs_file_cache_init()
 void
 jfs_file_cache_destroy()
 {
-  struct sglib_hashed_jfs_list_cache_t_iterator it;
-  jfs_list_cache_t *item;
+  struct sglib_hashed_jfs_file_cache_t_iterator it;
+  jfs_file_cache_t *item;
 
-  for(item = sglib_hashed_jfs_list_cache_t_it_init(&it,hashtab); 
-	  item != NULL; item = sglib_hashed_jfs_list_cache_t_it_next(&it)) {
+  for(item = sglib_hashed_jfs_file_cache_t_it_init(&it,hashtable); 
+	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
 	free(item);
   }
 }

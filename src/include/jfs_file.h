@@ -12,14 +12,26 @@
  * Create a joinFS static file. The file is added
  * to the Linux VFS and the database.
  */
-int jfs_s_file_create(const char *path, int q_inode, mode_t mode);
+int jfs_file_create(const char *path, int q_inode, mode_t mode);
 
 /*
- * Gets the datainode associated with a joinFS static file symlink.
- *
- * Returns the datainode or -1.
+ * Delets a joinFS static file.
  */
-int jfs_s_file_get_datainode(const char *path);
+int jfs_file_unlink(const char *path);
 
+/*
+ * Perform a rename on a joinFS file.
+ */
+int jfs_file_rename(const char *from, const char *to);
+
+/*
+ * Truncate a joinFS file.
+ */
+int jfs_file_truncate(const char *path, off_t size);
+
+/*
+ * Open a joinFS file.
+ */
+int jfs_file_open(const char *path, int flags);
 
 #endif

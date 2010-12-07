@@ -13,18 +13,18 @@ OBJS2=obj/jfs_file.o obj/jfs_file_cache.o obj/joinfs.o obj/jfs_uuid.o
 OBJS=$(OBJS1) $(OBJS2)
 TESTS=tests/jfs_pool_test tests/jfs_uuid_test
 
-all: joinfs
+all: ../demo/joinfs
 
 tests: $(OBJS) $(TESTS)
 
-joinfs: $(OBJS)
-	$(CC) -g -O0 $(ALLFLAGS) joinfs $(OBJS)
+../demo/joinfs: $(OBJS)
+	$(CC) -ggdb -O0 $(ALLFLAGS) ../demo/joinfs $(OBJS)
 
 tests/jfs_uuid_test: obj/jfs_uuid.o obj/error_log.o
-	$(CC) -g -O0 $(UUID) $(CFLAGS) tests/jfs_uuid_test tests/jfs_uuid_test.c obj/jfs_uuid.o obj/error_log.o
+	$(CC) -ggdb -O0 $(UUID) $(CFLAGS) tests/jfs_uuid_test tests/jfs_uuid_test.c obj/jfs_uuid.o obj/error_log.o
 
 tests/jfs_pool_test: $(OBJS1)
-	$(CC) -g -O0 $(STDFLAGS) tests/jfs_pool_test tests/jfs_pool_test.c $(OBJS1)
+	$(CC) -ggdb -O0 $(STDFLAGS) tests/jfs_pool_test tests/jfs_pool_test.c $(OBJS1)
 
 obj/jfs_uuid.o:
 	$(CC) -c $(CFLAGS) obj/jfs_uuid.o jfs_uuid.c
@@ -54,4 +54,4 @@ obj/error_log.o:
 	$(CC) -c $(CFLAGS) obj/error_log.o error_log.c 
 
 clean:
-	rm -rf obj/*.o $(TESTS) joinfs
+	rm -rf obj/*.o $(TESTS) ../demo/joinfs

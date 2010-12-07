@@ -2,10 +2,21 @@
 #define JOINFS_JOINFS_H
 
 #include "sqlitedb.h"
+#include "thr_pool.h"
+
+#include <stdio.h>
 
 struct jfs_context {
-  char *rootdir;
-  int rootlen;
+  FILE *logfile;
+
+  char *datapath;
+  char *mountpath;
+
+  int datapath_len;
+  int mountpath_len;
+
+  thr_pool_t *read_pool;
+  thr_pool_t *write_pool;
 };
 
 #define JFS_CONTEXT ((struct jfs_context *) fuse_get_context()->private_data)
