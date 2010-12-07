@@ -24,6 +24,7 @@
 
 #include "error_log.h"
 #include "jfs_file.h"
+#include "jfs_file_cache.h"
 #include "thr_pool.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
@@ -45,18 +46,27 @@
 static thr_pool_t *jfs_read_pool;
 static thr_pool_t *jfs_write_pool;
 
+/*
+ * Perform a read database operation.
+ */
 int 
 jfs_read_pool_queue(struct jfs_db_op *db_op)
 {
   return jfs_pool_queue(jfs_read_pool, db_op);
 }
 
+/*
+ * Perform a write database operation.
+ */
 int 
 jfs_write_pool_queue(struct jfs_db_op *db_op)
 {
   return jfs_pool_queue(jfs_write_pool, db_op);
 }
 
+/*
+ * Initialize joinFS.
+ */
 static void * 
 jfs_init(struct fuse_conn_info *conn)
 {
@@ -64,6 +74,9 @@ jfs_init(struct fuse_conn_info *conn)
 
   log_error("Starting joinFS. FUSE Major=%d Minor=%d\n",
 			conn->proto_major, conn->proto_minor);
+
+  /* initialize the static file cache */
+  jfs_file_cache_init();
   
   /* start sqlite in multithreaded mode */
   rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
@@ -117,7 +130,10 @@ jfs_destroy(void *arg)
 	log_error("SQLITE shutdown FAILED!!!\n");
   }
 
+  jfs_file_cache_destroy();
+
   log_error("joinFS shutdown. Passed arg:%d.\n", arg);
+  log_destroy();
 }
 
 static int 
@@ -194,6 +210,7 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int
 jfs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
+  int datainode;
   int res;
 
   /* On Linux this could just be 'mknod(path, mode, rdev)' but this
@@ -202,7 +219,7 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
     res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
 
     if (res >= 0) {
-	  res = jfs_s_file_create(path, res, mode);
+	  datainode = jfs_s_file_create(path, res, mode);
       res = close(res);
 	}
   } 
@@ -237,7 +254,7 @@ jfs_unlink(const char *path)
 {
   int res;
 
-  res = unlink(path);
+  res = jfs_s_file_unlink(path);
   if (res == -1) {
     return -errno;
   }
@@ -276,7 +293,7 @@ jfs_rename(const char *from, const char *to)
 {
   int res;
 
-  res = rename(from, to);
+  res = jfs_file_rename(from, to);
   if (res == -1) {
     return -errno;
   }
@@ -328,7 +345,7 @@ jfs_truncate(const char *path, off_t size)
 {
   int res;
 
-  res = truncate(path, size);
+  res = jfs_file_truncate(path, size);
   if (res == -1) {
     return -errno;
   }
@@ -356,17 +373,11 @@ jfs_utimens(const char *path, const struct timespec ts[2])
 }
 
 static int 
-jfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
-{
-  return 0;
-}
-
-static int 
 jfs_open(const char *path, struct fuse_file_info *fi)
 {
   int res;
 
-  res = open(path, fi->flags);
+  res = jfs_file_open(path, fi->flags);
   if (res == -1) {
     return -errno;
   }
@@ -383,7 +394,7 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
   int res;
 
   (void) fi;
-  fd = open(path, O_RDONLY);
+  fd = jfs_file_open(path, O_RDONLY);
   if (fd == -1) {
     return -errno;
   }
@@ -405,7 +416,7 @@ jfs_write(const char *path, const char *buf, size_t size,
   int res;
 
   (void) fi;
-  fd = open(path, O_WRONLY);
+  fd = jfs_file_open(path, O_WRONLY);
   if (fd == -1) {
     return -errno;
   }
@@ -529,7 +540,6 @@ static struct fuse_operations jfs_oper = {
   .chown        = jfs_chown,
   .truncate	    = jfs_truncate,
   .utimens	    = jfs_utimens,
-  .create       = jfs_create,
   .open		    = jfs_open,
   .read		    = jfs_read,
   .write        = jfs_write,

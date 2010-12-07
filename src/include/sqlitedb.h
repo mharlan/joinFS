@@ -8,7 +8,8 @@
 
 #define JFS_QUERY_SUCCESS 1
 #define JFS_QUERY_FAILED  2
-#define JFS_QUERY_MAX     4096
+#define JFS_QUERY_MAX     100000
+//#define JFS_QUERY_MAX     SQLITE_MAX_SQL_LENGTH /* 1,000,000 bytes */
 
 /*
  * Structure for thread pool database operations.

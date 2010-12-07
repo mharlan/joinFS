@@ -5,15 +5,33 @@
  * Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
  * 30 % Demo
+ * Very simple cache. Not intelligent at all.
  */
-#define JFS_FILE_CACHE_SIZE 100
 
-struct jfs_symlink {
-  int syminode;
-  int datainode;
-};
+/*
+ * Initialize the jfs_file_cache.
+ *
+ * Called when joinFS gets mounted.
+ */
+void jfs_file_cache_init();
 
-SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_symlink, JFS_FILE_CACHE_SIZE,
-										 jfs_file_cache_function);
+/*
+ * Destroy the jfs_file_cache.
+ *
+ * Called when joinFS gets dismount.
+ */
+void jfs_file_cache_destroy();
+
+/*
+ * Get a datainode from the file cache.
+ *
+ * Returns 0 if not in the cache.
+ */
+int jfs_file_cache_get(int syminode);
+
+/*
+ * Add a symlink to the jfs_file_cache.
+ */
+int jfs_file_cache_add(int syminode, int datainode);
 
 #endif

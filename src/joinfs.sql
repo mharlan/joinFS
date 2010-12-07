@@ -9,7 +9,7 @@ CREATE TABLE files(fileid INTEGER PRIMARY KEY AUTOINCREMENT,
 				   filename TEXT NOT NULL);
 
 CREATE TABLE symlinks(syminode INTEGER PRIMARY KEY NOT NULL,
-					  linkinode INTEGER NOT NULL,
+					  datainode INTEGER NOT NULL,
 					  fileid INTEGER,
 					  FOREIGN KEY(fileid) REFERENCES files(fileid));
 

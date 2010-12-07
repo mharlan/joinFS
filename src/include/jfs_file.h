@@ -8,13 +8,18 @@
  */
 #include <fuse.h>
 
+/*
+ * Create a joinFS static file. The file is added
+ * to the Linux VFS and the database.
+ */
 int jfs_s_file_create(const char *path, int q_inode, mode_t mode);
-int jfs_s_file_open(const char *path, struct fuse_file_info *fi);
-int jfs_s_file_read(const char *path, char *buf, size_t size, off_t offset,
-					struct fuse_file_info *fi);
-int jfs_s_file_write(const char *path, const char *buf, size_t size,
-					 off_t offset, struct fuse_file_info *fi);
-int jfs_s_file_truncate(const char *path, off_t size);
-int jfs_s_file_access(const char *path, int mask);
+
+/*
+ * Gets the datainode associated with a joinFS static file symlink.
+ *
+ * Returns the datainode or -1.
+ */
+int jfs_s_file_get_datainode(const char *path);
+
 
 #endif

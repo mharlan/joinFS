@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 
-static int jfs_do_write_op(sqlite3_stmt *stmt, int *error);
+static int jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt, int *error);
 static int jfs_s_file_result(jfs_list_t **result, int *error, 
 							 sqlite3_stmt *stmt, int *size);
 static int jfs_d_file_result(jfs_list_t **result, int *error, 
@@ -31,7 +31,7 @@ jfs_db_result(struct jfs_db_op *db_op)
 
   switch(db_op->res_t) {
   case(jfs_write_op):
-	rc = jfs_do_write_op(db_op->stmt, &db_op->error);
+	rc = jfs_do_write_op(db_op->db, db_op->stmt, &db_op->error);
 	break;
   case(jfs_s_file):
 	rc = jfs_s_file_result(&db_op->result, &db_op->error, db_op->stmt, &db_op->size);
@@ -123,20 +123,31 @@ jfs_d_file_result(jfs_list_t **result, int *error,
  * Performs a database write operation.
  */
 static int
-jfs_do_write_op(sqlite3_stmt *stmt, int *error)
+jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt, int *error)
 {
   int rc;
+
+  sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL);
 
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_DONE) {
 	log_error("Statement didn't finish executing.\n");
 	*error = JFS_QUERY_FAILED;
   }
-  *error = JFS_QUERY_SUCCESS;
+  else {
+	*error = JFS_QUERY_SUCCESS;
+  }
 
   rc = sqlite3_finalize(stmt);
   if(rc != SQLITE_OK) {
     log_error("Finalizing failed, rc:%d\n", rc);
+  }
+
+  if(*error == JFS_QUERY_SUCCESS) {
+	sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL);
+  }
+  else {
+	sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL);
   }
   
   return rc;
