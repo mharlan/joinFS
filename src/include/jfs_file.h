@@ -11,8 +11,18 @@
 /*
  * Create a joinFS static file. The file is added
  * to the Linux VFS and the database.
+ *
+ * Returns the inode of the new file or -1;
  */
-int jfs_file_create(const char *path, int q_inode, mode_t mode);
+int jfs_file_create(const char *path, mode_t mode);
+
+/*
+ * Create a joinFS static file. The file is added
+ * to the Linux VFS and the database.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int jfs_file_mknod(const char *path, mode_t mode);
 
 /*
  * Delets a joinFS static file.

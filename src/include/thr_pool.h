@@ -1,3 +1,6 @@
+#ifndef JFS_THR_POOL_H
+#define JFS_THR_POOL_H
+
 /*
  * Code modified from::
  * http://docs.sun.com/app/docs/doc/816-5137/ggedd?l=en&a=view
@@ -60,3 +63,5 @@ void jfs_pool_wait(thr_pool_t *pool);
  * Cancel all queued jobs and destroy the pool.
  */
 void jfs_pool_destroy(thr_pool_t *pool);
+
+#endif

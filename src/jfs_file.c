@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename);
 static int get_datainode(const char *path);
 static char *get_datapath(int datainode);
 static char *create_datapath(char *uuid);
@@ -29,53 +30,145 @@ static char *get_filename(const char *path);
  * Create a joinFS static file. The file is added
  * to the Linux VFS and the database.
  *
- * Returns the inode of the newly created file.
+ * Returns the inode of the newly created file or -1.
  */
 int
-jfs_file_create(const char *path, int syminode, mode_t mode)
+jfs_file_create(const char *path, mode_t mode)
 {
-  struct jfs_db_op *db_op;
   char *uuid;
   char *datapath;
   char *filename;
+
   int datainode;
+  int syminode;
   int rc;
+
+  log_error("Called jfs_file_mknod.");
+  syminode = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+  if(syminode < 0) {
+	return -1;
+  }
+
+  rc = close(syminode);
 
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
 
   datapath = create_datapath(uuid);
   filename = get_filename(path);
-  datainode = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
 
-  if(datainode >= 0) {
-	rc = close(datainode);
+  log_error("Datapath:%s\n", datapath);
 
-	db_op = jfs_db_op_create();
-	db_op->res_t = jfs_write_op;
-	snprintf(db_op->query, JFS_QUERY_MAX,
-             "INSERT INTO files VALUES(NULL, %d, 1, \"%s\", \"%s\"); INSERT INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
-			 datainode, datapath, filename, syminode, datainode, datainode);
+  datainode = creat(datapath, mode);
 
-	jfs_write_pool_queue(db_op);
-	jfs_db_op_wait(db_op);
-
-	if(db_op->error == JFS_QUERY_FAILED) {
-	  log_error("New file database inserts failed.\n");
-	  rc = unlink(datapath);
-	  free(datapath);
-	  return -1;
-	}
-
-	jfs_file_cache_add(syminode, datainode);
-	jfs_db_op_destroy(db_op);
-  }
-  else {
+  if(datainode < 0) {
+	rc = unlink(path);
 	free(datapath);
 	return -1;
   }
 
+  rc = jfs_file_db_add(syminode, datainode, datapath, filename);
+  if(rc < 0) {
+	log_error("New file database inserts failed.\n");
+	rc = unlink(path);
+	rc = unlink(datapath);
+	free(datapath);
+	return -1;
+  }
+
+  jfs_file_cache_add(syminode, datainode);
+
   free(datapath);
+
+  return datainode;
+}
+
+/*
+ * Create a joinFS static file. The file is added
+ * to the Linux VFS and the database.
+ *
+ * Returns 0 or -1 if there was an error.
+ */
+int
+jfs_file_mknod(const char *path, mode_t mode)
+{
+  char *uuid;
+  char *datapath;
+  char *filename;
+
+  int datainode;
+  int syminode;
+  int rc;
+
+  log_error("Called jfs_file_mknod.");
+  syminode = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+  if(syminode < 0) {
+	return -1;
+  }
+
+  rc = close(syminode);
+
+  uuid = jfs_create_uuid();
+  jfs_generate_uuid(uuid);
+
+  datapath = create_datapath(uuid);
+  filename = get_filename(path);
+
+  log_error("Datapath:%s\n", datapath);
+
+  datainode = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
+
+  if(datainode < 0) {
+	rc = unlink(path);
+	free(datapath);
+	return -1;
+  }
+
+  rc = close(datainode);
+  
+  rc = jfs_file_db_add(syminode, datainode, datapath, filename);
+  if(rc < 0) {
+	log_error("New file database inserts failed.\n");
+	rc = unlink(path);
+	rc = unlink(datapath);
+	free(datapath);
+	return -1;
+  }
+
+  jfs_file_cache_add(syminode, datainode);
+
+  free(datapath);
+
+  return 0;
+}
+
+/*
+ * Used by jfs_file_create and jfs_file_mknod to add
+ * the file to the database.
+ */
+static int
+jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename)
+{
+  struct jfs_db_op *db_op;
+
+  db_op = jfs_db_op_create();
+  db_op->res_t = jfs_write_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+		   "INSERT INTO files VALUES(NULL, %d, 1, \"%s\", \"%s\"); INSERT INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
+		   datainode, datapath, filename, syminode, datainode, datainode);
+
+  log_error("Create query:%s\n", db_op->query);
+  
+  jfs_write_pool_queue(db_op);
+  jfs_db_op_wait(db_op);
+
+  if(db_op->error == JFS_QUERY_FAILED) {
+	jfs_db_op_destroy(db_op);
+	return -1;
+  }
+
+  jfs_file_cache_add(syminode, datainode);
+  jfs_db_op_destroy(db_op);
 
   return 0;
 }
@@ -95,10 +188,14 @@ jfs_file_unlink(const char *path)
 
   rc = unlink(path);
   if(rc) {
+	free(datapath);
 	return rc;
   }
 
-  return unlink(datapath);
+  rc = unlink(datapath);
+  free(datapath);
+
+  return rc;
 }
 
 /*
@@ -140,11 +237,15 @@ jfs_file_truncate(const char *path, off_t size)
 {
   char *datapath;
   int datainode;
+  int rc;
 
   datainode = get_datainode(path);
   datapath = get_datapath(datainode);
 
-  return truncate(datapath, size);
+  rc = truncate(datapath, size);
+  free(datapath);
+
+  return rc;
 }
 
 /*
@@ -155,11 +256,17 @@ jfs_file_open(const char *path, int flags)
 {
   char *datapath;
   int datainode;
+  int rc;
 
   datainode = get_datainode(path);
   datapath = get_datapath(datainode);
+
+  log_error("Opening file at datapath, %s\n", datapath);
   
-  return open(datapath, flags);
+  rc = open(datapath, flags);
+  free(datapath);
+
+  return rc;
 }
 
 /*
@@ -241,6 +348,8 @@ get_datapath(int datainode)
  * Get the location where the data will be saved.
  * 
  * joinFS_root_dir/.data/uuid-string
+ *
+ * The result datapath must be freed
  */
 static char *
 create_datapath(char *uuid)

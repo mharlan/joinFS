@@ -5,13 +5,16 @@
 #include "thr_pool.h"
 
 #include <stdio.h>
+#include <limits.h>
 
 struct jfs_context {
   FILE *logfile;
 
-  char *datapath;
-  char *mountpath;
+  char querypath[PATH_MAX];
+  char datapath[PATH_MAX];
+  char mountpath[PATH_MAX];
 
+  int querypath_len;
   int datapath_len;
   int mountpath_len;
 
