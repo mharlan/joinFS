@@ -169,6 +169,8 @@ jfs_destroy(void *arg)
 
   log_error("joinFS shutdown. Passed arg:%d.\n", arg);
   log_destroy();
+
+  free(JFS_CONTEXT);
 }
 
 static int 
@@ -184,6 +186,7 @@ jfs_getattr(const char *path, struct stat *stbuf)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
   
@@ -203,6 +206,7 @@ jfs_access(const char *path, int mask)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
   
@@ -222,6 +226,7 @@ jfs_readlink(const char *path, char *buf, size_t size)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -247,7 +252,10 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   dp = opendir(jfs_path);
   free(jfs_path);
 
+  log_error("DIR:%d, for jfs_path:%s\n", dp, jfs_path);
+
   if (dp == NULL) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -280,6 +288,7 @@ jfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
   fi->fh = fd;
 
   if(fd < 0) {
+	log_error("Error occured, errno:%d\n", -errno);
 	return -errno;
   }
 
@@ -310,6 +319,7 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
   free(jfs_path);
 
   if(res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -329,6 +339,7 @@ jfs_mkdir(const char *path, mode_t mode)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -348,6 +359,7 @@ jfs_unlink(const char *path)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -367,6 +379,7 @@ jfs_rmdir(const char *path)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -389,6 +402,7 @@ jfs_symlink(const char *from, const char *to)
   free(jfs_path_to);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -411,6 +425,7 @@ jfs_rename(const char *from, const char *to)
   free(jfs_path_to);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -433,6 +448,7 @@ jfs_link(const char *from, const char *to)
   free(jfs_path_to);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -452,6 +468,7 @@ jfs_chmod(const char *path, mode_t mode)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -466,6 +483,7 @@ jfs_chown(const char *path, uid_t uid, gid_t gid)
   log_error("Called jfs_chmod, path:%s uid:%d gid:%d\n", path, uid, gid);
   res = lchown(path, uid, gid);
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -485,6 +503,7 @@ jfs_truncate(const char *path, off_t size)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -509,6 +528,7 @@ jfs_utimens(const char *path, const struct timespec ts[2])
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -528,6 +548,7 @@ jfs_open(const char *path, struct fuse_file_info *fi)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -551,11 +572,13 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
   free(jfs_path);
 
   if (fd == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
   res = pread(fd, buf, size, offset);
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     res = -errno;
   }
 
@@ -579,11 +602,13 @@ jfs_write(const char *path, const char *buf, size_t size,
   free(jfs_path);
 
   if (fd == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
   res = pwrite(fd, buf, size, offset);
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     res = -errno;
   }
 
@@ -604,6 +629,7 @@ jfs_statfs(const char *path, struct statvfs *stbuf)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -650,6 +676,7 @@ jfs_setxattr(const char *path, const char *name, const char *value,
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -670,6 +697,7 @@ jfs_getxattr(const char *path, const char *name, char *value,
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -689,6 +717,7 @@ jfs_listxattr(const char *path, char *list, size_t size)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
@@ -708,6 +737,7 @@ jfs_removexattr(const char *path, const char *name)
   free(jfs_path);
 
   if (res == -1) {
+	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
