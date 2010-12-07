@@ -5,23 +5,8 @@
  * 30 % Demo
  */
 
-#include "jfs_file_cache.h"
 #include "sglib.h"
+#include "jfs_file_cache.h"
 
-int 
-jfs_file_cache_has(int key)
-{
-  return 0;
-}
-
-int 
-jfs_file_cache_value(int key)
-{
-  return 0;
-}
-
-void 
-file_cache_add(int query_inode, int inode)
-{
-
-}
+SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_symlink, JFS_FILE_CACHE_SIZE,
+										jfs_file_cache_function);

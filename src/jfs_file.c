@@ -28,6 +28,7 @@ jfs_s_file_create(const char *path, int q_inode, mode_t mode)
   char *datapath;
   char *filename;
   int inode;
+  int rc;
   struct jfs_db_op *db_op;
 
   uuid = jfs_create_uuid();
@@ -37,16 +38,25 @@ jfs_s_file_create(const char *path, int q_inode, mode_t mode)
   filename = get_filename(path);
   inode = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
 
-  db_op = jfs_db_op_create();
-  db_op->res_t = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT INTO files VALUES(%d,1,%s,%s); INSERT INTO symlinks VALUES(%d,%d);",
-		   inode, datapath, filename, q_inode, inode);
+  if(inode >= 0) {
+	db_op = jfs_db_op_create();
+	db_op->res_t = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "INSERT INTO files VALUES(%d,1,%s,%s); INSERT INTO symlinks VALUES(%d,%d);",
+			 inode, datapath, filename, q_inode, inode);
 
-  jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
+	jfs_write_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
 
-  return db_op->error;
+	if(db_op->error == JFS_QUERY_FAILED) {
+	  rc = -1;
+	}
+  }
+  else {
+	rc = -1;
+  }
+
+  return rc;
 }
 
 int 

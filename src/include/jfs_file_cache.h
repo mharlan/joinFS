@@ -6,20 +6,14 @@
  *
  * 30 % Demo
  */
+#define JFS_FILE_CACHE_SIZE 100
 
-/*
- * Check if the cache has a match.
- */
-int jfs_file_cache_has(int key);
+struct jfs_symlink {
+  int syminode;
+  int datainode;
+};
 
-/*
- * Return the value associated with the key.
- */
-int jfs_file_cache_value(int key);
-
-/*
- * Add a key value pair to the file cache.
- */
-int jfs_file_cache_add(int key, int value);
+SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_symlink, JFS_FILE_CACHE_SIZE,
+										 jfs_file_cache_function);
 
 #endif

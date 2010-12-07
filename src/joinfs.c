@@ -116,6 +116,8 @@ jfs_destroy(void *arg)
   if(rc != SQLITE_OK) {
 	log_error("SQLITE shutdown FAILED!!!\n");
   }
+
+  log_error("joinFS shutdown. Passed arg:%d.\n", arg);
 }
 
 static int 
