@@ -560,29 +560,16 @@ static int
 jfs_read(const char *path, char *buf, size_t size, off_t offset,
 		 struct fuse_file_info *fi)
 {
-  char *jfs_path;
-  int fd;
   int res;
 
-  (void) fi;
   log_error("Called jfs_read, path:%s\n", path);
 
-  jfs_path = jfs_realpath(path);
-  fd = jfs_file_open(jfs_path, O_RDONLY);
-  free(jfs_path);
-
-  if (fd == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
-  }
-
-  res = pread(fd, buf, size, offset);
+  res = pread(fi->fh, buf, size, offset);
   if (res == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
     res = -errno;
   }
 
-  close(fd);
   return res;
 }
 
@@ -590,29 +577,16 @@ static int
 jfs_write(const char *path, const char *buf, size_t size,
 		  off_t offset, struct fuse_file_info *fi)
 {
-  char *jfs_path;
-  int fd;
   int res;
 
-  (void) fi;
   log_error("Called jfs_write, path:%s\n", path);
 
-  jfs_path = jfs_realpath(path);
-  fd = jfs_file_open(jfs_path, O_WRONLY);
-  free(jfs_path);
-
-  if (fd == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
-  }
-
-  res = pwrite(fd, buf, size, offset);
+  res = pwrite(fi->fh, buf, size, offset);
   if (res == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
     res = -errno;
   }
 
-  close(fd);
   return res;
 }
 

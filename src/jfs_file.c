@@ -21,7 +21,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename);
+static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode);
 static int get_datainode(const char *path);
 static char *get_datapath(int datainode);
 static char *create_datapath(char *uuid);
@@ -47,7 +47,7 @@ jfs_file_create(const char *path, mode_t mode)
 
   struct stat buf;
 
-  log_error("Called jfs_file_mknod.");
+  log_error("Called jfs_file_create.");
   rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
 	return -1;
@@ -75,7 +75,7 @@ jfs_file_create(const char *path, mode_t mode)
   rc = stat(datapath, &buf);
   datainode = buf.st_ino;
 
-  rc = jfs_file_db_add(syminode, datainode, datapath, filename);
+  rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
   if(rc < 0) {
 	log_error("New file database inserts failed.\n");
 	rc = unlink(path);
@@ -139,7 +139,7 @@ jfs_file_mknod(const char *path, mode_t mode)
   rc = stat(datapath, &buf);
   datainode = buf.st_ino;
   
-  rc = jfs_file_db_add(syminode, datainode, datapath, filename);
+  rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
   if(rc < 0) {
 	log_error("New file database inserts failed.\n");
 	rc = unlink(path);
@@ -160,15 +160,15 @@ jfs_file_mknod(const char *path, mode_t mode)
  * the file to the database.
  */
 static int
-jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename)
+jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode)
 {
   struct jfs_db_op *db_op;
 
   db_op = jfs_db_op_create();
   db_op->res_t = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT INTO files VALUES(NULL, %d, 1, \"%s\", \"%s\"); INSERT INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
-		   datainode, datapath, filename, syminode, datainode, datainode);
+		   "INSERT INTO files VALUES(NULL, %d, %d, \"%s\", \"%s\"); INSERT INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
+		   datainode, mode, datapath, filename, syminode, datainode, datainode);
 
   log_error("Create query:%s\n", db_op->query);
   
