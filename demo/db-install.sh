@@ -1,0 +1,1 @@
+cat ../src/joinfs.sql | sqlite3 joinfs.db

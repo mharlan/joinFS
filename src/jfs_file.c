@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename);
 static int get_datainode(const char *path);
@@ -42,14 +43,19 @@ jfs_file_create(const char *path, mode_t mode)
   int datainode;
   int syminode;
   int rc;
+  int fd;
+
+  struct stat buf;
 
   log_error("Called jfs_file_mknod.");
-  syminode = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
-  if(syminode < 0) {
+  rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+  if(rc < 0) {
 	return -1;
   }
+  rc = close(rc);
 
-  rc = close(syminode);
+  rc = stat(path, &buf);
+  syminode = buf.st_ino;
 
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
@@ -59,13 +65,15 @@ jfs_file_create(const char *path, mode_t mode)
 
   log_error("Datapath:%s\n", datapath);
 
-  datainode = creat(datapath, mode);
-
-  if(datainode < 0) {
+  fd = creat(datapath, mode);
+  if(fd < 0) {
 	rc = unlink(path);
 	free(datapath);
 	return -1;
   }
+
+  rc = stat(datapath, &buf);
+  datainode = buf.st_ino;
 
   rc = jfs_file_db_add(syminode, datainode, datapath, filename);
   if(rc < 0) {
@@ -80,7 +88,7 @@ jfs_file_create(const char *path, mode_t mode)
 
   free(datapath);
 
-  return datainode;
+  return fd;
 }
 
 /*
@@ -100,13 +108,17 @@ jfs_file_mknod(const char *path, mode_t mode)
   int syminode;
   int rc;
 
+  struct stat buf;
+
   log_error("Called jfs_file_mknod.");
-  syminode = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
-  if(syminode < 0) {
+  rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+  if(rc < 0) {
 	return -1;
   }
+  rc = close(rc);
 
-  rc = close(syminode);
+  rc = stat(path, &buf);
+  syminode = buf.st_ino;
 
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
@@ -116,15 +128,16 @@ jfs_file_mknod(const char *path, mode_t mode)
 
   log_error("Datapath:%s\n", datapath);
 
-  datainode = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
-
-  if(datainode < 0) {
+  rc = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
+  if(rc < 0) {
 	rc = unlink(path);
 	free(datapath);
 	return -1;
   }
+  rc = close(rc);
 
-  rc = close(datainode);
+  rc = stat(datapath, &buf);
+  datainode = buf.st_ino;
   
   rc = jfs_file_db_add(syminode, datainode, datapath, filename);
   if(rc < 0) {
@@ -280,36 +293,40 @@ get_datainode(const char *path)
   struct jfs_db_op *db_op;
   int syminode;
   int datainode;
+  int rc;
+  struct stat buf;
 
-  syminode = open(path, O_RDONLY);
-  if(syminode >= 0) {
-	close(syminode);
+  rc = open(path, O_RDONLY);
+  if(rc < 0) {
+	return -1;
+  }
+  rc = close(rc);
 
-	datainode = jfs_file_cache_get(syminode);
+  rc = stat(path, &buf);
+  syminode = buf.st_ino;
+
+  datainode = jfs_file_cache_get(syminode);
+  if(!datainode) {
+	db_op = jfs_db_op_create();
+	db_op->res_t = jfs_s_file;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "SELECT datainode FROM symlinks WHERE syminode=\"%d\";",
+			 syminode);
+	
+	jfs_read_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
+	
+	datainode = db_op->result->inode;
 	if(!datainode) {
-	  db_op = jfs_db_op_create();
-	  db_op->res_t = jfs_s_file;
-	  snprintf(db_op->query, JFS_QUERY_MAX,
-			   "SELECT datainode FROM symlinks WHERE syminode=\"%d\";",
-			   syminode);
-	  
-	  jfs_read_pool_queue(db_op);
-	  jfs_db_op_wait(db_op);
-	  
-	  datainode = db_op->result->inode;
-	  if(!datainode) {
-		log_error("Failed to find inode. Query=%s.\n", db_op->query);
-		return -1;
-	  }
-	  
-	  jfs_file_cache_add(syminode, datainode);
-	  jfs_db_op_destroy(db_op);
+	  log_error("Failed to find inode. Query=%s.\n", db_op->query);
+	  return -1;
 	}
 	
-	return datainode;
+	jfs_file_cache_add(syminode, datainode);
+	jfs_db_op_destroy(db_op);
   }
   
-  return -1;
+  return datainode;
 }
 
 /*
