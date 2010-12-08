@@ -10,6 +10,7 @@
 #include "sglib.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define JFS_FILE_CACHE_SIZE 1000
 
@@ -17,6 +18,7 @@ typedef struct jfs_file_cache jfs_file_cache_t;
 struct jfs_file_cache {
   int               syminode;
   int               datainode;
+  char             *datapath;
   jfs_file_cache_t *next;
 };
 
@@ -78,7 +80,7 @@ jfs_file_cache_destroy()
  * Returns 0 if not in the cache.
  */
 int
-jfs_file_cache_get(int syminode)
+jfs_file_cache_get_datainode(int syminode)
 {
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
@@ -94,10 +96,31 @@ jfs_file_cache_get(int syminode)
 }
 
 /*
+ * Get a datainode from the file cache.
+ *
+ * Returns 0 if not in the cache.
+ */
+char *
+jfs_file_cache_get_datapath(int syminode)
+{
+  jfs_file_cache_t check;
+  jfs_file_cache_t *result;
+
+  check.syminode = syminode;
+  result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
+
+  if(!result) {
+	return 0;
+  }
+
+  return result->datapath;
+}
+
+/*
  * Add a symlink to the jfs_file_cache.
  */
 int
-jfs_file_cache_add(int syminode, int datainode)
+jfs_file_cache_add(int syminode, int datainode, const char *datapath)
 {
   jfs_file_cache_t *item;
 
@@ -109,6 +132,10 @@ jfs_file_cache_add(int syminode, int datainode)
 
   item->syminode = syminode;
   item->datainode = datainode;
+
+  item->datapath = malloc(sizeof(*item->datapath) * strlen(datapath) + 1);
+  strcpy(item->datapath, datapath);
+
   sglib_hashed_jfs_file_cache_t_add(hashtable, item);
 
   return 0;

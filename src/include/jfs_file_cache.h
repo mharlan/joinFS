@@ -27,11 +27,18 @@ void jfs_file_cache_destroy();
  *
  * Returns 0 if not in the cache.
  */
-int jfs_file_cache_get(int syminode);
+int jfs_file_cache_get_datainode(int syminode);
+
+/*
+ * Get a datainode from the file cache.
+ *
+ * Returns 0 if not in the cache.
+ */
+char *jfs_file_cache_get_datapath(int syminode);
 
 /*
  * Add a symlink to the jfs_file_cache.
  */
-int jfs_file_cache_add(int syminode, int datainode);
+int jfs_file_cache_add(int syminode, int datainode, const char *datapath);
 
 #endif

@@ -22,8 +22,8 @@
 #include <sys/stat.h>
 
 static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode);
-static int get_datainode(const char *path);
-static char *get_datapath(int datainode);
+static int get_inode(const char *path);
+static char *get_datapath(const char *path);
 static char *create_datapath(char *uuid);
 static char *get_filename(const char *path);
 
@@ -84,7 +84,7 @@ jfs_file_create(const char *path, mode_t mode)
 	return -1;
   }
 
-  jfs_file_cache_add(syminode, datainode);
+  jfs_file_cache_add(syminode, datainode, datapath);
 
   free(datapath);
 
@@ -148,7 +148,7 @@ jfs_file_mknod(const char *path, mode_t mode)
 	return -1;
   }
 
-  jfs_file_cache_add(syminode, datainode);
+  jfs_file_cache_add(syminode, datainode, datapath);
 
   free(datapath);
 
@@ -180,7 +180,7 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 	return -1;
   }
 
-  jfs_file_cache_add(syminode, datainode);
+  jfs_file_cache_add(syminode, datainode, datapath);
   jfs_db_op_destroy(db_op);
 
   return 0;
@@ -193,11 +193,9 @@ int
 jfs_file_unlink(const char *path)
 {
   char *datapath;
-  int datainode;
   int rc;
 
-  datainode = get_datainode(path);
-  datapath = get_datapath(datainode);
+  datapath = get_datapath(path);
 
   rc = unlink(path);
   if(rc) {
@@ -217,19 +215,19 @@ jfs_file_unlink(const char *path)
 int
 jfs_file_rename(const char *from, const char *to)
 {
-  int datainode;
+  int syminode;
   char *filename;
   struct jfs_db_op *db_op;
 
-  datainode = get_datainode(from);
-  if(datainode >= 0) {
+  syminode = get_inode(from);
+  if(syminode >= 0) {
 	filename = get_filename(to);
 	
 	db_op = jfs_db_op_create();
 	db_op->res_t = jfs_write_op;
 	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "UPDATE files SET filename=\"%s\" WHERE inode=%d;",
-			 filename, datainode);
+			 "UPDATE files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
+			 filename, syminode);
 	
 	jfs_write_pool_queue(db_op);
 	jfs_db_op_wait(db_op);
@@ -249,11 +247,9 @@ int
 jfs_file_truncate(const char *path, off_t size)
 {
   char *datapath;
-  int datainode;
   int rc;
 
-  datainode = get_datainode(path);
-  datapath = get_datapath(datainode);
+  datapath = get_datapath(path);
 
   rc = truncate(datapath, size);
   free(datapath);
@@ -268,11 +264,9 @@ int
 jfs_file_open(const char *path, int flags)
 {
   char *datapath;
-  int datainode;
   int rc;
 
-  datainode = get_datainode(path);
-  datapath = get_datapath(datainode);
+  datapath = get_datapath(path);
 
   log_error("Opening file at datapath, %s\n", datapath);
   
@@ -282,52 +276,6 @@ jfs_file_open(const char *path, int flags)
   return rc;
 }
 
-/*
- * Gets the datainode associated with a joinFS static file symlink.
- *
- * Returns the datainode or -1.
- */
-static int 
-get_datainode(const char *path)
-{
-  struct jfs_db_op *db_op;
-  int syminode;
-  int datainode;
-  int rc;
-  struct stat buf;
-
-  rc = open(path, O_RDONLY);
-  if(rc < 0) {
-	return -1;
-  }
-  rc = close(rc);
-
-  rc = stat(path, &buf);
-  syminode = buf.st_ino;
-
-  datainode = jfs_file_cache_get(syminode);
-  if(!datainode) {
-	db_op = jfs_db_op_create();
-	db_op->res_t = jfs_s_file;
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "SELECT datainode FROM symlinks WHERE syminode=\"%d\";",
-			 syminode);
-	
-	jfs_read_pool_queue(db_op);
-	jfs_db_op_wait(db_op);
-	
-	datainode = db_op->result->inode;
-	if(!datainode) {
-	  log_error("Failed to find inode. Query=%s.\n", db_op->query);
-	  return -1;
-	}
-	
-	jfs_file_cache_add(syminode, datainode);
-	jfs_db_op_destroy(db_op);
-  }
-  
-  return datainode;
-}
 
 /*
  * Get the location where the data is saved.
@@ -335,27 +283,35 @@ get_datainode(const char *path)
  * The result must be freed.
  */
 static char *
-get_datapath(int datainode)
+get_datapath(const char *path)
 {
+  int syminode;
+  int datainode;
   char *datapath;
   struct jfs_db_op *db_op;
 
-  db_op = jfs_db_op_create();
-  db_op->res_t = jfs_datapath_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT datapath FROM files WHERE inode=\"%d\";",
-		   datainode);
-	  
-  jfs_read_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
+  syminode = get_inode(path);
+  datapath = jfs_file_cache_get_datapath(syminode);
+  if(!datapath) {
+	db_op = jfs_db_op_create();
+	db_op->res_t = jfs_datapath_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "SELECT datapath FROM files WHERE inode=(SELECT datainode WHERE syminode=%d);",
+			 syminode);
+	
+	jfs_read_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
+	
+	datapath = malloc(sizeof(*datapath) * strlen(db_op->result->datapath) + 1);
+	if(datapath) {
+	  strcpy(datapath, db_op->result->datapath);
+	}
+		
+	jfs_db_op_destroy(db_op);
 
-  datapath = malloc(sizeof(*datapath) * strlen(db_op->result->datapath) + 1);
-  if(datapath) {
-	strcpy(datapath, db_op->result->datapath);
+	datainode = get_inode(datapath);
+	jfs_file_cache_add(syminode, datainode, datapath);
   }
-
-
-  jfs_db_op_destroy(db_op);
 
   return datapath;
 }
@@ -397,4 +353,21 @@ get_filename(const char *path)
   filename = strrchr(path, '/');
 
   return ++filename;
+}
+
+/*
+ * Get the syminode from the path.
+ */
+static int
+get_inode(const char *path)
+{
+  struct stat buf;
+  int rc;
+
+  rc = stat(path, &buf);
+  if(rc < 0) {
+	return -1;
+  }
+
+  return buf.st_ino;
 }
