@@ -416,8 +416,6 @@ jfs_rename(const char *from, const char *to)
   char *jfs_path_from;
   char *jfs_path_to;
   int res;
-  
-  log_error("Called jfs_rename, from:%s to:%s\n", from, to);
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
@@ -794,10 +792,15 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
+  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
+  */
+ 
+  argc = 2;
+  argv[1] = jfs_context->mountpath;
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

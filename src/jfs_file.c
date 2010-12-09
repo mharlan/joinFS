@@ -131,7 +131,7 @@ jfs_file_mknod(const char *path, mode_t mode)
 	free(datapath);
 	return -1;
   }
-  //rc = close(rc);
+  rc = close(rc);
 
   datainode = get_inode(datapath);
   if(datainode < 0) {
@@ -209,14 +209,18 @@ jfs_file_unlink(const char *path)
   int datainode;
   int rc;
 
-  rc = unlink(path);
-  if(rc) {
-	return rc;
-  }
+  printf("---Started file UNLINK.\n");
 
   datapath = get_datapath(path);
   if(!datapath) {
+	printf("Failed to get datapath.\n");
 	return -1;
+  }
+
+  rc = unlink(path);
+  if(rc) {
+	printf("Unlink for path:%s failed.\n", path);
+	return rc;
   }
   
   datainode = get_inode(datapath);
@@ -257,9 +261,17 @@ jfs_file_unlink(const char *path)
 	}
 	jfs_db_op_destroy(db_op);
   }
+
+  if(!datapath) {
+	printf("No datapath.\n");
+	return -1;
+  }
   
 
   rc = unlink(datapath);
+  if(rc) {
+	printf("Unlink on path:%s failed.\n", datapath);
+  }
   free(datapath);
 
   return rc;
@@ -271,9 +283,12 @@ jfs_file_unlink(const char *path)
 int
 jfs_file_rename(const char *from, const char *to)
 {
+  int rc;
   int syminode;
   char *filename;
   struct jfs_db_op *db_op;
+
+  printf("Called jfs_rename, from:%s to:%s\n", from, to);
 
   syminode = get_inode(from);
   if(syminode >= 0) {
@@ -299,6 +314,11 @@ jfs_file_rename(const char *from, const char *to)
 	jfs_db_op_destroy(db_op);
 
 	printf("Renaming from:%s , to:%s\n", from, to);
+
+	rc = open(to, O_CREAT | O_EXCL);
+	if(rc < 0) {
+	  rc = jfs_file_unlink(to);
+	}
 
 	return rename(from, to);
   }

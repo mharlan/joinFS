@@ -170,7 +170,7 @@ jfs_query(struct jfs_db_op *db_op)
 
   db_op->stmt = stmt;
   rc = jfs_db_result(db_op);
-  if(rc) {
+  if(rc == JFS_QUERY_FAILED) {
 	log_error("Get result failed for db_op->jfs_type=%d\n",
 			  db_op->res_t);
   }
