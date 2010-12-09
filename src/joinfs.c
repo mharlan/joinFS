@@ -308,6 +308,7 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
      is more portable */
   if(S_ISREG(mode)) {
 	res = jfs_file_mknod(jfs_path, mode);
+	//res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   } 
   else if(S_ISFIFO(mode)) {
     res = mkfifo(jfs_path, mode);
@@ -420,7 +421,7 @@ jfs_rename(const char *from, const char *to)
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  res = jfs_file_rename(from, to);
+  res = jfs_file_rename(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
@@ -443,7 +444,7 @@ jfs_link(const char *from, const char *to)
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  res = link(from, to);
+  res = link(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
@@ -539,20 +540,26 @@ static int
 jfs_open(const char *path, struct fuse_file_info *fi)
 {
   char *jfs_path;
-  int res;
+  int fd;
 
-  log_error("Called jfs_file_open, path:%s, flags:%d\n", path, fi->flags);
+  printf("Called jfs_file_open, path:%s, flags:%d\n", path, fi->flags);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_file_open(jfs_path, fi->flags);
+  fd = jfs_file_open(jfs_path, fi->flags);
   free(jfs_path);
 
-  if (res == -1) {
+  if (fd < 0) {
 	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
 
-  close(res);
+  printf("directo_io:%d, now being set to 1.\n", fi->direct_io);
+
+  fi->fh = fd;
+  fi->direct_io = 1;
+
+  printf("Setting fi->fh:%llu\n", fi->fh);
+
   return 0;
 }
 
@@ -562,13 +569,16 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
 {
   int res;
 
-  log_error("Called jfs_read, path:%s\n", path);
+  printf("Called jfs_read, path:%s, fi->fh:%llu\n", path, fi->fh);
 
   res = pread(fi->fh, buf, size, offset);
+
   if (res == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
     res = -errno;
   }
+
+  printf("Pread return %d bytes in buf:%s, expected:%d\n", res, buf, size);
 
   return res;
 }
@@ -579,7 +589,7 @@ jfs_write(const char *path, const char *buf, size_t size,
 {
   int res;
 
-  log_error("Called jfs_write, path:%s\n", path);
+  printf("Called jfs_write, path:%s fi->fh:%llu\n", path, fi->fh);
 
   res = pwrite(fi->fh, buf, size, offset);
   if (res == -1) {
@@ -611,25 +621,24 @@ jfs_statfs(const char *path, struct statvfs *stbuf)
 }
 
 static int 
-jfs_release(const char *path, struct fuse_file_info *fi)
-{
-  /* Just a stub.	 This method is optional and can safely be left
-     unimplemented */
-  (void) path;
-  (void) fi;
-
-  return 0;
-}
-
-static int 
 jfs_fsync(const char *path, int isdatasync,
 		  struct fuse_file_info *fi)
 {
-  /* Just a stub.	 This method is optional and can safely be left
-     unimplemented */
-  (void) path;
-  (void) isdatasync;
-  (void) fi;
+  char *jfs_path;
+  int rc;
+
+  jfs_path = jfs_realpath(path);
+
+  if(isdatasync) {
+	rc = fdatasync(fi->fh);
+  }
+  else {
+	rc = fsync(fi->fh);
+  }
+
+  if(rc < 0) {
+	return -errno;
+  }
 
   return 0;
 }
@@ -740,7 +749,6 @@ static struct fuse_operations jfs_oper = {
   .read		    = jfs_read,
   .write        = jfs_write,
   .statfs       = jfs_statfs,
-  .release	    = jfs_release,
   .fsync        = jfs_fsync,
   .init         = jfs_init,
   .destroy      = jfs_destroy,
@@ -786,8 +794,10 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
-  argc = 2;
-  argv[1] = jfs_context->mountpath;
+  argc = 4;
+  argv[1] = "-d";
+  argv[2] = "-s";
+  argv[3] = jfs_context->mountpath;
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

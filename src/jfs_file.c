@@ -45,17 +45,17 @@ jfs_file_create(const char *path, mode_t mode)
   int rc;
   int fd;
 
-  struct stat buf;
-
-  log_error("Called jfs_file_create.");
+  log_error("Called jfs_file_create.\n");
   rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
 	return -1;
   }
   rc = close(rc);
 
-  rc = stat(path, &buf);
-  syminode = buf.st_ino;
+  syminode = get_inode(path);
+  if(syminode < 0) {
+	return -1;
+  }
 
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
@@ -67,24 +67,20 @@ jfs_file_create(const char *path, mode_t mode)
 
   fd = creat(datapath, mode);
   if(fd < 0) {
-	rc = unlink(path);
 	free(datapath);
 	return -1;
   }
 
-  rc = stat(datapath, &buf);
-  datainode = buf.st_ino;
+  datainode = get_inode(datapath);
+  if(datainode < 0) {
+	free(datapath);
+	return -1;
+  }
 
   rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
   if(rc < 0) {
-	log_error("New file database inserts failed.\n");
-	rc = unlink(path);
-	rc = unlink(datapath);
-	free(datapath);
-	return -1;
+	printf("New file database inserts failed.\n");
   }
-
-  jfs_file_cache_add(syminode, datainode, datapath);
 
   free(datapath);
 
@@ -108,8 +104,6 @@ jfs_file_mknod(const char *path, mode_t mode)
   int syminode;
   int rc;
 
-  struct stat buf;
-
   log_error("Called jfs_file_mknod.");
   rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
@@ -117,60 +111,62 @@ jfs_file_mknod(const char *path, mode_t mode)
   }
   rc = close(rc);
 
-  rc = stat(path, &buf);
-  syminode = buf.st_ino;
+  syminode = get_inode(path);
+  if(syminode < 0) {
+	return -1;
+  }
 
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
 
   datapath = create_datapath(uuid);
+  jfs_destroy_uuid(uuid);
+
   filename = get_filename(path);
 
   log_error("Datapath:%s\n", datapath);
 
   rc = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
-	rc = unlink(path);
 	free(datapath);
 	return -1;
   }
-  rc = close(rc);
+  //rc = close(rc);
 
-  rc = stat(datapath, &buf);
-  datainode = buf.st_ino;
+  datainode = get_inode(datapath);
+  if(datainode < 0) {
+	free(datapath);
+	return -1;
+  }
   
   rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
   if(rc < 0) {
-	log_error("New file database inserts failed.\n");
-	rc = unlink(path);
-	rc = unlink(datapath);
-	free(datapath);
-	return -1;
+	printf("New file database inserts failed.\n");
   }
-
-  jfs_file_cache_add(syminode, datainode, datapath);
 
   free(datapath);
 
-  return 0;
+  return rc;;
 }
 
 /*
  * Used by jfs_file_create and jfs_file_mknod to add
  * the file to the database.
+ *
+ * It is two db_ops because I can't compile two statements 
+ * into a single sqlite3_stmt
  */
 static int
 jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode)
 {
   struct jfs_db_op *db_op;
 
+  /* first add to the files table */
   db_op = jfs_db_op_create();
   db_op->res_t = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT INTO files VALUES(NULL, %d, %d, \"%s\", \"%s\"); INSERT INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
-		   datainode, mode, datapath, filename, syminode, datainode, datainode);
-
-  log_error("Create query:%s\n", db_op->query);
+		   "INSERT INTO files VALUES(NULL, %d, %d, \"%s\", \"%s\");",
+		   datainode, mode, datapath, filename);
   
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
@@ -179,9 +175,25 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 	jfs_db_op_destroy(db_op);
 	return -1;
   }
-
-  jfs_file_cache_add(syminode, datainode, datapath);
   jfs_db_op_destroy(db_op);
+
+  /* now add to symlinks */
+  db_op = jfs_db_op_create();
+  db_op->res_t = jfs_write_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+		   "INSERT INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
+		   syminode, datainode, datainode);
+  
+  jfs_write_pool_queue(db_op);
+  jfs_db_op_wait(db_op);
+
+  if(db_op->error == JFS_QUERY_FAILED) {
+	jfs_db_op_destroy(db_op);
+	return -1;
+  }
+  jfs_db_op_destroy(db_op);
+
+  //jfs_file_cache_add(syminode, datainode, datapath);
 
   return 0;
 }
@@ -192,16 +204,60 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 int
 jfs_file_unlink(const char *path)
 {
+  struct jfs_db_op *db_op;
   char *datapath;
+  int datainode;
   int rc;
-
-  datapath = get_datapath(path);
 
   rc = unlink(path);
   if(rc) {
-	free(datapath);
 	return rc;
   }
+
+  datapath = get_datapath(path);
+  if(!datapath) {
+	return -1;
+  }
+  
+  datainode = get_inode(datapath);
+  if(datainode >= 0) {
+	db_op = jfs_db_op_create();
+	db_op->res_t = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "DELETE FROM files WHERE inode=%d;",
+			 datainode);
+
+	printf("Delete query called:%s\n", db_op->query);
+	
+	jfs_write_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
+	
+	if(db_op->error == JFS_QUERY_FAILED) {
+	  printf("Delete from files table failed.\n");
+	  free(datapath);
+	  return -1;
+	}
+	jfs_db_op_destroy(db_op);
+
+	db_op = jfs_db_op_create();
+	db_op->res_t = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "DELETE FROM symlinks WHERE datainode=%d;",
+			 datainode);
+
+	printf("Delete query called:%s\n", db_op->query);
+	
+	jfs_write_pool_queue(db_op);
+	jfs_db_op_wait(db_op);
+	
+	if(db_op->error == JFS_QUERY_FAILED) {
+	  printf("Delete from symlinks table failed.\n");
+	  free(datapath);
+	  return -1;
+	}
+	jfs_db_op_destroy(db_op);
+  }
+  
 
   rc = unlink(datapath);
   free(datapath);
@@ -228,14 +284,26 @@ jfs_file_rename(const char *from, const char *to)
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "UPDATE files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
 			 filename, syminode);
+
+	printf("Rename query called:%s\n", db_op->query);
 	
 	jfs_write_pool_queue(db_op);
 	jfs_db_op_wait(db_op);
+
+	if(db_op->error == JFS_QUERY_FAILED) {
+	  return -1;
+	}
+
+	printf("Database cleanup.\n");
 	
 	jfs_db_op_destroy(db_op);
 
+	printf("Renaming from:%s , to:%s\n", from, to);
+
 	return rename(from, to);
   }
+
+  printf("Syminode not found for rename of from:%s.\n", from);
   
   return -1;
 }
@@ -250,6 +318,9 @@ jfs_file_truncate(const char *path, off_t size)
   int rc;
 
   datapath = get_datapath(path);
+  if(!datapath) {
+	return -1;
+  }
 
   rc = truncate(datapath, size);
   free(datapath);
@@ -266,9 +337,25 @@ jfs_file_open(const char *path, int flags)
   char *datapath;
   int rc;
 
-  datapath = get_datapath(path);
+  printf("Called jfs_file_open.\n");
+  //if the create flag is set, check to see if the file exists
+  //if it does, call jfs_file_create
+  if(flags & O_CREAT) {
+	printf("Open called with create flag set.\n");
+	rc = open(path, O_CREAT | O_EXCL | O_WRONLY);
+	if(rc < 0) {
+	  close(rc);
+	  rc = unlink(path);
+	  return jfs_file_create(path, flags);
+	}
+  }
 
-  log_error("Opening file at datapath, %s\n", datapath);
+  datapath = get_datapath(path);
+  if(!datapath) {
+	return -1;
+  }
+
+  printf("Opening file at datapath, %s\n", datapath);
   
   rc = open(datapath, flags);
   free(datapath);
@@ -280,7 +367,7 @@ jfs_file_open(const char *path, int flags)
 /*
  * Get the location where the data is saved.
  *
- * The result must be freed.
+ * The result must be freed. Returns 0 on failure.
  */
 static char *
 get_datapath(const char *path)
@@ -289,18 +376,33 @@ get_datapath(const char *path)
   int datainode;
   char *datapath;
   struct jfs_db_op *db_op;
-
+												
   syminode = get_inode(path);
-  datapath = jfs_file_cache_get_datapath(syminode);
+  if(syminode < 0) {
+	return 0;
+  }
+
+  printf("Checking cache for syminode:%d\n", syminode);
+  //datapath = jfs_file_cache_get_datapath(syminode);
+  datapath = 0;
+  printf("Cache returned datapath:%s\n", datapath);
   if(!datapath) {
 	db_op = jfs_db_op_create();
 	db_op->res_t = jfs_datapath_op;
 	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "SELECT datapath FROM files WHERE inode=(SELECT datainode WHERE syminode=%d);",
+			 "SELECT datapath FROM files WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
 			 syminode);
 	
 	jfs_read_pool_queue(db_op);
 	jfs_db_op_wait(db_op);
+
+	if(db_op->error == JFS_QUERY_FAILED) {
+	  return 0;
+	}
+
+	if(!db_op->result->datapath) {
+	  return 0;
+	}
 	
 	datapath = malloc(sizeof(*datapath) * strlen(db_op->result->datapath) + 1);
 	if(datapath) {
@@ -310,8 +412,12 @@ get_datapath(const char *path)
 	jfs_db_op_destroy(db_op);
 
 	datainode = get_inode(datapath);
-	jfs_file_cache_add(syminode, datainode, datapath);
+	if(datainode >= 0) {
+	  jfs_file_cache_add(syminode, datainode, datapath);
+	}
   }
+
+  printf("Returning datapath:%s\n", datapath);
 
   return datapath;
 }

@@ -17,7 +17,7 @@
 
 static FILE *log;
 static const char *log_path = "/home/joinfs/git/joinFS/demo/error_log.txt";
-static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
+//static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void log_init(void)
 {
@@ -42,9 +42,9 @@ void log_error(const char * format, ...)
   va_list args;
   va_start(args, format);
 
-  pthread_mutex_lock(&log_mutex);
+  //pthread_mutex_lock(&log_mutex);
   vfprintf(log, format, args);
-  pthread_mutex_unlock(&log_mutex);
+  //pthread_mutex_unlock(&log_mutex);
 
   va_end(args);
 }

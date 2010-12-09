@@ -230,13 +230,11 @@ worker_thread(void *arg)
 					  active.active_tid);
 			db_op->db = db;
 			rc = jfs_query(db_op);
-			if(rc) {
-			  log_error("db connection: %d, query failed\n", db);
-			}
 			/*
 			 * Wake up the thread waiting on the job.
 			 */
 			db_op->db = NULL;
+			db_op->error = rc;
 			pthread_cond_signal(&db_op->cond);
 			pthread_mutex_unlock(&db_op->mut);
 

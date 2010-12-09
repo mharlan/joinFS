@@ -61,7 +61,23 @@ jfs_db_op_create()
 void
 jfs_db_op_destroy(struct jfs_db_op *db_op)
 {
-  free(db_op->result);
+  switch(db_op->res_t) {
+  case(jfs_write_op):
+	break;
+  case(jfs_datapath_op):
+	free(db_op->result->datapath);
+	free(db_op->result);
+	break;
+  case(jfs_s_file):
+	free(db_op->result);
+	break;
+  case(jfs_d_file):
+	free(db_op->result);
+	break;
+  default:
+	break;
+  }
+
   free(db_op);
 }
 
