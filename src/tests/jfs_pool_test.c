@@ -134,7 +134,7 @@ void *write_thrd_func(void *arg)
 
   db_op->res_t = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT INTO test_table VALUES(%d,\"%d\");",
+		   "INSERT OR ROLLBACK INTO test_table VALUES(%d,\"%d\");",
 		   q_val, q_val);
   
   printf("--WRITE--Query set:%s\n", db_op->query);
