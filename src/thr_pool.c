@@ -12,6 +12,8 @@
 #define	_REENTRANT
 #endif
 
+#define QUERY_TIMEOUT 600000
+
 #include "sqlitedb.h"
 #include "error_log.h"
 #include "thr_pool.h"
@@ -167,6 +169,7 @@ worker_thread(void *arg)
 	 * Get a db connection object before performing jobs.
 	 */
 	db = jfs_open_db(pool->sqlite_attr);
+	sqlite3_busy_timeout(db, QUERY_TIMEOUT);
 
 	/*
 	 * This is the worker's main loop.  It will only be left

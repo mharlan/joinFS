@@ -31,6 +31,7 @@
 #include <sqlite3.h>
 #include <fuse.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -104,6 +105,8 @@ jfs_write_pool_queue(struct jfs_db_op *db_op)
 static void * 
 jfs_init(struct fuse_conn_info *conn)
 {
+  struct sched_param param;
+  pthread_attr_t wattr;
   int rc;
 
   log_init();
@@ -136,8 +139,14 @@ jfs_init(struct fuse_conn_info *conn)
 	exit(EXIT_FAILURE);
   }
 
+  pthread_attr_init(&wattr);
+  pthread_attr_setschedpolicy(&wattr, SCHED_RR);
+  pthread_attr_getschedparam(&wattr, &param);
+  param.sched_priority = 1;
+  pthread_attr_setschedparam(&wattr, &param);
+
   jfs_write_pool = jfs_pool_create(1, 1, JFS_THREAD_LINGER, 
-								   NULL, SQLITE_OPEN_READWRITE);
+								   &wattr, SQLITE_OPEN_READWRITE);
   if(!jfs_write_pool) {
 	log_error("Failed to allocate WRITE pool.\n");
 	exit(EXIT_FAILURE);

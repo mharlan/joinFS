@@ -10,6 +10,7 @@
 #include "sglib.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define JFS_FILE_CACHE_SIZE 1000
@@ -32,7 +33,12 @@ static jfs_file_cache_t *hashtable[JFS_FILE_CACHE_SIZE];
 static unsigned int 
 jfs_file_cache_t_hash(jfs_file_cache_t *item)
 {
-  return item->syminode % JFS_FILE_CACHE_SIZE;
+  int hash;
+
+  hash = item->syminode % JFS_FILE_CACHE_SIZE;
+  printf("Symionde:%d, hashed to (%d)\n", item->syminode, hash);
+
+  return hash;
 }
 
 /*
@@ -55,6 +61,8 @@ SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_file_cache_t, JFS_FILE_CACHE_SIZE,
 void 
 jfs_file_cache_init()
 {
+  printf("JFS_FILE_CACHE_INIT\n");
+
   sglib_hashed_jfs_file_cache_t_init(hashtable);
 }
 
@@ -66,9 +74,12 @@ jfs_file_cache_destroy()
 {
   struct sglib_hashed_jfs_file_cache_t_iterator it;
   jfs_file_cache_t *item;
+  
+  printf("JFS_FILE_CACHE_CLEANUP\n");
 
   for(item = sglib_hashed_jfs_file_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
+	free(item->datapath);
 	free(item);
   }
 }
@@ -113,6 +124,9 @@ jfs_file_cache_get_datapath(int syminode)
 	return 0;
   }
 
+  printf("File cache returned syminode:%d, datainode:%d, datapath:%s\n",
+		 result->syminode, result->datainode, result->datapath);
+
   return result->datapath;
 }
 
@@ -136,6 +150,8 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
   item->datapath = malloc(sizeof(*item->datapath) * strlen(datapath) + 1);
   strcpy(item->datapath, datapath);
 
+  printf("--CACHE ADD-- adding item syminode:%d, datainode:%d, datapath:%s\n",
+		 item->syminode, item->datainode, item->datapath);
   sglib_hashed_jfs_file_cache_t_add(hashtable, item);
 
   return 0;

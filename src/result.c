@@ -64,7 +64,10 @@ jfs_do_datapath_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
   int rc;
 
   row = malloc(sizeof(*row));
-  *result = row;
+  if(!row) {
+	printf("Failed to allocate memory for forw.\n");
+	return JFS_QUERY_FAILED;
+  }
 
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_ROW) {
@@ -92,14 +95,16 @@ jfs_do_datapath_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 	}
   }
 
-  rc = sqlite3_step(stmt);
-  if(rc != SQLITE_DONE) {
-	printf("A SQLite error has occured while stepping, rc:%d\n", rc);
-  }
-
   rc = sqlite3_finalize(stmt);
   if(rc != SQLITE_OK) {
     printf("Finalizing failed, rc:%d\n", rc);
+  }
+
+  if(error == JFS_QUERY_SUCCESS) {
+	*result = row;
+  }
+  else {
+	free(row);
   }
 
   return error;
@@ -116,7 +121,10 @@ jfs_s_file_result(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
   int error;
 
   row = malloc(sizeof(*row));
-  *result = row;
+  if(!row) {
+	printf("Failed to allocate memory for row.\n");
+	return JFS_QUERY_FAILED;
+  }
 
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_ROW) {
@@ -129,16 +137,17 @@ jfs_s_file_result(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 	*size = 1;
 	error = JFS_QUERY_SUCCESS;
   }
-  
-  rc = sqlite3_step(stmt);
-  if(rc != SQLITE_DONE) {
-    printf("A SQLite error has occured while stepping, rc:%d\n", 
-			  rc);
-  }
 
   rc = sqlite3_finalize(stmt);
   if(rc != SQLITE_OK) {
     printf("Finalizing failed, rc:%d\n", rc);
+  }
+
+  if(error == JFS_QUERY_SUCCESS) {
+	*result = row;
+  }
+  else {
+	free(row);
   }
 
   return error;
@@ -185,8 +194,7 @@ jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt)
   int error;
   int rc;
 
-  printf("Performing write op, transaction started.\n");
-  sqlite3_exec(db, "BEGIN TRANSACTION", 0, 0, 0);
+  printf("Performing write op.\n");
 
   rc = sqlite3_step(stmt);
   printf("Statement step result:%d\n", rc);
@@ -203,12 +211,6 @@ jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt)
     printf("Finalizing failed, rc:%d\n", rc);
   }
 
-  if(error == JFS_QUERY_SUCCESS) {
-	sqlite3_exec(db, "COMMIT TRANSACTION", 0, 0, 0);
-  }
-  else {
-	sqlite3_exec(db, "ROLLBACK TRANSACTION", 0, 0, 0);
-  }
   printf("Finished write operation, error:%d\n", error);
   
   return error;
