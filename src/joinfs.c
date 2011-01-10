@@ -1,11 +1,21 @@
-/*
- * joinFS: Relational filesystem for FUSE
- * Matthew Harlan <mharlan@gwmail.gwu.edu>
+/********************************************************************
+ * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
- * 30% Demo
- *
- * Note: Static file support.
- */
+ * This file is part of joinFS.
+ *	 
+ * JoinFS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * JoinFS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
+ ********************************************************************/
 
 #define JFS_THREAD_MIN    10
 #define JFS_THREAD_MAX    200
@@ -23,6 +33,8 @@
 
 #include "error_log.h"
 #include "jfs_file.h"
+#include "jfs_meta.h"
+#include "jfs_security.h"
 #include "jfs_file_cache.h"
 #include "thr_pool.h"
 #include "sqlitedb.h"
@@ -39,9 +51,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/time.h>
-#ifdef HAVE_SETXATTR
 #include <sys/xattr.h>
-#endif
 
 static thr_pool_t *jfs_read_pool;
 static thr_pool_t *jfs_write_pool;
@@ -166,7 +176,7 @@ jfs_destroy(void *arg)
   jfs_pool_destroy(jfs_read_pool);
   
   /* let writes propogate */
-  jfs_pool_wait(jfs_read_pool);
+  jfs_pool_wait(jfs_write_pool);
   jfs_pool_destroy(jfs_write_pool);
 
   rc = sqlite3_shutdown();
@@ -191,7 +201,7 @@ jfs_getattr(const char *path, struct stat *stbuf)
   log_error("Called jfs_getattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = lstat(jfs_path, stbuf);
+  res = jfs_file_getattr(jfs_path, stbuf);
   free(jfs_path);
 
   if (res == -1) {
@@ -211,7 +221,7 @@ jfs_access(const char *path, int mask)
   log_error("Called jfs_access, path:%s, mask:%d\n", path, mask);
 
   jfs_path = jfs_realpath(path);
-  res = access(jfs_path, mask);
+  res = jfs_security_access(jfs_path, mask);
   free(jfs_path);
 
   if (res == -1) {
@@ -472,7 +482,7 @@ jfs_chmod(const char *path, mode_t mode)
   log_error("Called jfs_chmod, path:%s mode:%d\n", path, mode);
 
   jfs_path = jfs_realpath(path);
-  res = chmod(jfs_path, mode);
+  res = jfs_security_chmod(jfs_path, mode);
   free(jfs_path);
 
   if (res == -1) {
@@ -489,7 +499,7 @@ jfs_chown(const char *path, uid_t uid, gid_t gid)
   int res;
 
   log_error("Called jfs_chmod, path:%s uid:%d gid:%d\n", path, uid, gid);
-  res = lchown(path, uid, gid);
+  res = jfs_security_chown(path, uid, gid);
   if (res == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
@@ -650,8 +660,6 @@ jfs_fsync(const char *path, int isdatasync,
   return 0;
 }
 
-#ifdef HAVE_SETXATTR
-/* xattr operations are optional and can safely be left unimplemented */
 static int 
 jfs_setxattr(const char *path, const char *name, const char *value,
 			 size_t size, int flags)
@@ -662,7 +670,8 @@ jfs_setxattr(const char *path, const char *name, const char *value,
   log_error("Called jfs_setxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = lsetxattr(jfs_path, name, value, size, flags);
+  //res = lsetxattr(jfs_path, name, value, size, flags);
+  res = jfs_meta_setxattr(jfs_path, name, value, size, flags);
   free(jfs_path);
 
   if (res == -1) {
@@ -683,7 +692,8 @@ jfs_getxattr(const char *path, const char *name, char *value,
   log_error("Called jfs_getxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = lgetxattr(jfs_path, name, value, size);
+  //res = lgetxattr(jfs_path, name, value, size);
+  res = jfs_meta_getxattr(jfs_path, name, value, size);
   free(jfs_path);
 
   if (res == -1) {
@@ -703,7 +713,8 @@ jfs_listxattr(const char *path, char *list, size_t size)
   log_error("Called jfs_listxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = llistxattr(jfs_path, list, size);
+  //res = llistxattr(jfs_path, list, size);
+  res = jfs_meta_listxattr(jfs_path, list, size);
   free(jfs_path);
 
   if (res == -1) {
@@ -723,7 +734,8 @@ jfs_removexattr(const char *path, const char *name)
   log_error("Called jfs_removexattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = lremovexattr(jfs_path, name);
+  //res = lremovexattr(jfs_path, name);
+  res = jfs_meta_removexattr(jfs_path, name);
   free(jfs_path);
 
   if (res == -1) {
@@ -733,7 +745,6 @@ jfs_removexattr(const char *path, const char *name)
 
   return 0;
 }
-#endif /* HAVE_SETXATTR */
 
 static struct fuse_operations jfs_oper = {
   .getattr	    = jfs_getattr,
@@ -759,12 +770,10 @@ static struct fuse_operations jfs_oper = {
   .fsync        = jfs_fsync,
   .init         = jfs_init,
   .destroy      = jfs_destroy,
-#ifdef HAVE_SETXATTR
   .setxattr	    = jfs_setxattr,
   .getxattr	    = jfs_getxattr,
   .listxattr	= jfs_listxattr,
-  .removexattr	= jfs_removexattr,
-#endif
+  .removexattr	= jfs_removexattr
 };
 
 int 
@@ -801,15 +810,15 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
-  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
-  */
  
+  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
+  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

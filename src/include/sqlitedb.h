@@ -1,3 +1,22 @@
+/********************************************************************
+ * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
+ *
+ * This file is part of joinFS.
+ *	 
+ * JoinFS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * JoinFS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
+ ********************************************************************/
+
 #ifndef JOINFS_SQLITEDB_H
 #define JOINFS_SQLITEDB_H
 
@@ -6,8 +25,8 @@
 #include <pthread.h>
 #include <sqlite3.h>
 
-#define JFS_QUERY_SUCCESS 1
-#define JFS_QUERY_FAILED  2
+#define JFS_QUERY_SUCCESS -1
+#define JFS_QUERY_FAILED  -2
 #define JFS_QUERY_MAX     100000
 //#define JFS_QUERY_MAX     SQLITE_MAX_SQL_LENGTH /* 1,000,000 bytes */
 
@@ -28,6 +47,7 @@ struct jfs_db_op {
   enum jfs_t       res_t;
   jfs_list_t      *result;
   int              size;
+  size_t           buffer_size;
 };
 
 /*
@@ -47,7 +67,7 @@ void jfs_db_op_destroy(struct jfs_db_op *db_op);
  * Returns the size of the result or an error code if the
  * query failed.
  */
-  int jfs_db_op_wait(struct jfs_db_op *db_op);
+int jfs_db_op_wait(struct jfs_db_op *db_op);
 
 /*
  * Create a jfsdb handle. The handle can not

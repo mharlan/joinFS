@@ -1,12 +1,18 @@
-/*
- * Code modified from:
- * http://docs.sun.com/app/docs/doc/816-5137/ggedd?l=en&a=view
- */
-
-/*
- * Thread pool implementation.
- * See <thr_pool.h> for interface declarations.
- */
+/************************************************************************
+ * Copyright 2008 Sun Microsystems
+ *
+ * Modifications by Matthew Harlan <mharlan@gwmail.gwu.edu>
+ *
+ * Code modified from the Sun Multithreaded Programming Guide's
+ * extended example section on thread pool programming and is 
+ * available here:
+ *
+ * (pdf) http://dlc.sun.com/pdf/816-5137/816-5137.pdf
+ * (webpage) http://docs.sun.com/app/docs/doc/816-5137/ggedd?l=en&a=view
+ *
+ * Without an explicit license, this code is distrbuted under the GNU 
+ * General Public License as modified for use in joinFS.
+ ************************************************************************/
 
 #if !defined(_REENTRANT)
 #define	_REENTRANT

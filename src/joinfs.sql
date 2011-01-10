@@ -2,6 +2,9 @@ DROP TABLE IF EXISTS test_table;
 DROP TABLE IF EXISTS files;
 DROP TABLE IF EXISTS symlinks;
 DROP TABLE IF EXISTS queries;
+DROP TABLE IF EXISTS keys;
+DROP TABLE IF EXISTS metadata;
+DROP TABLE IF EXISTS reldata;
 
 CREATE TABLE test_table(id INTEGER PRIMARY KEY,
 	   		 			name TEXT NOT NULL);
@@ -50,3 +53,20 @@ CREATE TABLE symlinks(syminode INTEGER PRIMARY KEY NOT NULL,
 
 CREATE TABLE queries(qinode INTEGER PRIMARY KEY,
 	   		 	     query TEXT);
+
+CREATE TABLE keys(keyid INTEGER PRIMARY KEY AUTOINCREMENT,
+	              keytext TEXT UNIQUE);
+
+CREATE TABLE metadata(inode INTEGER,
+					  keyid INTEGER,
+					  keyvalue TEXT,
+					  FOREIGN KEY(inode) REFERENCES files(inode),
+					  FOREIGN KEY(keyid) REFERENCES keys(keyid),
+					  PRIMARY KEY(inode, keyid));
+
+CREATE TABLE reldata(inode INTEGER,
+					 keyid INTEGER,
+					 keyvalue TEXT,
+					 FOREIGN KEY(inode) REFERENCES files(inode),
+					 FOREIGN KEY(keyid) REFERENCES keys(keyid),
+					 PRIMARY KEY(inode, keyid));

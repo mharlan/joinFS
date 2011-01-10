@@ -17,48 +17,48 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#include "error_log.h"
-#include "jfs_uuid.h"
+#include "jfs_security.h"
+#include "jfs_util.h"
 
-#include <stdlib.h>
-#include <uuid/uuid.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-/*
- * Allocate the memory to store a uuid.
- */
-char *
-jfs_create_uuid()
+int 
+jfs_security_chmod(const char *path, mode_t mode)
 {
-  char *uuid;
+  char *datapath;
 
-  uuid = malloc(sizeof(*uuid) * JFS_UUID_LEN);
-  if(!uuid) {
-	log_error("Failed to allocate memory for new uuid.\n");
+  datapath = jfs_util_get_datapath(path);
+  if(!datapath) {
+	return -1;
   }
 
-  return uuid;
+  return chmod(datapath, mode);
 }
 
-/*
- * Deallocate the memory for a uuid.
- */
-void
-jfs_destroy_uuid(char *uuid)
+int 
+jfs_security_chown(const char *path, uid_t uid, gid_t gid)
 {
-  free(uuid);
+  char *datapath;
+
+  datapath = jfs_util_get_datapath(path);
+  if(!datapath) {
+	return -1;
+  }
+
+  return lchown(datapath, uid, gid);
 }
 
-/*
- * Generates a new unique joinFS id.
- *
- * Memory for the uuid must already be allocated with
- * jfs_create_uuid().
- */
-void
-jfs_generate_uuid(char *uuid)
+int 
+jfs_security_access(const char *path, int mask)
 {
-  uuid_t id;
+  char *datapath;
 
-  uuid_generate(id);
-  uuid_unparse_lower(id, uuid);
+  datapath = jfs_util_get_datapath(path);
+  if(!datapath) {
+	return -1;
+  }
+
+  return access(datapath, mask);
 }

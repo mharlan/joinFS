@@ -1,13 +1,26 @@
-/*
- * joinFS - File Module
- * Matthew Harlan <mharlan@gwmail.gwu.edu>
+/********************************************************************
+ * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
- * 30 % Demo
- */
+ * This file is part of joinFS.
+ *	 
+ * JoinFS is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * JoinFS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
+ ********************************************************************/
 
 #include "error_log.h"
 #include "jfs_uuid.h"
 #include "jfs_file.h"
+#include "jfs_util.h"
 #include "jfs_file_cache.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
@@ -17,15 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/stat.h>
 
 static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode);
-static int get_inode(const char *path);
-static char *get_datapath(const char *path);
 static char *create_datapath(char *uuid);
-static char *get_filename(const char *path);
 
 /*
  * Create a joinFS static file. The file is added
@@ -52,7 +59,7 @@ jfs_file_create(const char *path, mode_t mode)
   }
   rc = close(rc);
 
-  syminode = get_inode(path);
+  syminode = jfs_util_get_inode(path);
   if(syminode < 0) {
 	return -1;
   }
@@ -61,7 +68,7 @@ jfs_file_create(const char *path, mode_t mode)
   jfs_generate_uuid(uuid);
 
   datapath = create_datapath(uuid);
-  filename = get_filename(path);
+  filename = jfs_util_get_filename(path);
 
   log_error("Datapath:%s\n", datapath);
 
@@ -71,7 +78,7 @@ jfs_file_create(const char *path, mode_t mode)
 	return -1;
   }
 
-  datainode = get_inode(datapath);
+  datainode = jfs_util_get_inode(datapath);
   if(datainode < 0) {
 	free(datapath);
 	return -1;
@@ -109,7 +116,7 @@ jfs_file_mknod(const char *path, mode_t mode)
   }
   rc = close(rc);
 
-  syminode = get_inode(path);
+  syminode = jfs_util_get_inode(path);
   if(syminode < 0) {
 	return -1;
   }
@@ -120,7 +127,7 @@ jfs_file_mknod(const char *path, mode_t mode)
   datapath = create_datapath(uuid);
   jfs_destroy_uuid(uuid);
 
-  filename = get_filename(path);
+  filename = jfs_util_get_filename(path);
 
   log_error("Datapath:%s\n", datapath);
 
@@ -131,7 +138,7 @@ jfs_file_mknod(const char *path, mode_t mode)
   }
   rc = close(rc);
 
-  datainode = get_inode(datapath);
+  datainode = jfs_util_get_inode(datapath);
   if(datainode < 0) {
 	free(datapath);
 	return -1;
@@ -169,6 +176,7 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 
   if(db_op->error == JFS_QUERY_FAILED) {
 	jfs_db_op_destroy(db_op);
+	free(datapath);
 	return -1;
   }
   jfs_db_op_destroy(db_op);
@@ -185,6 +193,7 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 
   if(db_op->error == JFS_QUERY_FAILED) {
 	jfs_db_op_destroy(db_op);
+	free(datapath);
 	return -1;
   }
   jfs_db_op_destroy(db_op);
@@ -195,7 +204,7 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 }
 
 /*
- * Delets a joinFS static file.
+ * Deletes a joinFS static file.
  */
 int
 jfs_file_unlink(const char *path)
@@ -203,11 +212,13 @@ jfs_file_unlink(const char *path)
   struct jfs_db_op *db_op;
   char *datapath;
   int datainode;
+  int syminode;
   int rc;
 
   printf("---Started file UNLINK.\n");
 
-  datapath = get_datapath(path);
+  syminode = jfs_util_get_inode(path);
+  datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	printf("Failed to get datapath.\n");
 	return -1;
@@ -219,7 +230,7 @@ jfs_file_unlink(const char *path)
 	return rc;
   }
   
-  datainode = get_inode(datapath);
+  datainode = jfs_util_get_inode(datapath);
   if(datainode >= 0) {
 	db_op = jfs_db_op_create();
 	db_op->res_t = jfs_write_op;
@@ -234,6 +245,7 @@ jfs_file_unlink(const char *path)
 	
 	if(db_op->error == JFS_QUERY_FAILED) {
 	  printf("Delete from files table failed.\n");
+	  jfs_db_op_destroy(db_op);
 	  return -1;
 	}
 	jfs_db_op_destroy(db_op);
@@ -251,6 +263,7 @@ jfs_file_unlink(const char *path)
 	
 	if(db_op->error == JFS_QUERY_FAILED) {
 	  printf("Delete from symlinks table failed.\n");
+	  jfs_db_op_destroy(db_op);
 	  return -1;
 	}
 	jfs_db_op_destroy(db_op);
@@ -265,6 +278,8 @@ jfs_file_unlink(const char *path)
   if(rc) {
 	printf("Unlink on path:%s failed.\n", datapath);
   }
+
+  rc = jfs_file_cache_remove(syminode);
 
   return rc;
 }
@@ -282,9 +297,9 @@ jfs_file_rename(const char *from, const char *to)
 
   printf("Called jfs_rename, from:%s to:%s\n", from, to);
 
-  syminode = get_inode(from);
+  syminode = jfs_util_get_inode(from);
   if(syminode >= 0) {
-	filename = get_filename(to);
+	filename = jfs_util_get_filename(to);
 	
 	db_op = jfs_db_op_create();
 	db_op->res_t = jfs_write_op;
@@ -298,6 +313,7 @@ jfs_file_rename(const char *from, const char *to)
 	jfs_db_op_wait(db_op);
 
 	if(db_op->error == JFS_QUERY_FAILED) {
+	  jfs_db_op_destroy(db_op);
 	  return -1;
 	}
 
@@ -329,7 +345,7 @@ jfs_file_truncate(const char *path, off_t size)
   char *datapath;
   int rc;
 
-  datapath = get_datapath(path);
+  datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	return -1;
   }
@@ -361,7 +377,7 @@ jfs_file_open(const char *path, int flags)
 	}
   }
 
-  datapath = get_datapath(path);
+  datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	return -1;
   }
@@ -373,72 +389,28 @@ jfs_file_open(const char *path, int flags)
   return rc;
 }
 
-
 /*
- * Get the location where the data is saved.
- *
- * Do not free the result. Datapath is returned
- * from the cached and freed there on cleanup.
+ * Get the system attributes for a file.
  */
-static char *
-get_datapath(const char *path)
+int
+jfs_file_getattr(const char *path, struct stat *stbuf)
 {
-  int syminode;
-  int datainode;
   char *datapath;
-  struct jfs_db_op *db_op;
-												
-  syminode = get_inode(path);
-  if(syminode < 0) {
-	return 0;
-  }
 
-  printf("Checking cache for syminode:%d\n", syminode);
-  datapath = jfs_file_cache_get_datapath(syminode);
-  printf("Cache returned datapath:%s\n", datapath);
+  datapath = jfs_util_get_datapath(path);
   if(!datapath) {
-	db_op = jfs_db_op_create();
-	db_op->res_t = jfs_datapath_op;
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "SELECT datapath FROM files WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-			 syminode);
-	
-	jfs_read_pool_queue(db_op);
-	jfs_db_op_wait(db_op);
-
-	if(db_op->error == JFS_QUERY_FAILED) {
-	  return 0;
-	}
-
-	if(!db_op->result->datapath) {
-	  return 0;
-	}
-	
-	datapath = malloc(sizeof(*datapath) * strlen(db_op->result->datapath) + 1);
-	if(datapath) {
-	  strcpy(datapath, db_op->result->datapath);
-	}
-		
-	jfs_db_op_destroy(db_op);
-
-	datainode = get_inode(datapath);
-	if(datainode >= 0) {
-	  jfs_file_cache_add(syminode, datainode, datapath);
-	}
+	return -1;
   }
 
-  printf("Returning datapath:%s\n", datapath);
-
-  return datapath;
+  return lstat(datapath, stbuf);
 }
-
 
 /*
  * Get the location where the data will be saved.
  * 
  * joinFS_root_dir/.data/uuid-string
  *
- * The result datapath must be freed
+ * The datapath must be freed if not added to the cache.
  */
 static char *
 create_datapath(char *uuid)
@@ -456,34 +428,4 @@ create_datapath(char *uuid)
   }
 
   return path;
-}
-
-/*
- * Get a filename from a path.
- */
-static char *
-get_filename(const char *path)
-{
-  char *filename;
-
-  filename = strrchr(path, '/');
-
-  return ++filename;
-}
-
-/*
- * Get the syminode from the path.
- */
-static int
-get_inode(const char *path)
-{
-  struct stat buf;
-  int rc;
-
-  rc = stat(path, &buf);
-  if(rc < 0) {
-	return -1;
-  }
-
-  return buf.st_ino;
 }
