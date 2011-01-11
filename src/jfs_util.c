@@ -224,6 +224,7 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
 {
   struct jfs_db_op *db_op;
   char *path;
+  size_t path_len;
   int inode;
   int rc;
 
@@ -250,9 +251,10 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
  
   inode = db_op->result->inode;
   
-  path = malloc(sizeof(*datapath) * strlen(db_op->result->datapath) + 1);
+  path_len = strlen(db_op->result->datapath) + 1;
+  path = malloc(sizeof(*datapath) * path_len);
   if(path) {
-	strcpy(path, db_op->result->datapath);
+	strncpy(path, db_op->result->datapath, path_len);
   }
   else {
 	jfs_db_op_destroy(db_op);

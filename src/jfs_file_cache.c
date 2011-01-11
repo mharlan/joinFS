@@ -178,9 +178,7 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
 
   item->syminode = syminode;
   item->datainode = datainode;
-
-  item->datapath = malloc(sizeof(*item->datapath) * strlen(datapath) + 1);
-  strcpy(item->datapath, datapath);
+  item->datapath = datapath;
 
   printf("--CACHE ADD-- adding item syminode:%d, datainode:%d, datapath:%s\n",
 		 item->syminode, item->datainode, item->datapath);

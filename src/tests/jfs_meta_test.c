@@ -67,5 +67,13 @@ main()
   getxattr(TEST_FILE, "artist", buffer, buff_size);
   printf("artist:%s\n", buffer);
 
+  setxattr(TEST_FILE, "attr1", "nandos is tasty", 15, XATTR_REPLACE);
+  getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  printf("New attr1:%s\n", buffer);
+
+  setxattr(TEST_FILE, "attr1", "shouldn't see this", 18, XATTR_CREATE);
+  getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  printf("attr1 again:%s\n", buffer);
+
   return 0;
 }

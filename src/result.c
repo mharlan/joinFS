@@ -99,7 +99,7 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
   }
   else {
 	value = sqlite3_column_text(stmt, 0);
-	value_len = sqlite3_column_bytes(stmt, 0);
+	value_len = sqlite3_column_bytes(stmt, 0) + 1;
 
 	if(value_len < 1) {
 	  printf("Badpath returned.\n");
@@ -109,7 +109,7 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 	else {
 	  printf("Size of value in bytes:%d, value:%s\n", value_len, value);
 	  row->value = malloc(sizeof(*row->value) * value_len);
-	  strcpy(row->value, (const char *)value);
+	  strncpy(row->value, (const char *)value, value_len);
 
 	  *size = 1;
 	  error = JFS_QUERY_SUCCESS;
@@ -211,7 +211,7 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
   }
   else {
 	datapath = sqlite3_column_text(stmt, 0);
-	path_len = sqlite3_column_bytes(stmt, 0);
+	path_len = sqlite3_column_bytes(stmt, 0) + 1;
 	inode = sqlite3_column_int(stmt, 1);
 
 	if(!path_len) {
@@ -228,7 +228,7 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 		error = JFS_QUERY_FAILED;
 	  }
 	  else {
-		strcpy(row->datapath, (const char *)datapath);
+		strncpy(row->datapath, (const char *)datapath, path_len);
 		row->inode = inode;
 		
 		*size = 1;
@@ -282,7 +282,7 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 
 	keyid = sqlite3_column_int(stmt, 0);
 	key = sqlite3_column_text(stmt, 1);
-	key_len = sqlite3_column_bytes(stmt, 1);
+	key_len = sqlite3_column_bytes(stmt, 1) + 1;
 
 	row->keyid = keyid;
 	row->key = malloc(sizeof(*row->key) * key_len);
@@ -292,8 +292,8 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 	  break;
 	}
 
-	strcpy(row->key, (const char *)key);
-	buffer_size += key_len + 1;
+	strncpy(row->key, (const char *)key, key_len);
+	buffer_size += key_len;
 
 	printf("--Adding key:%s to jfs_list.\n", row->key);
 

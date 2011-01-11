@@ -89,7 +89,6 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   int keyid;
   size_t size;
 
-  memset(value, 0, buffer_size);
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return -1;
@@ -117,9 +116,9 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 	return -1;
   }
   
-  size = strlen(db_op->result->value);
+  size = strlen(db_op->result->value) + 1;
   if(buffer_size > size) {
-	strcpy(value, db_op->result->value);
+	strncpy(value, db_op->result->value, size);
   }
 
   jfs_db_op_destroy(db_op);
@@ -135,6 +134,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t size)
   jfs_list_t *item;
   char *list_pos;
   size_t buff_size;
+  size_t attr_size;
   int datainode;
   int pos;
 
@@ -169,9 +169,11 @@ jfs_meta_listxattr(const char *path, char *list, size_t size)
   for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
 	  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
 	printf("Extracting Key:%s\n", item->key);
-	strcpy(list_pos, item->key);
 
-	list_pos += strlen(item->key) + 1;
+	attr_size = strlen(item->key) + 1;
+	strncpy(list_pos, item->key, attr_size);
+
+	list_pos += attr_size;
 	printf("List:%p, List_pos:%p\n", list, list_pos);
 
 	free(item->key);
