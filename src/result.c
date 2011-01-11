@@ -214,7 +214,7 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 	path_len = sqlite3_column_bytes(stmt, 0);
 	inode = sqlite3_column_int(stmt, 1);
 
-	if(path_len < 1) {
+	if(!path_len) {
 	  printf("Badpath returned.\n");
 	  row->datapath = 0;
 	  error = JFS_QUERY_FAILED;

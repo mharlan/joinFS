@@ -29,9 +29,9 @@
 struct jfs_context {
   FILE *logfile;
 
-  char querypath[PATH_MAX];
-  char datapath[PATH_MAX];
-  char mountpath[PATH_MAX];
+  char *querypath;
+  char *datapath;
+  char *mountpath;
 
   int querypath_len;
   int datapath_len;

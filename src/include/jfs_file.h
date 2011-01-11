@@ -19,13 +19,9 @@
 
 #ifndef JOINFS_JFS_FILE_H
 #define JOINFS_JFS_FILE_H
-/*
- * joinFS - File Module
- * Matthew Harlan <mharlan@gwmail.gwu.edu>
- *
- * 30 % Demo
- */
+
 #include <fuse.h>
+#include <sys/time.h>
 
 /*
  * Create a joinFS static file. The file is added
@@ -67,5 +63,7 @@ int jfs_file_open(const char *path, int flags);
  * Get the system attributes for a file.
  */
 int jfs_file_getattr(const char *path, struct stat *stbuf);
+
+int jfs_file_utimes(const char *path, const struct timeval tv[2]);
 
 #endif

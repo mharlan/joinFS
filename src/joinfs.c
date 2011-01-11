@@ -64,31 +64,39 @@ static thr_pool_t *jfs_write_pool;
 static char *
 jfs_realpath(const char *path)
 {
-  char *jfs_realpath;
+  char *jfs_path;
+  char *jfs_rpath;
   int path_len;
 
   log_error("Called jfs_realpath, path:%s\n", path);
 
   path_len = strlen(path) + JFS_CONTEXT->querypath_len + 2;
-  jfs_realpath = malloc(sizeof(*jfs_realpath) * path_len);
-  if(!jfs_realpath) {
+  jfs_path = malloc(sizeof(*jfs_path) * path_len);
+  if(!jfs_path) {
 	log_error("Failed to allocate memory for jfs_realpath.\n");
+	return 0;
+  }
+
+  if(path[0] == '/') {
+	snprintf(jfs_path, path_len, "%s%s", JFS_CONTEXT->querypath, path);
+  }
+  else if(path == NULL) {
+	snprintf(jfs_path, path_len, "%s/", JFS_CONTEXT->querypath);
   }
   else {
-	if(path[0] == '/') {
-	  snprintf(jfs_realpath, path_len, "%s%s", JFS_CONTEXT->querypath, path);
-	}
-	else if(path == NULL) {
-	  snprintf(jfs_realpath, path_len, "%s/", JFS_CONTEXT->querypath);
-	}
-	else {
-	  snprintf(jfs_realpath, path_len, "%s/%s", JFS_CONTEXT->querypath, path);
-	}
-
-	log_error("Computed realpath:%s\n", jfs_realpath);
+	snprintf(jfs_path, path_len, "%s/%s", JFS_CONTEXT->querypath, path);
+  }
+  
+  jfs_rpath = realpath(jfs_path, NULL);
+  if(!jfs_rpath) {
+	printf("realpath failed, resolved path:%s to jfs_path:%s\n", path, jfs_path);
+	return jfs_path;
   }
 
-  return jfs_realpath;
+  printf("Transformed path:%s to jfs_path:%s to jfs_realpath:%s\n", path, jfs_path, jfs_rpath);
+  free(jfs_path);
+
+  return jfs_rpath;
 }
 
 /*
@@ -670,7 +678,6 @@ jfs_setxattr(const char *path, const char *name, const char *value,
   log_error("Called jfs_setxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  //res = lsetxattr(jfs_path, name, value, size, flags);
   res = jfs_meta_setxattr(jfs_path, name, value, size, flags);
   free(jfs_path);
 
@@ -692,7 +699,6 @@ jfs_getxattr(const char *path, const char *name, char *value,
   log_error("Called jfs_getxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  //res = lgetxattr(jfs_path, name, value, size);
   res = jfs_meta_getxattr(jfs_path, name, value, size);
   free(jfs_path);
 
@@ -713,7 +719,6 @@ jfs_listxattr(const char *path, char *list, size_t size)
   log_error("Called jfs_listxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  //res = llistxattr(jfs_path, list, size);
   res = jfs_meta_listxattr(jfs_path, list, size);
   free(jfs_path);
 
@@ -734,7 +739,6 @@ jfs_removexattr(const char *path, const char *name)
   log_error("Called jfs_removexattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  //res = lremovexattr(jfs_path, name);
   res = jfs_meta_removexattr(jfs_path, name);
   free(jfs_path);
 
@@ -797,13 +801,13 @@ main(int argc, char *argv[])
 	printf("format: joinfs querydir datadir mountdir\n");
   }
 
-  realpath(argv[1], jfs_context->querypath);
+  jfs_context->querypath = realpath(argv[1], NULL);
   jfs_context->querypath_len = strlen(jfs_context->querypath);
 
-  realpath(argv[2], jfs_context->datapath);
+  jfs_context->datapath = realpath(argv[2], NULL);
   jfs_context->datapath_len = strlen(jfs_context->datapath);
   
-  realpath(argv[3], jfs_context->mountpath);
+  jfs_context->mountpath = realpath(argv[3], NULL);
   jfs_context->mountpath_len = strlen(jfs_context->mountpath);
   
   printf("querydir:%s\n", jfs_context->querypath);

@@ -56,6 +56,11 @@ int jfs_file_cache_get_datainode(int syminode);
 char *jfs_file_cache_get_datapath(int syminode);
 
 /*
+ * Get both the datapath and datainode from the file cache.
+ */
+char *jfs_file_cache_get_datapath_and_datainode(int syminode, int *datainode);
+
+/*
  * Add a symlink to the jfs_file_cache.
  */
 int jfs_file_cache_add(int syminode, int datainode, const char *datapath);

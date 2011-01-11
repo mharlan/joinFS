@@ -142,6 +142,26 @@ jfs_file_cache_get_datapath(int syminode)
   return result->datapath;
 }
 
+char *
+jfs_file_cache_get_datapath_and_datainode(int syminode, int *datainode)
+{
+  jfs_file_cache_t check;
+  jfs_file_cache_t *result;
+
+  check.syminode = syminode;
+  result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
+
+  if(!result) {
+	return 0;
+  }
+
+  printf("File cache returned syminode:%d, datainode:%d, datapath:%s\n",
+		 result->syminode, result->datainode, result->datapath);
+
+  *datainode = result->datainode;
+  return result->datapath;
+}
+
 /*
  * Add a symlink to the jfs_file_cache.
  */
@@ -152,8 +172,8 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
 
   item = malloc(sizeof(*item));
   if(!item) {
-	log_error("Failed to allocate memory for a file cache symlink.");
-	return 1;
+	printf("Failed to allocate memory for a file cache symlink.");
+	return -1;
   }
 
   item->syminode = syminode;

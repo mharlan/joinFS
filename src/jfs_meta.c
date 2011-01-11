@@ -43,7 +43,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   }
 
   datainode = jfs_util_get_datainode(path);
-  if(datainode < 0) {
+  if(datainode < 1) {
 	return -1;
   }
 
@@ -83,13 +83,13 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 				  size_t buffer_size)
 {
   struct jfs_db_op *db_op;
-  int syminode;
+  int datainode;
   int keyid;
   size_t size;
 
-  syminode = jfs_util_get_inode(path);
-  if(syminode < 0) {
-	return syminode;
+  datainode = jfs_util_get_datainode(path);
+  if(datainode < 1) {
+	return -1;
   }
 
   keyid = jfs_util_get_keyid(key);
@@ -101,8 +101,8 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   db_op->res_t = jfs_attr_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT keyvalue FROM metadata WHERE keyid=%d and inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-		   keyid, syminode);
+		   "SELECT keyvalue FROM metadata WHERE keyid=%d and inode=%d;",
+		   keyid, datainode);
 
   printf("Getxattr query:%s\n", db_op->query);
 
@@ -124,39 +124,6 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   return size;
 }
 
-/*
-A single extended attribute name is a simple NULL-terminated string. 
-The name includes a namespace prefix - there may be several, disjoint namespaces 
-associated with an individual inode.
-
-An empty buffer of size zero can be passed into these calls to return the 
-current size of the list of extended attribute names, which can be used to 
-estimate the size of a buffer which is sufficiently large to hold the list of names.
-
-Examples
-
-The list of names is returned as an unordered array of NULL-terminated character strings 
-(attribute names are separated by NULL characters), like this:
-
-    user.name1\0system.name1\0user.name2\0
-
-Filesystems like ext2, ext3 and XFS which implement POSIX ACLs using extended attributes, 
-might return a list like this:
-
-    system.posix_acl_access\0system.posix_acl_default\0
-
-Return Value
-
-On success, a positive number is returned indicating the size of the extended 
-attribute name list. On failure, -1 is returned and errno is set appropriately.
-
-If the size of the list buffer is too small to hold the result, errno is set to ERANGE.
-
-If extended attributes are not supported by the filesystem, or are disabled, 
-errno is set to ENOTSUP.
-
-The errors documented for the stat(2) system call are also applicable here. 
- */
 int
 jfs_meta_listxattr(const char *path, char *list, size_t size)
 {
@@ -203,12 +170,12 @@ int
 jfs_meta_removexattr(const char *path, const char *key)
 {
   struct jfs_db_op *db_op;
-  int syminode;
+  int datainode;
   int keyid;
 
-  syminode = jfs_util_get_inode(path);
-  if(syminode < 0) {
-	return syminode;
+  datainode = jfs_util_get_datainode(path);
+  if(datainode < 1) {
+	return -1;
   }
 
   keyid = jfs_util_get_keyid(key);
@@ -220,8 +187,8 @@ jfs_meta_removexattr(const char *path, const char *key)
   db_op->res_t = jfs_write_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "DELETE FROM metadata WHERE keyid=%d and inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-		   keyid, syminode);
+		   "DELETE FROM metadata WHERE keyid=%d and inode=%d;",
+		   keyid, datainode);
 
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
