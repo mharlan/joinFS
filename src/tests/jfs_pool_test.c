@@ -113,7 +113,7 @@ void *read_thrd_func(void *arg)
   db_op = jfs_db_op_create();
   if(!db_op) return 0;
 
-  db_op->res_t = jfs_s_file;
+  db_op->res_t = jfs_key_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT id FROM test_table WHERE name=\"%d\";",
 		   (q_val % 30) + 1);
@@ -127,7 +127,7 @@ void *read_thrd_func(void *arg)
   if(db_op->error == JFS_QUERY_SUCCESS) {
 	printf("--READ--Job #%d Waking Up\n", q_val);
 	printf("--READ--Result size:%d\n", db_op->size);
-	printf("--READ--Result inode:%d\n", db_op->result->inode);
+	printf("--READ--Result inode:%d\n", db_op->result->keyid);
   }
   else {
 	printf("Read query failed for job %d\n", q_val);

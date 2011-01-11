@@ -12,7 +12,7 @@ OBJS1=obj/error_log.o obj/sqlitedb.o obj/thr_pool.o obj/result.o obj/jfs_list.o
 OBJS2=obj/jfs_file.o obj/jfs_file_cache.o obj/joinfs.o obj/jfs_uuid.o
 OBJS3=obj/jfs_meta.o obj/jfs_util.o obj/jfs_security.o
 OBJS=$(OBJS1) $(OBJS2) $(OBJS3)
-TESTS=tests/jfs_pool_test tests/jfs_uuid_test tests/jfs_realpath_test
+TESTS=tests/jfs_pool_test tests/jfs_uuid_test tests/jfs_realpath_test tests/jfs_meta_test
 
 all: ../demo/joinfs
 
@@ -20,6 +20,9 @@ tests: $(OBJS) $(TESTS)
 
 ../demo/joinfs: $(OBJS)
 	$(CC) -ggdb -O0 $(ALLFLAGS) ../demo/joinfs $(OBJS)
+
+tests/jfs_meta_test:
+	$(CC) -ggdb -O0 $(CFLAGS) tests/jfs_meta_test tests/jfs_meta_test.c
 
 tests/jfs_realpath_test:
 	$(CC) -ggdb -O0 $(CFLAGS) tests/jfs_realpath_test tests/jfs_realpath_test.c

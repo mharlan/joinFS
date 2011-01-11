@@ -293,7 +293,9 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 	}
 
 	strcpy(row->key, (const char *)key);
-	buffer_size += key_len;
+	buffer_size += key_len + 1;
+
+	printf("--Adding key:%s to jfs_list.\n", row->key);
 
 	jfs_list_t_add(&head, row);
 	++rows;
