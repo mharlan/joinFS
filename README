@@ -1,4 +1,9 @@
 Copyright 2010, 2011 Matthew Harlan
 
-joinFS - A (FUSE based) Relational Filesystem for Linux
+Dependencies:
+
+FUSE
+sqlite3
+libuuid
+attr (for xattr scripts)
 
