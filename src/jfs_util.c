@@ -242,15 +242,8 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
 	jfs_db_op_destroy(db_op);
 	return -1;
   }
-  
-  if(!db_op->result->datapath) {
-	printf("Query:%s did not return a datapath.\n", db_op->query);
-	jfs_db_op_destroy(db_op);
-	return -1;
-  }
  
   inode = db_op->result->inode;
-  
   path_len = strlen(db_op->result->datapath) + 1;
   path = malloc(sizeof(*datapath) * path_len);
   if(path) {
