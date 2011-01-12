@@ -17,43 +17,59 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#include "error_log.h"
 #include "jfs_dir.h"
 
 #include <fuse.h>
+#include <string.h>
+#include <errno.h>
 #include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
 
 int 
 jfs_dir_mkdir(const char *path, mode_t mode)
 {
-  return 0;
+  int rc;
+
+  rc = mkdir(path, mode);
+
+  return rc;
 }
 
 int 
 jfs_dir_rmdir(const char *path)
 {
-  return 0;
+  int rc;
+
+  rc = rmdir(path);
+
+  return rc;
 }
 
 int 
-jfs_dir_opendir(const char *path, struct fuse_file_info *fi)
+jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 {
-  return 0;
-}
+  DIR *dp;
+  struct dirent *de;
+  
+  dp = opendir(path);
+  if (dp == NULL) {
+	log_error("Error occured, errno:%d\n", -errno);
+    return -errno;
+  }
 
-int 
-jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
-{
-  return 0;
-}
+  while ((de = readdir(dp)) != NULL) {
+    struct stat st;
+    memset(&st, 0, sizeof(st));
+    st.st_ino = de->d_ino;
+    st.st_mode = de->d_type << 12;
 
-int 
-jfs_dir_releasedir(const char *path, struct fuse_file_info *fi)
-{
-  return 0;
-}
-
-int 
-jfs_dir_fsyncdir(const char *path, int isdatasync, struct fuse_file_info *fi)
-{
+    if (filler(buf, de->d_name, &st, 0)) {
+	  break;
+	}
+  }
+  closedir(dp);
+  
   return 0;
 }

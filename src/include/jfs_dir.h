@@ -24,10 +24,4 @@ int jfs_dir_mkdir(const char *path, mode_t mode);
 
 int jfs_dir_rmdir(const char *path);
 
-int jfs_dir_opendir(const char *path, struct fuse_file_info *fi);
-
-int jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
-
-int jfs_dir_releasedir(const char *path, struct fuse_file_info *fi);
-
-int jfs_dir_fsyncdir(const char *path, int isdatasync, struct fuse_file_info *fi);
+int jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler);

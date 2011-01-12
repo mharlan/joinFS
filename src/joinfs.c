@@ -32,6 +32,7 @@
 #endif
 
 #include "error_log.h"
+#include "jfs_dir.h"
 #include "jfs_file.h"
 #include "jfs_meta.h"
 #include "jfs_security.h"
@@ -266,9 +267,8 @@ static int
 jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			off_t offset, struct fuse_file_info *fi)
 {
-  DIR *dp;
-  struct dirent *de;
   char *jfs_path;
+  int rc;
 
   (void) offset;
   (void) fi;
@@ -276,29 +276,10 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   log_error("Called jfs_readdir, path:%s\n", path);
   
   jfs_path = jfs_realpath(path);
-  dp = opendir(jfs_path);
+  rc = jfs_dir_readdir(jfs_path, buf, filler);
   free(jfs_path);
 
-  log_error("DIR:%d, for jfs_path:%s\n", dp, jfs_path);
-
-  if (dp == NULL) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
-  }
-
-  while ((de = readdir(dp)) != NULL) {
-    struct stat st;
-    memset(&st, 0, sizeof(st));
-    st.st_ino = de->d_ino;
-    st.st_mode = de->d_type << 12;
-
-    if (filler(buf, de->d_name, &st, 0)) {
-      break;
-	}
-  }
-
-  closedir(dp);
-  return 0;
+  return rc;
 }
 
 static int
@@ -363,7 +344,7 @@ jfs_mkdir(const char *path, mode_t mode)
   log_error("Called jfs_mkdir, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = mkdir(jfs_path, mode);
+  res = jfs_dir_mkdir(jfs_path, mode);
   free(jfs_path);
 
   if (res == -1) {
@@ -403,7 +384,7 @@ jfs_rmdir(const char *path)
   log_error("Called jfs_rmdir, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = rmdir(jfs_path);
+  res = jfs_dir_rmdir(jfs_path);
   free(jfs_path);
 
   if (res == -1) {
