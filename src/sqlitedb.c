@@ -61,10 +61,8 @@ jfs_db_op_create()
 
   db_op->db = NULL;
   db_op->stmt = NULL;
-  db_op->size = 0;
   db_op->done = 0;
   db_op->rc = 0;
-
   memset(db_op->query, 0, JFS_QUERY_MAX);
 
   pthread_cond_init(&db_op->cond, NULL);

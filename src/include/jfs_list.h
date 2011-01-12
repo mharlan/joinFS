@@ -21,6 +21,7 @@
 #define JOINFS_JFS_LIST_H
 
 #include "sglib.h"
+#include "jfs_db_ops.h"
 
 #include <sys/types.h>
 
@@ -47,6 +48,6 @@ SGLIB_DEFINE_LIST_PROTOTYPES(jfs_list_t, JFS_LIST_CMP, next)
 
 void jfs_list_add(jfs_list_t **head, jfs_list_t *node);
 
-void jfs_list_destroy(jfs_list_t *head);
+void jfs_list_destroy(jfs_list_t *head, enum jfs_db_ops op);
 
 #endif

@@ -83,32 +83,24 @@ jfs_util_is_db_symlink(const char *path)
   return 0;
 }
 
-char *
-jfs_util_get_datapath(const char *path)
+int
+jfs_util_get_datapath(const char *path, char *datapath)
 {
-  char *datapath;
   int syminode;
   int rc;
 
   syminode = jfs_util_is_db_symlink(path);
   if(syminode < 1) {
-	return (char *)path;
+	datapath = (char *)path;
+	return 0;
   }
 
-  printf("Checking cache for syminode:%d\n", syminode);
   datapath = jfs_file_cache_get_datapath(syminode);
-  printf("Cache returned datapath:%s\n", datapath);
   if(!datapath) {
 	rc = jfs_util_file_cache_failure(syminode, &datapath, NULL);
-	if(rc) {
-	  printf("File cache recovery failed for path:%s.\n", path);
-	  return 0;
-	}
   }
 
-  printf("Returning datapath:%s\n", datapath);
-
-  return datapath;
+  return rc;
 }
 
 int
@@ -126,38 +118,30 @@ jfs_util_get_datainode(const char *path)
   datainode = jfs_file_cache_get_datainode(syminode);
   if(datainode < 1) {
 	rc = jfs_util_file_cache_failure(syminode, NULL, &datainode);
-	if(rc) {
-	  printf("File cache recovery failed for path:%s.\n", path);
-	  return -1;
-	}
   }
 
-  return datainode;
+  return rc;
 }
 
-char *
-jfs_util_get_datapath_and_datainode(const char *path, int *datainode)
+int
+jfs_util_get_datapath_and_datainode(const char *path, char *datapath, int *datainode)
 {
-  char *datapath;
   int syminode;
   int rc;
 
   syminode = jfs_util_is_db_symlink(path);
   if(syminode < 1) {
+	datapath = (char *)path;
 	*datainode = jfs_util_get_inode(path);
-	return (char *)path;
+	return 0;
   }
 
   datapath = jfs_file_cache_get_datapath_and_datainode(syminode, datainode);
   if(!datapath) {
 	rc = jfs_util_file_cache_failure(syminode, &datapath, datainode);
-	if(rc) {
-	  printf("File cache recovery failed for path:%s.\n", path);
-	  return 0;
-	}
   }
   
-  return datapath;
+  return rc;
 }
 
 char *
@@ -181,10 +165,11 @@ jfs_util_get_keyid(const char *key)
 {
   struct jfs_db_op *db_op;
   int keyid;
+  int rc;
 
   //insert or fail if it exists
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_write_op;
+  db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "INSERT OR IGNORE INTO keys VALUES(NULL, \"%s\");",
 		   key);
@@ -192,16 +177,16 @@ jfs_util_get_keyid(const char *key)
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
-	printf("Insert key query failed.\n");
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
   jfs_db_op_destroy(db_op);
   
   //return the keyid
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_key_op;
+  db_op->op = jfs_key_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT keyid FROM keys WHERE keytext=\"%s\";",
 		   key);
@@ -209,9 +194,10 @@ jfs_util_get_keyid(const char *key)
   jfs_read_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
 
   keyid = db_op->result->keyid;
@@ -230,7 +216,7 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
   int rc;
 
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_file_cache_op;
+  db_op->op = jfs_file_cache_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT datapath, inode FROM files WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
 		   syminode);
@@ -238,26 +224,22 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
   jfs_read_pool_queue(db_op);
   jfs_db_op_wait(db_op);
   
-  if(db_op->error == JFS_QUERY_FAILED) {
-	printf("Query:%s failed.\n", db_op->query);
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
  
   inode = db_op->result->inode;
   path_len = strlen(db_op->result->datapath) + 1;
   path = malloc(sizeof(*datapath) * path_len);
-  if(path) {
-	strncpy(path, db_op->result->datapath, path_len);
-  }
-  else {
+  if(!path) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return -ENOMEM;
   }
+  
+  strncpy(path, db_op->result->datapath, path_len);
   jfs_db_op_destroy(db_op);
-
-  printf("Adding syminode:%d, datainode:%d, datapath:%s to file cache.\n",
-		 syminode, inode, path);
 
   if(datapath) {
 	*datapath = path;
@@ -267,7 +249,5 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
 	*datainode = inode;
   }
 
-  rc = jfs_file_cache_add(syminode, inode, path);
-
-  return rc;
+  return jfs_file_cache_add(syminode, inode, datapath);
 }

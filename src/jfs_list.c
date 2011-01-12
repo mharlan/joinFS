@@ -23,7 +23,6 @@
 
 #include "sglib.h"
 #include "jfs_list.h"
-#include "sqlitedb.h"
 
 #include <stdlib.h>
 
@@ -36,7 +35,7 @@ jfs_list_add(jfs_list_t **head, jfs_list_t *node)
 }
 
 void
-jfs_list_destroy(jfs_lit_t *head, enum jfs_db_op *op)
+jfs_list_destroy(jfs_list_t *head, enum jfs_db_ops op)
 {
   struct sglib_jfs_list_t_iterator it;
   jfs_list_t *item;

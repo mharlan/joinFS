@@ -49,7 +49,7 @@ jfs_dir_mkdir(const char *path, mode_t mode)
   }
 
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_write_op;
+  db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "INSERT OR ROLLBACK INTO directories VALUES(%d, 0, NULL);",
 		   dirinode);
@@ -57,9 +57,10 @@ jfs_dir_mkdir(const char *path, mode_t mode)
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
   jfs_db_op_destroy(db_op);
 
@@ -79,7 +80,7 @@ jfs_dir_rmdir(const char *path)
   }
 
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_write_op;
+  db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "DELETE FROM directories WHERE inode=%d;",
 		   dirinode);
@@ -87,9 +88,10 @@ jfs_dir_rmdir(const char *path)
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
   jfs_db_op_destroy(db_op);
 

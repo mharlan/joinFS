@@ -37,10 +37,11 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   struct jfs_db_op *db_op;
   int datainode;
   int keyid;
+  int rc;
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
-	return -1;
+	return keyid;
   }
 
   datainode = jfs_util_get_datainode(path);
@@ -49,7 +50,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   }
 
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_write_op;
+  db_op->op = jfs_write_op;
 
   if(flags == XATTR_CREATE) {
 	snprintf(db_op->query, JFS_QUERY_MAX,
@@ -67,14 +68,13 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 			 datainode, keyid, value);
   }
 
-  printf("setxattr query:%s\n", db_op->query);
-
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
   jfs_db_op_destroy(db_op);
 
@@ -88,6 +88,7 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   struct jfs_db_op *db_op;
   size_t size;
   int datainode;
+  int rc;
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
@@ -95,27 +96,25 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   }
   
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_attr_op;
+  db_op->op = jfs_attr_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
 		   datainode, key);
 
-  printf("Getxattr query:%s\n", db_op->query);
-
   jfs_read_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
   
   size = strlen(db_op->result->value) + 1;
   if(buffer_size >= size) {
 	strncpy(value, db_op->result->value, size);
   }
-
   jfs_db_op_destroy(db_op);
 
   return size;
@@ -132,8 +131,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   size_t attr_size;
   int datainode;
   int pos;
-
-  printf("Called jfs_meta_listxattr.\n");
+  int rc;
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
@@ -141,19 +139,18 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   }
   
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_listattr_op;
+  db_op->op = jfs_listattr_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
 		   datainode);
 
-  printf("Listxattr query:%s\n", db_op->query);
-
   jfs_read_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
 
   list_size = db_op->buffer_size;
@@ -166,14 +163,11 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   list_pos = list;
   for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
 	  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
-	printf("Extracting Key:%s\n", item->key);
-
 	attr_size = strlen(item->key) + 1;
 	strncpy(list_pos, item->key, attr_size);
 
 	list_pos += attr_size;
-	printf("List:%p, List_pos:%p\n", list, list_pos);
-
+	
 	free(item->key);
 	free(item);
   }
@@ -186,31 +180,27 @@ jfs_meta_removexattr(const char *path, const char *key)
 {
   struct jfs_db_op *db_op;
   int datainode;
-  int keyid;
+  int rc;
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
   }
-
-  keyid = jfs_util_get_keyid(key);
-  if(keyid < 1) {
-	return -1;
-  }
   
   db_op = jfs_db_op_create();
-  db_op->res_t = jfs_write_op;
+  db_op->op = jfs_write_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "DELETE FROM metadata WHERE keyid=%d and inode=%d;",
-		   keyid, datainode);
+		   "DELETE FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
+		   datainode, key);
 
   jfs_write_pool_queue(db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_FAILED) {
+  rc = db_op->rc;
+  if(rc) {
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return rc;
   }
   jfs_db_op_destroy(db_op);
 

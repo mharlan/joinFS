@@ -17,10 +17,11 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_SQLITEDB_H
-#define JOINFS_SQLITEDB_H
+#ifndef JOINFS_JFS_SQLITEDB_H
+#define JOINFS_JFS_SQLITEDB_H
 
 #include "jfs_list.h"
+#include "jfs_db_ops.h"
 
 #include <pthread.h>
 #include <sqlite3.h>
@@ -31,22 +32,6 @@
 //#define JFS_QUERY_MAX     SQLITE_MAX_SQL_LENGTH /* 1,000,000 bytes */
 
 /*
- * Enumerator used to determine what kind
- * of database operation is being executed.
- */
-enum jfs_db_op {
-  jfs_write_op,
-  jfs_file_cache_op,
-  jfs_key_op,
-  jfs_attr_op,
-  jfs_listattr_op,
-  jfs_dynamic_file_op,
-  jfs_folder_cache_op,
-  jfs_dynamic_folder_op,
-  jfs_search_op
-};
-
-/*
  * Structure for thread pool database operations.
  *
  * Errors are stored in size.
@@ -54,7 +39,7 @@ enum jfs_db_op {
 struct jfs_db_op {
   sqlite3         *db;
   sqlite3_stmt    *stmt;
-  enum jfs_db_op   op;
+  enum jfs_db_ops  op;
   int              done;
   int              rc;
 
@@ -63,7 +48,6 @@ struct jfs_db_op {
 
   char            *query;
   jfs_list_t      *result;
-  int              size;
   size_t           buffer_size;
 };
 

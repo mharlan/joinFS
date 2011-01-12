@@ -34,11 +34,11 @@
 #include <sys/types.h>
 
 static int jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt);
-static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size);
-static int jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size);
-static int jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size);
-static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *buff_size);
-static int jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size);
+static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size);
+static int jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt);
 
 /*
  * Processes the result of a jfs_db_op.
@@ -53,19 +53,19 @@ jfs_db_result(struct jfs_db_op *db_op)
 	rc = jfs_do_write_op(db_op->db, db_op->stmt);
 	break;
   case(jfs_attr_op):
-	rc = jfs_do_attr_op(&db_op->result, db_op->stmt, &db_op->size);
+	rc = jfs_do_attr_op(&db_op->result, db_op->stmt);
 	break;
   case(jfs_listattr_op):
-	rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->size, &db_op->buffer_size);
+	rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->buffer_size);
 	break;
   case(jfs_file_cache_op):
-	rc = jfs_do_file_cache_op(&db_op->result, db_op->stmt, &db_op->size);
+	rc = jfs_do_file_cache_op(&db_op->result, db_op->stmt);
 	break;
   case(jfs_key_op):
-	rc = jfs_do_key_op(&db_op->result, db_op->stmt, &db_op->size);
+	rc = jfs_do_key_op(&db_op->result, db_op->stmt);
 	break;
   case(jfs_dynamic_file_op):
-	rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt, &db_op->size);
+	rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt);
 	break;
   default:
 	rc = -EOPNOTSUPP;
@@ -79,7 +79,7 @@ jfs_db_result(struct jfs_db_op *db_op)
  * Used for getting the value of an xattr.
  */
 int 
-jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
+jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   jfs_list_t *row;
   const unsigned char* value;
@@ -108,7 +108,6 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 	}
 	strncpy(row->value, (const char *)value, value_len);
 
-	*size = 1;
 	*result = row;
   }
 
@@ -119,7 +118,7 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
  * Used for getting the keyid in the system.
  */
 static int 
-jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
+jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   jfs_list_t *row;
   int keyid;
@@ -149,7 +148,7 @@ jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
  * Generate a datapath query result.
  */
 static int 
-jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *error_code)
+jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   const unsigned char *datapath;
   jfs_list_t *row;
@@ -182,7 +181,6 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *er
 	strncpy(row->datapath, (const char *)datapath, path_len);
 	row->inode = inode;
 	  
-	*size = 1;
 	*result = row;
   }
 
@@ -193,7 +191,7 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *er
  * Returns a linked list of xattr keys.
  */
 static int
-jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *buff_size)
+jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size)
 {
   const unsigned char *key;
   size_t buffer_size;
@@ -203,7 +201,6 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 
   int key_len;
   int keyid;
-  int rows;
   int rc;
 
   head = NULL;
@@ -212,7 +209,7 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 	row = malloc(sizeof(*row));
 	if(!row) {
 	  sqlite3_finalize(stmt);
-	  jfs_list_destroy(head);
+	  jfs_list_destroy(head, jfs_listattr_op);
 	  return -ENOMEM;
 	}
 
@@ -224,7 +221,7 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 	row->key = malloc(sizeof(*row->key) * key_len);
 	if(!row->key) {
 	  sqlite3_finalize(stmt);
-	  jfs_list_destroy(head);
+	  jfs_list_destroy(head, jfs_listattr_op);
 	  return -ENOMEM;
 	}
 
@@ -232,11 +229,9 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 	buffer_size += key_len;
 
 	jfs_list_add(&head, row);
-	++rows;
   }
 
   if(rc == SQLITE_DONE) {
-	*size = rows;
 	*result = head;
   }
   
@@ -247,30 +242,25 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
  * Result processing for dynamic files.
  */
 static int
-jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *error_code)
+jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   jfs_list_t *head;
   jfs_list_t *row;
-
-  int rows;
   int rc;
   
-  rows = 0;
   while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 	row = malloc(sizeof(*row));
 	if(!row) {
 	  sqlite3_finalize(stmt);
-	  jfs_list_destroy(head);
+	  jfs_list_destroy(head, jfs_dynamic_file_op);
 	  return -ENOMEM;
 	}
 
 	//copy row here
 	jfs_list_add(&head, row);
-	++rows;
   }
   
   if(rc == SQLITE_DONE) {
-	*size = rows;
 	*result = head;
   }
 
@@ -281,30 +271,15 @@ jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *
  * Performs a database write operation.
  */
 static int
-jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt, int *error_code)
+jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt)
 {
-  int error;
   int rc;
 
-  printf("Performing write op.\n");
-
-  rc = sqlite3_step(stmt);
-  printf("Statement step result:%d\n", rc);
-  if(rc != SQLITE_DONE) {
-	printf("Statement didn't finish executing.\n");
-	error = JFS_QUERY_FAILED;
-  }
-  else {
-	error = JFS_QUERY_SUCCESS;
-  }
-
+  sqlite3_step(stmt);
   rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    printf("Finalizing failed, rc:%d\n", rc);
-	*error_code = rc;
+  if(rc) {
+	return rc;
   }
 
-  printf("Finished write operation, error:%d\n", error);
-  
-  return error;
+  return 0;
 }

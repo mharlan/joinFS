@@ -108,12 +108,13 @@ int main(void)
 void *read_thrd_func(void *arg)
 {
   struct jfs_db_op *db_op;
+  int rc;
   int q_val = (int)arg;
   
   db_op = jfs_db_op_create();
   if(!db_op) return 0;
 
-  db_op->res_t = jfs_key_op;
+  db_op->op = jfs_key_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT id FROM test_table WHERE name=\"%d\";",
 		   (q_val % 30) + 1);
@@ -124,9 +125,9 @@ void *read_thrd_func(void *arg)
   jfs_pool_queue(read_pool, db_op);
   jfs_db_op_wait(db_op);
 
-  if(db_op->error == JFS_QUERY_SUCCESS) {
+  rc = db_op->rc;
+  if(rc) {
 	printf("--READ--Job #%d Waking Up\n", q_val);
-	printf("--READ--Result size:%d\n", db_op->size);
 	printf("--READ--Result inode:%d\n", db_op->result->keyid);
   }
   else {
@@ -141,12 +142,13 @@ void *read_thrd_func(void *arg)
 void *write_thrd_func(void *arg)
 {
   struct jfs_db_op *db_op;
+  int rc;
   int q_val = (int)arg;
   
   db_op = jfs_db_op_create();
   if(!db_op) return 0;
 
-  db_op->res_t = jfs_write_op;
+  db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "INSERT OR ROLLBACK INTO test_table VALUES(%d,\"%d\");",
 		   q_val, q_val);
@@ -157,8 +159,9 @@ void *write_thrd_func(void *arg)
   jfs_pool_queue(write_pool, db_op);
   jfs_db_op_wait(db_op);
   
+  rc = db_op->rc;
   printf("--WRITE--Job #-%d Waking Up\n", q_val);
-  if(db_op->error == JFS_QUERY_SUCCESS) {
+  if(rc) {
 	printf("Write was successful.\n");
   }
   else {
