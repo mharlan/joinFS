@@ -33,8 +33,11 @@ jfs_dir_mkdir(const char *path, mode_t mode)
   int rc;
 
   rc = mkdir(path, mode);
+  if(rc) {
+	return -errno;
+  }
 
-  return rc;
+  return 0;
 }
 
 int 
@@ -43,8 +46,11 @@ jfs_dir_rmdir(const char *path)
   int rc;
 
   rc = rmdir(path);
+  if(rc) {
+	return -errno;
+  }
 
-  return rc;
+  return 0;
 }
 
 int 
@@ -52,24 +58,28 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 {
   DIR *dp;
   struct dirent *de;
+  int rc;
   
   dp = opendir(path);
-  if (dp == NULL) {
-	log_error("Error occured, errno:%d\n", -errno);
+  if(dp == NULL) {
     return -errno;
   }
 
-  while ((de = readdir(dp)) != NULL) {
+  while((de = readdir(dp)) != NULL) {
     struct stat st;
     memset(&st, 0, sizeof(st));
     st.st_ino = de->d_ino;
     st.st_mode = de->d_type << 12;
 
-    if (filler(buf, de->d_name, &st, 0)) {
+    if(filler(buf, de->d_name, &st, 0)) {
 	  break;
 	}
   }
-  closedir(dp);
+
+  rc = closedir(dp);
+  if(rc) {
+	return -errno;
+  }
   
   return 0;
 }

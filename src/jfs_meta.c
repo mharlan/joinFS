@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <attr/xattr.h>
 
@@ -44,7 +45,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
-	return -1;
+	return datainode;
   }
 
   db_op = jfs_db_op_create();
@@ -91,7 +92,7 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
-	return -1;
+	return datainode;
   }
 
   keyid = jfs_util_get_keyid(key);
@@ -141,6 +142,9 @@ jfs_meta_listxattr(const char *path, char *list, size_t size)
   printf("Called jfs_meta_listxattr.\n");
 
   datainode = jfs_util_get_datainode(path);
+  if(datainode < 1) {
+	return datainode;
+  }
   
   db_op = jfs_db_op_create();
   db_op->res_t = jfs_listattr_op;
@@ -192,7 +196,7 @@ jfs_meta_removexattr(const char *path, const char *key)
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
-	return -1;
+	return datainode;
   }
 
   keyid = jfs_util_get_keyid(key);

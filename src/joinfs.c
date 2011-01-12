@@ -204,18 +204,18 @@ jfs_destroy(void *arg)
 static int 
 jfs_getattr(const char *path, struct stat *stbuf)
 {
-  int res;
   char *jfs_path;
+  int rc;
 
   log_error("Called jfs_getattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_file_getattr(jfs_path, stbuf);
+  rc = jfs_file_getattr(jfs_path, stbuf);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
   
   return 0;
@@ -225,17 +225,17 @@ static int
 jfs_access(const char *path, int mask)
 {
   char *jfs_path;
-  int res;
+  int rc;
   
   log_error("Called jfs_access, path:%s, mask:%d\n", path, mask);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_security_access(jfs_path, mask);
+  rc = jfs_security_access(jfs_path, mask);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
   
   return 0;
@@ -245,20 +245,20 @@ static int
 jfs_readlink(const char *path, char *buf, size_t size)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_readlink, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = readlink(jfs_path, buf, size - 1);
+  rc = readlink(jfs_path, buf, size - 1);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
-  buf[res] = '\0';
+  buf[rc] = '\0';
   return 0;
 }
 
@@ -279,7 +279,11 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   rc = jfs_dir_readdir(jfs_path, buf, filler);
   free(jfs_path);
 
-  return rc;
+  if(rc) {
+	return rc;
+  }
+
+  return 0;
 }
 
 static int
@@ -293,12 +297,14 @@ jfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
   jfs_path = jfs_realpath(path);
   fd = jfs_file_create(jfs_path, mode);
   free(jfs_path);
-  fi->fh = fd;
 
   if(fd < 0) {
-	log_error("Error occured, errno:%d\n", -errno);
-	return -errno;
+	log_error("Error occured, errno:%d\n", fd);
+	return fd;
   }
+
+  fi->fh = fd;
+  fi->direct_io = 1;
 
   return 0;
 }
@@ -307,7 +313,7 @@ static int
 jfs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_mknod, path:%s mode:%d\n", path, mode);
 
@@ -315,21 +321,22 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
   /* On Linux this could just be 'mknod(path, mode, rdev)' but this
      is more portable */
   if(S_ISREG(mode)) {
-	res = jfs_file_mknod(jfs_path, mode);
-	//res = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+	rc = jfs_file_mknod(jfs_path, mode);
   } 
   else if(S_ISFIFO(mode)) {
-    res = mkfifo(jfs_path, mode);
+    rc = mkfifo(jfs_path, mode);
   }
   else {
-    res = mknod(jfs_path, mode, rdev);
+    rc = mknod(jfs_path, mode, rdev);
   }
-
   free(jfs_path);
 
-  if(res == -1) {
+  if(rc == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
+  }
+  else if(rc < -1) {
+	return rc;
   }
 
   return 0;
@@ -339,17 +346,17 @@ static int
 jfs_mkdir(const char *path, mode_t mode)
 {
   char *jfs_path;
-  int res;
+  int rc;
   
   log_error("Called jfs_mkdir, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_dir_mkdir(jfs_path, mode);
+  rc = jfs_dir_mkdir(jfs_path, mode);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -359,17 +366,17 @@ static int
 jfs_unlink(const char *path)
 {
   char *jfs_path;
-  int res;
+  int rc;
   
   log_error("Called jfs_unlink, path:%s\n", path);
   
   jfs_path = jfs_realpath(path);
-  res = jfs_file_unlink(jfs_path);
+  rc = jfs_file_unlink(jfs_path);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -379,17 +386,17 @@ static int
 jfs_rmdir(const char *path)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_rmdir, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_dir_rmdir(jfs_path);
+  rc = jfs_dir_rmdir(jfs_path);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -400,19 +407,19 @@ jfs_symlink(const char *from, const char *to)
 {
   char *jfs_path_from;
   char *jfs_path_to;
-  int res;
+  int rc;
 
   log_error("Called jfs_symlink, from:%s to:%s\n", from, to);
   
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  res = symlink(jfs_path_from, jfs_path_to);
+  rc = symlink(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -423,17 +430,17 @@ jfs_rename(const char *from, const char *to)
 {
   char *jfs_path_from;
   char *jfs_path_to;
-  int res;
+  int rc;
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  res = jfs_file_rename(jfs_path_from, jfs_path_to);
+  rc = jfs_file_rename(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -444,19 +451,19 @@ jfs_link(const char *from, const char *to)
 {
   char *jfs_path_from;
   char *jfs_path_to;
-  int res;
+  int rc;
 
   log_error("Called jfs_link, from:%s to:%s\n", from, to);
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  res = link(jfs_path_from, jfs_path_to);
+  rc = link(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -466,17 +473,17 @@ static int
 jfs_chmod(const char *path, mode_t mode)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_chmod, path:%s mode:%d\n", path, mode);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_security_chmod(jfs_path, mode);
+  rc = jfs_security_chmod(jfs_path, mode);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -485,13 +492,13 @@ jfs_chmod(const char *path, mode_t mode)
 static int 
 jfs_chown(const char *path, uid_t uid, gid_t gid)
 {
-  int res;
+  int rc;
 
   log_error("Called jfs_chmod, path:%s uid:%d gid:%d\n", path, uid, gid);
-  res = jfs_security_chown(path, uid, gid);
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  rc = jfs_security_chown(path, uid, gid);
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -501,17 +508,17 @@ static int
 jfs_truncate(const char *path, off_t size)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_truncate, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_file_truncate(jfs_path, size);
+  rc = jfs_file_truncate(jfs_path, size);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -520,9 +527,9 @@ jfs_truncate(const char *path, off_t size)
 static int 
 jfs_utimens(const char *path, const struct timespec ts[2])
 {
-  char *jfs_path;
-  int res;
   struct timeval tv[2];
+  char *jfs_path;
+  int rc;
 
   log_error("Called jfs_utimens, path:%s\n", path);
   tv[0].tv_sec = ts[0].tv_sec;
@@ -531,12 +538,12 @@ jfs_utimens(const char *path, const struct timespec ts[2])
   tv[1].tv_usec = ts[1].tv_nsec / 1000;
 
   jfs_path = jfs_realpath(path);
-  res = utimes(jfs_path, tv);
+  rc = utimes(jfs_path, tv);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -554,17 +561,13 @@ jfs_open(const char *path, struct fuse_file_info *fi)
   fd = jfs_file_open(jfs_path, fi->flags);
   free(jfs_path);
 
-  if (fd < 0) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(fd < 0) {
+	log_error("Error occured, errno:%d\n", fd);
+    return fd;
   }
-
-  printf("directo_io:%d, now being set to 1.\n", fi->direct_io);
 
   fi->fh = fd;
   fi->direct_io = 1;
-
-  printf("Setting fi->fh:%llu\n", fi->fh);
 
   return 0;
 }
@@ -573,52 +576,52 @@ static int
 jfs_read(const char *path, char *buf, size_t size, off_t offset,
 		 struct fuse_file_info *fi)
 {
-  int res;
+  int rc;
 
   printf("Called jfs_read, path:%s, fi->fh:%llu\n", path, fi->fh);
 
-  res = pread(fi->fh, buf, size, offset);
+  rc = pread(fi->fh, buf, size, offset);
 
-  if (res == -1) {
+  if (rc == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
-    res = -errno;
+    return -errno;
   }
 
-  printf("Pread return %d bytes in buf:%s, expected:%d\n", res, buf, size);
+  printf("Pread return %d bytes in buf:%s, expected:%d\n", rc, buf, size);
 
-  return res;
+  return rc;
 }
 
 static int 
 jfs_write(const char *path, const char *buf, size_t size,
 		  off_t offset, struct fuse_file_info *fi)
 {
-  int res;
+  int rc;
 
   printf("Called jfs_write, path:%s fi->fh:%llu\n", path, fi->fh);
 
-  res = pwrite(fi->fh, buf, size, offset);
-  if (res == -1) {
+  rc = pwrite(fi->fh, buf, size, offset);
+  if (rc == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
-    res = -errno;
+    return -errno;
   }
 
-  return res;
+  return rc;
 }
 
 static int 
 jfs_statfs(const char *path, struct statvfs *stbuf)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_statvfs, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = statvfs(jfs_path, stbuf);
+  rc = statvfs(jfs_path, stbuf);
   free(jfs_path);
 
-  if (res == -1) {
+  if(rc == -1) {
 	log_error("Error occured, errno:%d\n", -errno);
     return -errno;
   }
@@ -654,17 +657,17 @@ jfs_setxattr(const char *path, const char *name, const char *value,
 			 size_t size, int flags)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_setxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_meta_setxattr(jfs_path, name, value, size, flags);
+  rc = jfs_meta_setxattr(jfs_path, name, value, size, flags);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;
@@ -675,57 +678,55 @@ jfs_getxattr(const char *path, const char *name, char *value,
 			 size_t size)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_getxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_meta_getxattr(jfs_path, name, value, size);
+  rc = jfs_meta_getxattr(jfs_path, name, value, size);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc < 0) {
+	log_error("Error occured, errno:%d\n", rc);
   }
 
-  return res;
+  return rc;
 }
 
 static int 
 jfs_listxattr(const char *path, char *list, size_t size)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_listxattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_meta_listxattr(jfs_path, list, size);
+  rc = jfs_meta_listxattr(jfs_path, list, size);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc < 0) {
+	log_error("Error occured, errno:%d\n", rc);
   }
 
-  return res;
+  return rc;
 }
 
 static int 
 jfs_removexattr(const char *path, const char *name)
 {
   char *jfs_path;
-  int res;
+  int rc;
 
   log_error("Called jfs_removexattr, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  res = jfs_meta_removexattr(jfs_path, name);
+  rc = jfs_meta_removexattr(jfs_path, name);
   free(jfs_path);
 
-  if (res == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc) {
+	log_error("Error occured, errno:%d\n", rc);
+    return rc;
   }
 
   return 0;

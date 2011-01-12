@@ -20,6 +20,7 @@
 #include "jfs_security.h"
 #include "jfs_util.h"
 
+#include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,37 +29,55 @@ int
 jfs_security_chmod(const char *path, mode_t mode)
 {
   char *datapath;
+  int rc;
 
   datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	return -1;
   }
 
-  return chmod(datapath, mode);
+  rc = chmod(datapath, mode);
+  if(rc) {
+	return -errno;
+  }
+
+  return 0;
 }
 
 int 
 jfs_security_chown(const char *path, uid_t uid, gid_t gid)
 {
   char *datapath;
+  int rc;
 
   datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	return -1;
   }
 
-  return lchown(datapath, uid, gid);
+  rc = lchown(datapath, uid, gid);
+  if(rc) {
+	return -errno;
+  }
+
+  return 0;
 }
 
 int 
 jfs_security_access(const char *path, int mask)
 {
   char *datapath;
+  int rc;
 
   datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	return -1;
   }
 
-  return access(datapath, mask);
+  rc = access(datapath, mask);
+  if(rc) {
+	return -errno;
+  }
+
+  return 0;
 }

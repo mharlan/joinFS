@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -40,7 +41,7 @@ jfs_util_get_inode(const char *path)
 
   rc = stat(path, &buf);
   if(rc < 0) {
-	return rc;
+	return -errno;
   }
 
   return buf.st_ino;
@@ -54,7 +55,7 @@ jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode)
 
   rc = stat(path, &buf);
   if(rc < 0) {
-	return rc;
+	return -errno;
   }
 
   *inode = buf.st_ino;

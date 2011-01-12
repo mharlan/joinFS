@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -56,13 +57,17 @@ jfs_file_create(const char *path, mode_t mode)
   log_error("Called jfs_file_create.\n");
   rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
-	return -1;
+	return -errno;
   }
+
   rc = close(rc);
+  if(rc) {
+	return -errno;
+  }
 
   syminode = jfs_util_get_inode(path);
   if(syminode < 0) {
-	return -1;
+	return syminode;
   }
 
   uuid = jfs_create_uuid();
@@ -76,13 +81,14 @@ jfs_file_create(const char *path, mode_t mode)
   fd = creat(datapath, mode);
   if(fd < 0) {
 	free(datapath);
-	return -1;
+	return -errno;
   }
 
   datainode = jfs_util_get_inode(datapath);
   if(datainode < 0) {
+	close(fd);
 	free(datapath);
-	return -1;
+	return datainode;
   }
 
   rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
@@ -113,13 +119,17 @@ jfs_file_mknod(const char *path, mode_t mode)
   log_error("Called jfs_file_mknod.");
   rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
-	return -1;
+	return -errno;
   }
+
   rc = close(rc);
+  if(rc) {
+	return -errno;
+  }
 
   syminode = jfs_util_get_inode(path);
   if(syminode < 0) {
-	return -1;
+	return syminode;
   }
 
   uuid = jfs_create_uuid();
@@ -135,14 +145,18 @@ jfs_file_mknod(const char *path, mode_t mode)
   rc = open(datapath, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
 	free(datapath);
-	return -1;
+	return -errno;
   }
+
   rc = close(rc);
+  if(rc) {
+	return -errno;
+  }
 
   datainode = jfs_util_get_inode(datapath);
   if(datainode < 0) {
 	free(datapath);
-	return -1;
+	return datainode;
   }
   
   rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
@@ -228,7 +242,7 @@ jfs_file_unlink(const char *path)
   rc = unlink(path);
   if(rc) {
 	printf("Unlink for path:%s failed.\n", path);
-	return rc;
+	return -errno;
   }
   
   if(datainode > 0) {
@@ -272,11 +286,10 @@ jfs_file_unlink(const char *path)
   rc = unlink(datapath);
   if(rc) {
 	printf("Unlink on path:%s failed.\n", datapath);
+	return -errno;
   }
 
-  rc = jfs_file_cache_remove(syminode);
-
-  return rc;
+  return jfs_file_cache_remove(syminode);
 }
 
 /*
@@ -285,9 +298,10 @@ jfs_file_unlink(const char *path)
 int
 jfs_file_rename(const char *from, const char *to)
 {
-  int syminode;
-  char *filename;
   struct jfs_db_op *db_op;
+  char *filename;
+  int syminode;
+  int rc;
 
   printf("Called jfs_rename, from:%s to:%s\n", from, to);
 
@@ -320,8 +334,13 @@ jfs_file_rename(const char *from, const char *to)
   else {
 	printf("Syminode not found for rename of from:%s. Performing regular rename\n", from);
   }
+
+  rc = rename(from, to);
+  if(rc) {
+	return -errno;
+  }
   
-  return rename(from, to);
+  return 0;
 }
 
 /*
@@ -339,8 +358,11 @@ jfs_file_truncate(const char *path, off_t size)
   }
 
   rc = truncate(datapath, size);
+  if(rc) {
+	return -errno;
+  }
 
-  return rc;
+  return 0;
 }
 
 /*
@@ -356,20 +378,25 @@ jfs_file_open(const char *path, int flags)
 
   if(flags & O_CREAT) {
 	printf("Open called with explicit create flag set.\n");
+
 	rc = open(path, O_CREAT | O_EXCL | O_WRONLY);
 	if(rc > 0) {
 	  close(rc);
 
 	  rc = unlink(path);
 	  if(rc) {
-		return -1;
+		return -errno;
 	  }
 
 	  return jfs_file_create(path, flags);
 	}
-	
-	if(flags & O_EXCL) {
-	  return -1;
+	else if(errno == EEXIST) {
+	  if(flags & O_EXCL) {
+		return -errno;
+	  }
+	}
+	else {
+	  return -errno;
 	}
   }
 
@@ -380,7 +407,12 @@ jfs_file_open(const char *path, int flags)
 
   printf("Opening file at datapath, %s\n", datapath);
 
-  return open(datapath, flags);
+  rc = open(datapath, flags);
+  if(rc < 0) {
+	return -errno;
+  }
+
+  return rc;
 }
 
 /*
@@ -390,13 +422,19 @@ int
 jfs_file_getattr(const char *path, struct stat *stbuf)
 {
   char *datapath;
+  int rc;
 
   datapath = jfs_util_get_datapath(path);
   if(!datapath) {
 	return -1;
   }
 
-  return stat(datapath, stbuf);
+  rc = stat(datapath, stbuf);
+  if(rc) {
+	return -errno;
+  }
+
+  return 0;
 }
 
 int
@@ -409,11 +447,16 @@ jfs_file_utimes(const char *path, const struct timeval tv[2])
   if(strcmp(datapath, path)) {
 	rc = utimes(path, tv);
 	if(rc) {
-	  return -1;
+	  return -errno;
 	}
   }
   
-  return utimes(datapath, tv);
+  rc = utimes(datapath, tv);
+  if(rc) {
+	return -errno;
+  }
+
+  return 0;
 }
 
 /*
