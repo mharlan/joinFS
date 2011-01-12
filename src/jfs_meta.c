@@ -86,26 +86,20 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 				  size_t buffer_size)
 {
   struct jfs_db_op *db_op;
-  int datainode;
-  int keyid;
   size_t size;
+  int datainode;
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
-  }
-
-  keyid = jfs_util_get_keyid(key);
-  if(keyid < 1) {
-	return -1;
   }
   
   db_op = jfs_db_op_create();
   db_op->res_t = jfs_attr_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT keyvalue FROM metadata WHERE keyid=%d and inode=%d;",
-		   keyid, datainode);
+		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
+		   datainode, key);
 
   printf("Getxattr query:%s\n", db_op->query);
 
@@ -118,7 +112,7 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   }
   
   size = strlen(db_op->result->value) + 1;
-  if(buffer_size > size) {
+  if(buffer_size >= size) {
 	strncpy(value, db_op->result->value, size);
   }
 
@@ -128,13 +122,13 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 }
 
 int
-jfs_meta_listxattr(const char *path, char *list, size_t size)
+jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 {
   struct sglib_jfs_list_t_iterator it;
   struct jfs_db_op *db_op;
   jfs_list_t *item;
   char *list_pos;
-  size_t buff_size;
+  size_t list_size;
   size_t attr_size;
   int datainode;
   int pos;
@@ -162,10 +156,10 @@ jfs_meta_listxattr(const char *path, char *list, size_t size)
 	return -1;
   }
 
-  buff_size = db_op->buffer_size;
-  if(size < buff_size) {
+  list_size = db_op->buffer_size;
+  if(buffer_size < list_size) {
 	jfs_db_op_destroy(db_op);
-	return buff_size;
+	return list_size;
   }
 
   pos = 0;
@@ -184,7 +178,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t size)
 	free(item);
   }
 
-  return buff_size;
+  return list_size;
 }
 
 int

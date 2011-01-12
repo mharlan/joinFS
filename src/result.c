@@ -28,6 +28,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <sqlite3.h>
 #include <sys/types.h>
@@ -47,7 +48,7 @@ jfs_db_result(struct jfs_db_op *db_op)
 {
   int rc;
 
-  switch(db_op->res_t) {
+  switch(db_op->op) {
   case(jfs_write_op):
 	rc = jfs_do_write_op(db_op->db, db_op->stmt);
 	break;
@@ -67,7 +68,7 @@ jfs_db_result(struct jfs_db_op *db_op)
 	rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt, &db_op->size);
 	break;
   default:
-	rc = JFS_QUERY_FAILED;
+	rc = -EOPNOTSUPP;
 	log_error("jfs_t:%d not implemented yet.\n");
   }
 
@@ -83,52 +84,35 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
   jfs_list_t *row;
   const unsigned char* value;
   int value_len;
-  int error;
   int rc;
 
   row = malloc(sizeof(*row));
   if(!row) {
-	printf("Failed to allocate memory for for row.\n");
-	return JFS_QUERY_FAILED;
+	sqlite3_finalize(stmt);
+	return -ENOMEM;
   }
+
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_ROW) {
-    printf("Query failed to get keyid, rc:%d\n", rc);
-	row->value = 0;
-	error = JFS_QUERY_FAILED;
+	free(row);
   }
   else {
 	value = sqlite3_column_text(stmt, 0);
 	value_len = sqlite3_column_bytes(stmt, 0) + 1;
 
-	if(value_len < 1) {
-	  printf("Badpath returned.\n");
-	  row->value = 0;
-	  error = JFS_QUERY_FAILED;
+	row->value = malloc(sizeof(*row->value) * value_len);
+	if(!row->value) {
+	  sqlite3_finalize(stmt);
+	  free(row);
+	  return -ENOMEM;
 	}
-	else {
-	  printf("Size of value in bytes:%d, value:%s\n", value_len, value);
-	  row->value = malloc(sizeof(*row->value) * value_len);
-	  strncpy(row->value, (const char *)value, value_len);
+	strncpy(row->value, (const char *)value, value_len);
 
-	  *size = 1;
-	  error = JFS_QUERY_SUCCESS;
-	}
-  }
-
-  rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    printf("Finalizing failed, rc:%d\n", rc);
-  }
-
-  if(error == JFS_QUERY_SUCCESS) {
+	*size = 1;
 	*result = row;
   }
-  else {
-	free(row);
-  }
 
-  return error;
+  return sqlite3_finalize(stmt);
 }
 
 /*
@@ -139,117 +123,70 @@ jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
 {
   jfs_list_t *row;
   int keyid;
-  int error;
   int rc;
 
   row = malloc(sizeof(*row));
   if(!row) {
-	printf("Failed to allocate memory for for row.\n");
-	return JFS_QUERY_FAILED;
+	sqlite3_finalize(stmt);
+	return -ENOMEM;
   }
 
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_ROW) {
-    printf("Query failed to get keyid, rc:%d\n", rc);
-	row->keyid = 0;
-	error = JFS_QUERY_FAILED;
+	free(row);
   }
   else {
 	keyid = sqlite3_column_int(stmt, 0);
 
-	if(keyid == 0) {
-	  printf("Bad keyid returned.\n");
-	  row->keyid = 0;
-	  error = JFS_QUERY_FAILED;
-	}
-	else {
-	  printf("Returned keyid:%d\n", keyid);
-	  row->keyid = keyid;
-	  error = JFS_QUERY_SUCCESS;
-	}
-  }
-
-  rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    printf("Finalizing failed, rc:%d\n", rc);
-  }
-
-  if(error == JFS_QUERY_SUCCESS) {
+	row->keyid = keyid;
 	*result = row;
   }
-  else {
-	free(row);
-  }
 
-  return error;
+  return sqlite3_finalize(stmt);
 }
 
 /*
  * Generate a datapath query result.
  */
 static int 
-jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
+jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *error_code)
 {
-  jfs_list_t *row;
   const unsigned char *datapath;
+  jfs_list_t *row;
   int inode;
   int path_len;
-  int error;
   int rc;
 
   row = malloc(sizeof(*row));
   if(!row) {
-	printf("Failed to allocate memory for forw.\n");
-	return JFS_QUERY_FAILED;
+	sqlite3_finalize(stmt);
+	return -ENOMEM;
   }
 
   rc = sqlite3_step(stmt);
   if(rc != SQLITE_ROW) {
-    printf("Query Failed to get datapath, rc:%d\n", rc);
-    row->datapath = 0;
-	error = JFS_QUERY_FAILED;
+	free(row);
   }
   else {
 	datapath = sqlite3_column_text(stmt, 0);
 	path_len = sqlite3_column_bytes(stmt, 0) + 1;
 	inode = sqlite3_column_int(stmt, 1);
 
-	if(!path_len) {
-	  printf("Badpath returned.\n");
-	  row->datapath = 0;
-	  error = JFS_QUERY_FAILED;
+	row->datapath = malloc(sizeof(*row->datapath) * path_len);
+	if(!row->datapath) {
+	  sqlite3_finalize(stmt);
+	  free(row);
+	  return -ENOMEM;
 	}
-	else {
-	  printf("Size of datapath in bytes:%d, datapath:%s\n", path_len, datapath);
-	  row->datapath = malloc(sizeof(*row->datapath) * path_len);
 
-	  if(!row->datapath) {
-		printf("Failed to allocate memory for datapath in file_cache_op.\n");
-		error = JFS_QUERY_FAILED;
-	  }
-	  else {
-		strncpy(row->datapath, (const char *)datapath, path_len);
-		row->inode = inode;
-		
-		*size = 1;
-		error = JFS_QUERY_SUCCESS;
-	  }
-	}
-  }
-
-  rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    printf("Finalizing failed, rc:%d\n", rc);
-  }
-
-  if(error == JFS_QUERY_SUCCESS) {
+	strncpy(row->datapath, (const char *)datapath, path_len);
+	row->inode = inode;
+	  
+	*size = 1;
 	*result = row;
   }
-  else {
-	free(row);
-  }
 
-  return error;
+  return sqlite3_finalize(stmt);
 }
 
 /* 
@@ -267,7 +204,6 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
   int key_len;
   int keyid;
   int rows;
-  int error;
   int rc;
 
   head = NULL;
@@ -275,9 +211,9 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
   while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 	row = malloc(sizeof(*row));
 	if(!row) {
-	  printf("Failed to allocate memory for row in listattr.\n");
-	  error = JFS_QUERY_FAILED;
-	  break;
+	  sqlite3_finalize(stmt);
+	  jfs_list_destroy(head);
+	  return -ENOMEM;
 	}
 
 	keyid = sqlite3_column_int(stmt, 0);
@@ -286,79 +222,66 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, size_t *b
 
 	row->keyid = keyid;
 	row->key = malloc(sizeof(*row->key) * key_len);
-	if(!key) {
-	  printf("Failed to allocate memory for listattr key.\n");
-	  error = JFS_QUERY_FAILED;
-	  break;
+	if(!row->key) {
+	  sqlite3_finalize(stmt);
+	  jfs_list_destroy(head);
+	  return -ENOMEM;
 	}
 
 	strncpy(row->key, (const char *)key, key_len);
 	buffer_size += key_len;
 
-	printf("--Adding key:%s to jfs_list.\n", row->key);
-
-	jfs_list_t_add(&head, row);
+	jfs_list_add(&head, row);
 	++rows;
   }
 
-  if(rc != SQLITE_DONE) {
-	error = JFS_QUERY_FAILED;
-	*size = 0;
-  }
-  else {
-	error = JFS_QUERY_SUCCESS;
+  if(rc == SQLITE_DONE) {
 	*size = rows;
+	*result = head;
   }
-
-  rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    printf("Finalizing failed, rc:%d\n", rc);
-  }
-
-  *buff_size = buffer_size;
-  *result = head;
   
-  return error;
+  return sqlite3_finalize(stmt);
 }
 
 /*
  * Result processing for dynamic files.
  */
 static int
-jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size)
+jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt, int *size, int *error_code)
 {
   jfs_list_t *head;
   jfs_list_t *row;
+
   int rows;
   int rc;
   
   rows = 0;
   while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 	row = malloc(sizeof(*row));
+	if(!row) {
+	  sqlite3_finalize(stmt);
+	  jfs_list_destroy(head);
+	  return -ENOMEM;
+	}
+
 	//copy row here
-	jfs_list_t_add(&head, row);
+	jfs_list_add(&head, row);
 	++rows;
   }
-  *size = rows;
   
-  if(rc != SQLITE_DONE) {
-	log_error("A SQLite error has occured while stepping, rc:%d\n", 
-			  rc);
+  if(rc == SQLITE_DONE) {
+	*size = rows;
+	*result = head;
   }
 
-  rc = sqlite3_finalize(stmt);
-  if(rc != SQLITE_OK) {
-    log_error("Finalizing failed, rc:%d\n", rc);
-  }
-
-  return rc;
+  return sqlite3_finalize(stmt);
 }
 
 /*
  * Performs a database write operation.
  */
 static int
-jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt)
+jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt, int *error_code)
 {
   int error;
   int rc;
@@ -378,6 +301,7 @@ jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt)
   rc = sqlite3_finalize(stmt);
   if(rc != SQLITE_OK) {
     printf("Finalizing failed, rc:%d\n", rc);
+	*error_code = rc;
   }
 
   printf("Finished write operation, error:%d\n", error);

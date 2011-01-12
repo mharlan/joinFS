@@ -101,6 +101,7 @@ create_worker(thr_pool_t *pool)
 	error = pthread_create(&pid, &pool->pool_attr, worker_thread, pool);
 	log_error("Thread created, id:%d\n", pid);
 	(void) pthread_sigmask(SIG_SETMASK, &oset, NULL);
+
 	return (error);
 }
 
@@ -239,11 +240,13 @@ worker_thread(void *arg)
 					  active.active_tid);
 			db_op->db = db;
 			rc = jfs_query(db_op);
+
 			/*
 			 * Wake up the thread waiting on the job.
 			 */
 			db_op->db = NULL;
-			db_op->error = rc;
+			db_op->rc = rc;
+			db_op->done = 1;
 			pthread_cond_signal(&db_op->cond);
 			pthread_mutex_unlock(&db_op->mut);
 

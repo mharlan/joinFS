@@ -31,20 +31,37 @@
 //#define JFS_QUERY_MAX     SQLITE_MAX_SQL_LENGTH /* 1,000,000 bytes */
 
 /*
+ * Enumerator used to determine what kind
+ * of database operation is being executed.
+ */
+enum jfs_db_op {
+  jfs_write_op,
+  jfs_file_cache_op,
+  jfs_key_op,
+  jfs_attr_op,
+  jfs_listattr_op,
+  jfs_dynamic_file_op,
+  jfs_folder_cache_op,
+  jfs_dynamic_folder_op,
+  jfs_search_op
+};
+
+/*
  * Structure for thread pool database operations.
  *
  * Errors are stored in size.
  */
 struct jfs_db_op {
-  sqlite3          *db;
-  sqlite3_stmt     *stmt;
-  int               error;
+  sqlite3         *db;
+  sqlite3_stmt    *stmt;
+  enum jfs_db_op   op;
+  int              done;
+  int              rc;
 
   pthread_cond_t   cond;
   pthread_mutex_t  mut;
 
-  char             query[JFS_QUERY_MAX];
-  enum jfs_t       res_t;
+  char            *query;
   jfs_list_t      *result;
   int              size;
   size_t           buffer_size;

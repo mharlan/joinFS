@@ -23,13 +23,34 @@
 
 #include "sglib.h"
 #include "jfs_list.h"
+#include "sqlitedb.h"
 
 #include <stdlib.h>
 
 SGLIB_DEFINE_LIST_FUNCTIONS(jfs_list_t, JFS_LIST_CMP, next)
 
 void
-jfs_list_t_add(jfs_list_t **head, jfs_list_t *node)
+jfs_list_add(jfs_list_t **head, jfs_list_t *node)
 {
   sglib_jfs_list_t_add(head, node);
+}
+
+void
+jfs_list_destroy(jfs_lit_t *head, enum jfs_db_op *op)
+{
+  struct sglib_jfs_list_t_iterator it;
+  jfs_list_t *item;
+  
+  for(item = sglib_jfs_list_t_it_init(&it, head);
+	  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
+	switch(op) {
+	case(jfs_listattr_op):
+	  free(item->key);
+	  free(item);
+	  break;
+	default:
+	  free(item);
+	  break;
+	}
+  }
 }

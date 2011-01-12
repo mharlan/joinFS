@@ -25,22 +25,6 @@
 #include <sys/types.h>
 
 /*
- * Enumerator used to determine what fields 
- * are set in a jfs_list node.
- */
-enum jfs_t {
-  jfs_write_op,
-  jfs_file_cache_op,
-  jfs_key_op,
-  jfs_attr_op,
-  jfs_listattr_op,
-  jfs_dynamic_file_op,
-  jfs_folder_cache_op,
-  jfs_dynamic_folder_op,
-  jfs_search_op
-};
-
-/*
  * The jfs_list node. Used for storing
  * a database result row.
  */
@@ -61,6 +45,8 @@ struct jfs_list {
 #define JFS_LIST_CMP(a, b) (a->inode - b->inode)
 SGLIB_DEFINE_LIST_PROTOTYPES(jfs_list_t, JFS_LIST_CMP, next)
 
-void jfs_list_t_add(jfs_list_t **head, jfs_list_t *node);
+void jfs_list_add(jfs_list_t **head, jfs_list_t *node);
+
+void jfs_list_destroy(jfs_list_t *head);
 
 #endif

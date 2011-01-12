@@ -49,14 +49,21 @@ jfs_db_op_create()
 
   db_op = malloc(sizeof(*db_op));
   if(!db_op) {
-	log_error("Failed to allocate memory for db_op.");
+	log_error("Failed to allocate memory for db_op.\n");
+	return 0;
+  }
+
+  db_op->query = malloc(sizeof(*db_op->query) * JFS_QUERY_MAX);
+  if(!db_op->query) {
+	log_error("Failed to allocate memory for db_op query.\n");
 	return 0;
   }
 
   db_op->db = NULL;
   db_op->stmt = NULL;
   db_op->size = 0;
-  db_op->error = 0;
+  db_op->done = 0;
+  db_op->rc = 0;
 
   memset(db_op->query, 0, JFS_QUERY_MAX);
 
@@ -77,8 +84,8 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 
   printf("Database operation destroy called.\n");
 
-  if(db_op->error == JFS_QUERY_SUCCESS) {
-	switch(db_op->res_t) {
+  if(!db_op->rc) {
+	switch(db_op->op) {
 	case(jfs_file_cache_op):
 	  free(db_op->result->datapath);
 	  free(db_op->result);
@@ -119,12 +126,12 @@ int
 jfs_db_op_wait(struct jfs_db_op *db_op)
 {
   pthread_mutex_lock(&db_op->mut);
-  while(!db_op->error) {
+  while(!db_op->done) {
 	pthread_cond_wait(&db_op->cond, &db_op->mut);
   }
   pthread_mutex_unlock(&db_op->mut);
 
-  return db_op->error;
+  return db_op->rc;
 }
 
 /*
@@ -145,7 +152,6 @@ jfs_open_db(int sqlite_attr)
     sqlite3_close(db);
     exit(1);
   }
-  printf("Opened database connection.\n");
 
   return db;
 }
@@ -191,17 +197,18 @@ jfs_query(struct jfs_db_op *db_op)
   if(rc) {
 	log_error("Setup statement failed for query=%s\n",
 			  db_op->query);
-	db_op->error = JFS_QUERY_FAILED;
+
+	db_op->rc = rc;
+	db_op->done = 1;
+
     return rc;
   }
 
   db_op->stmt = stmt;
   rc = jfs_db_result(db_op);
-  if(rc == JFS_QUERY_FAILED) {
-	log_error("Get result failed for db_op->jfs_type=%d\n",
-			  db_op->res_t);
+  if(rc) {
+	log_error("Query:%s failed for db_op=%d\n", db_op->query, db_op->op);
   }
 
   return rc;
 }
-

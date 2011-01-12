@@ -102,17 +102,17 @@ jfs_dir_rmdir(const char *path)
 }
 
 int 
-jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
+jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler, struct fuse_file_info *fi)
 {
-  DIR *dp;
   struct dirent *de;
+  DIR *dp;
   int rc;
-  
+
   dp = opendir(path);
   if(dp == NULL) {
     return -errno;
   }
-
+  
   while((de = readdir(dp)) != NULL) {
     struct stat st;
     memset(&st, 0, sizeof(st));
@@ -128,6 +128,8 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
   if(rc) {
 	return -errno;
   }
-  
+
   return 0;
 }
+
+

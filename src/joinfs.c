@@ -271,12 +271,11 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int rc;
 
   (void) offset;
-  (void) fi;
 
   log_error("Called jfs_readdir, path:%s\n", path);
   
   jfs_path = jfs_realpath(path);
-  rc = jfs_dir_readdir(jfs_path, buf, filler);
+  rc = jfs_dir_readdir(jfs_path, buf, filler, fi);
   free(jfs_path);
 
   if(rc) {

@@ -164,10 +164,10 @@ char *
 jfs_util_get_filename(const char *path)
 {
   char *filename;
+  
+  filename = strrchr(path, '/') + 1;
 
-  filename = strrchr(path, '/');
-
-  return ++filename;
+  return filename;
 }
 
 /*
