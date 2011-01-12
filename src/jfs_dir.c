@@ -19,8 +19,12 @@
 
 #include "error_log.h"
 #include "jfs_dir.h"
+#include "sqlitedb.h"
+#include "jfs_util.h"
+#include "joinfs.h"
 
 #include <fuse.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -30,6 +34,8 @@
 int 
 jfs_dir_mkdir(const char *path, mode_t mode)
 {
+  struct jfs_db_op *db_op;
+  int dirinode;
   int rc;
 
   rc = mkdir(path, mode);
@@ -37,13 +43,55 @@ jfs_dir_mkdir(const char *path, mode_t mode)
 	return -errno;
   }
 
+  dirinode = jfs_util_get_inode(path);
+  if(dirinode < 0) {
+	return dirinode;
+  }
+
+  db_op = jfs_db_op_create();
+  db_op->res_t = jfs_write_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+		   "INSERT OR ROLLBACK INTO directories VALUES(%d, 0, NULL);",
+		   dirinode);
+
+  jfs_write_pool_queue(db_op);
+  jfs_db_op_wait(db_op);
+
+  if(db_op->error == JFS_QUERY_FAILED) {
+	jfs_db_op_destroy(db_op);
+	return -1;
+  }
+  jfs_db_op_destroy(db_op);
+
   return 0;
 }
 
 int 
 jfs_dir_rmdir(const char *path)
 {
+  struct jfs_db_op *db_op;
+  int dirinode;
   int rc;
+
+  dirinode = jfs_util_get_inode(path);
+  if(dirinode < 0) {
+	return dirinode;
+  }
+
+  db_op = jfs_db_op_create();
+  db_op->res_t = jfs_write_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+		   "DELETE FROM directories WHERE inode=%d;",
+		   dirinode);
+
+  jfs_write_pool_queue(db_op);
+  jfs_db_op_wait(db_op);
+
+  if(db_op->error == JFS_QUERY_FAILED) {
+	jfs_db_op_destroy(db_op);
+	return -1;
+  }
+  jfs_db_op_destroy(db_op);
 
   rc = rmdir(path);
   if(rc) {

@@ -1,10 +1,10 @@
 DROP TABLE IF EXISTS test_table;
 DROP TABLE IF EXISTS files;
 DROP TABLE IF EXISTS symlinks;
-DROP TABLE IF EXISTS queries;
 DROP TABLE IF EXISTS keys;
 DROP TABLE IF EXISTS metadata;
 DROP TABLE IF EXISTS reldata;
+DROP TABLE IF EXISTS directories;
 
 CREATE TABLE test_table(id INTEGER PRIMARY KEY,
 	   		 			name TEXT NOT NULL);
@@ -40,33 +40,31 @@ INSERT INTO test_table VALUES(28, "28");
 INSERT INTO test_table VALUES(29, "29");
 INSERT INTO test_table VALUES(30, "30");
 
-CREATE TABLE files(fileid INTEGER PRIMARY KEY AUTOINCREMENT, 
-	   		 	   inode INTEGER NOT NULL,
-				   access INTEGER NOT NULL,
+CREATE TABLE files(inode INTEGER PRIMARY KEY NOT NULL,
 				   datapath TEXT NOT NULL,
 				   filename TEXT NOT NULL);
 
 CREATE TABLE symlinks(syminode INTEGER PRIMARY KEY NOT NULL,
 					  datainode INTEGER NOT NULL,
-					  fileid INTEGER,
-					  FOREIGN KEY(fileid) REFERENCES files(fileid));
-
-CREATE TABLE queries(qinode INTEGER PRIMARY KEY,
-	   		 	     query TEXT);
+					  FOREIGN KEY(fileid) REFERENCES files(fileid) ON DELETE CASCADE);
 
 CREATE TABLE keys(keyid INTEGER PRIMARY KEY AUTOINCREMENT,
-	              keytext TEXT UNIQUE);
+	              keytext TEXT UNIQUE NOT NULL);
 
-CREATE TABLE metadata(inode INTEGER,
-					  keyid INTEGER,
-					  keyvalue TEXT,
-					  FOREIGN KEY(inode) REFERENCES files(inode),
-					  FOREIGN KEY(keyid) REFERENCES keys(keyid),
+CREATE TABLE metadata(inode INTEGER NOT NULL,
+					  keyid INTEGER NOT NULL,
+					  keyvalue TEXT NOT NULL,
+					  FOREIGN KEY(inode) REFERENCES files(inode) ON DELETE CASCADE,
+					  FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT,
 					  PRIMARY KEY(inode, keyid));
 
 CREATE TABLE reldata(inode INTEGER,
 					 keyid INTEGER,
 					 keyvalue TEXT,
-					 FOREIGN KEY(inode) REFERENCES files(inode),
-					 FOREIGN KEY(keyid) REFERENCES keys(keyid),
-					 PRIMARY KEY(inode, keyid));
+					 FOREIGN KEY(inode) REFERENCES files(inode) ON DELETE CASCADE,
+					 FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT,
+					 PRIMARY KEY(inode, keyid, keyvalue));
+
+CREATE TABLE directories(inode INTEGER PRIMARY KEY,
+	   		 		     has_subquery INTEGER NOT NULL,
+						 query TEXT);
