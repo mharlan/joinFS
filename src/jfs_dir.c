@@ -35,6 +35,7 @@
 
 static int jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler);
 static int jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery, int *sub_inode, char **query);
+static void safe_jfs_list_destroy(struct sglib_jfs_list_t_iterator *it, jfs_list_t *item);
 
 int 
 jfs_dir_mkdir(const char *path, const char *jfs_path, mode_t mode)
@@ -172,7 +173,6 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   char *query;
   char *buffer;
   char *datapath;
-  char *dirpath;
 
   size_t buffer_len;
   size_t datapath_len;
@@ -256,7 +256,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	  datapath_len = strlen(path) + strlen(".jfs_sub_query") + 2;
 	  datapath = malloc(sizeof(*datapath) * datapath_len);
 	  if(!datapath) {
-		jfs_list_destroy(item, jfs_readdir_op);
+		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
 		return -ENOMEM;
 	  }
@@ -270,7 +270,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 
 	  rc = stat(item->datapath, &st);
 	  if(rc) {
-		db_op->result = item;
+		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
 		return rc;
 	  }
@@ -278,7 +278,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	  datapath_len = strlen(item->datapath) + 1;
 	  datapath = malloc(sizeof(*datapath) * datapath_len);
 	  if(!datapath) {
-		db_op->result = item;
+		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
 		return -ENOMEM;
 	  }
@@ -289,7 +289,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	}
 
 	if(filler(buf, item->filename, &st, 0) != 0) {
-	  db_op->result = item;
+	  safe_jfs_list_destroy(&it, item);
 	  jfs_db_op_destroy(db_op);
 	  return -ENOMEM;
 	}
@@ -298,7 +298,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 
 	rc = jfs_path_cache_add(buffer, datapath);
 	if(rc) {
-	  db_op->result = item;
+	  safe_jfs_list_destroy(&it, item);
 	  jfs_db_op_destroy(db_op);
 	  return rc;
 	}
@@ -308,7 +308,12 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	}
 	free(item->filename);
 	free(item);
+
+	free(buffer);
+	free(datapath);
   }
+
+  jfs_db_op_destroy(db_op);
 
   return 0;
 }
@@ -405,6 +410,7 @@ jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery
 	*query = malloc(sizeof(**query) * query_len);
 	if(!*query) {
 	  free(quote_sub_key);
+	  free(quote_filename);
 	  jfs_db_op_destroy(db_op);
 	  return -ENOMEM;
 	}
@@ -427,4 +433,23 @@ jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery
   jfs_db_op_destroy(db_op);
 
   return 0;
+}
+
+static void
+safe_jfs_list_destroy(struct sglib_jfs_list_t_iterator *it, jfs_list_t *item)
+{
+  if(item->datapath != NULL) {
+	free(item->datapath);
+  }
+  free(item->filename);
+  free(item);
+
+  item = sglib_jfs_list_t_it_next(it);
+  for(;item != NULL; item = sglib_jfs_list_t_it_next(it)) {
+	if(item->datapath != NULL) {
+	  free(item->datapath);
+	}
+	free(item->filename);
+	free(item);
+  }
 }

@@ -119,9 +119,6 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 	case(jfs_listattr_op):
 	  jfs_list_destroy(db_op->result, jfs_listattr_op);
 	  break;
-	case(jfs_readdir_op):
-	  jfs_list_destroy(db_op->result, jfs_readdir_op);
-	  break;
 	case(jfs_dynamic_file_op):
 	  free(db_op->result);
 	  break;

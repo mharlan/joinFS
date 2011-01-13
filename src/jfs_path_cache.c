@@ -102,17 +102,35 @@ jfs_path_cache_destroy()
 }
 
 int
-jfs_path_cache_add(const char *path, const char *datapath)
+jfs_path_cache_add(char *path, char *datapath)
 {
   jfs_path_cache_t *item;
+  size_t path_len;
+  size_t datapath_len;
 
   item = malloc(sizeof(*item));
   if(!item) {
 	return -ENOMEM;
   }
 
-  item->path = (char *)path;
-  item->datapath = (char *)datapath;
+  path_len = strlen(path) + 1;
+  datapath_len = strlen(datapath) + 1;
+
+  item->path = malloc(sizeof(*item->path) * path_len);
+  if(!item->path) {
+	free(item);
+	return -ENOMEM;
+  }
+
+  item->datapath = malloc(sizeof(*item->path) * path_len);
+  if(!item->path) {
+	free(item->path);
+	free(item);
+	return -ENOMEM;
+  }
+
+  strncpy(item->path, path, path_len);
+  strncpy(item->datapath, datapath, datapath_len);
 
   sglib_hashed_jfs_path_cache_t_add(hashtable, item);
 

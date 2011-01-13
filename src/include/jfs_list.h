@@ -23,6 +23,9 @@
 #include "sglib.h"
 #include "jfs_db_ops.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 
 /*

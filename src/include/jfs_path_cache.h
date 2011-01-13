@@ -24,7 +24,7 @@ void jfs_path_cache_init();
 
 void jfs_path_cache_destroy();
 
-int jfs_path_cache_add(const char *path, const char *datapath);
+int jfs_path_cache_add(char *path, char *datapath);
 
 int jfs_path_cache_remove(const char *path);
 
