@@ -105,8 +105,12 @@ int
 jfs_path_cache_add(char *path, char *datapath)
 {
   jfs_path_cache_t *item;
+  jfs_path_cache_t *exists;
+
   size_t path_len;
   size_t datapath_len;
+
+  int rc;
 
   item = malloc(sizeof(*item));
   if(!item) {
@@ -131,6 +135,14 @@ jfs_path_cache_add(char *path, char *datapath)
 
   strncpy(item->path, path, path_len);
   strncpy(item->datapath, datapath, datapath_len);
+
+  //remove it if path is already in path cache to update datapath
+  rc = sglib_hashed_jfs_path_cache_t_delete_if_member(hashtable, item, &exists);
+  if(rc) {
+	free(exists->path);
+	free(exists->datapath);
+	free(exists);
+  }
 
   sglib_hashed_jfs_path_cache_t_add(hashtable, item);
 
