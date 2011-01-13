@@ -19,6 +19,7 @@
 
 #include "sqlitedb.h"
 #include "jfs_file_cache.h"
+#include "jfs_path_cache.h"
 #include "jfs_util.h"
 #include "joinfs.h"
 
@@ -95,8 +96,8 @@ jfs_util_get_datapath(const char *path, char **datapath)
 
   syminode = jfs_util_is_db_symlink(path);
   if(syminode < 1) {
-	*datapath = (char *)path;
-	return 0;
+	rc = jfs_path_cache_get_datapath(path, datapath);
+	return rc;
   }
 
   printf("--Checking cache for syminode:%d\n", syminode);
@@ -118,6 +119,8 @@ jfs_util_get_datapath(const char *path, char **datapath)
 int
 jfs_util_get_datainode(const char *path)
 {
+  char *datapath;
+
   int syminode;
   int datainode;
   int rc;
@@ -126,7 +129,12 @@ jfs_util_get_datainode(const char *path)
 
   syminode = jfs_util_is_db_symlink(path);
   if(syminode < 1) {
-	return jfs_util_get_inode(path);
+	rc = jfs_path_cache_get_datapath(path, &datapath);
+	if(rc) {
+	  return jfs_util_get_inode(path);
+	}
+
+	return jfs_util_get_inode(datapath);
   }
 
   printf("--Checking cache for syminode:%d\n", syminode);
@@ -155,8 +163,14 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
 
   syminode = jfs_util_is_db_symlink(path);
   if(syminode < 1) {
-	*datapath = (char *)path;
-	*datainode = jfs_util_get_inode(path);
+	rc = jfs_path_cache_get_datapath(path, datapath);
+	if(rc) {
+	  *datapath = (char *)path;
+	  *datainode = jfs_util_get_inode(path);
+	}
+
+	*datainode = jfs_util_get_inode(*datapath);
+
 	return 0;
   }
 

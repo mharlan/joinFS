@@ -46,20 +46,29 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
 int
 jfs_db_op_create(struct jfs_db_op **op)
 {
+  char *query;
+
+  query = malloc(sizeof(*query) * JFS_QUERY_MAX);
+
+  return jfs_do_db_op_create(op, query);
+}
+
+/*
+ * Creates a database operation.
+ */
+int
+jfs_do_db_op_create(struct jfs_db_op **op, char *query)
+{
   struct jfs_db_op *db_op;
 
   db_op = malloc(sizeof(*db_op));
   if(!db_op) {
 	log_error("Failed to allocate memory for db_op.\n");
+	free(query);
 	return -ENOMEM;
   }
 
-  db_op->query = malloc(sizeof(*db_op->query) * JFS_QUERY_MAX);
-  if(!db_op->query) {
-	log_error("Failed to allocate memory for db_op query.\n");
-	return -ENOMEM;
-  }
-
+  db_op->query = query;
   db_op->db = NULL;
   db_op->stmt = NULL;
   db_op->result = NULL;
@@ -80,7 +89,9 @@ jfs_db_op_create(struct jfs_db_op **op)
 void
 jfs_db_op_destroy(struct jfs_db_op *db_op)
 {
-  printf("--PERFORMING JFS DB OP CLEANUP\n");
+  printf("--PERFORMING DB_OP CLEANUP\n");
+
+  free(db_op->query);
 
   if(!db_op->rc) {
 	switch(db_op->op) {
@@ -95,8 +106,21 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 	  free(db_op->result->value);
 	  free(db_op->result);
 	  break;
+	case(jfs_directory_cache_op):
+	  if(db_op->result->query != NULL) {
+		free(db_op->result->query);
+	  }
+	  
+	  if(db_op->result->sub_key != NULL) {
+		free(db_op->result->sub_key);
+	  }
+	  free(db_op->result);
+	  break;
 	case(jfs_listattr_op):
 	  jfs_list_destroy(db_op->result, jfs_listattr_op);
+	  break;
+	case(jfs_readdir_op):
+	  jfs_list_destroy(db_op->result, jfs_readdir_op);
 	  break;
 	case(jfs_dynamic_file_op):
 	  free(db_op->result);

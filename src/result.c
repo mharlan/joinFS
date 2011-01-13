@@ -38,6 +38,8 @@ static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size);
+static int jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt);
 
 /*
@@ -68,6 +70,12 @@ jfs_db_result(struct jfs_db_op *db_op)
 	break;
   case(jfs_dynamic_file_op):
 	rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt);
+	break;
+  case(jfs_directory_cache_op):
+	rc = jfs_do_directory_cache_op(&db_op->result, db_op->stmt);
+	break;
+  case(jfs_readdir_op):
+	rc = jfs_do_readdir_op(&db_op->result, db_op->stmt);
 	break;
   default:
 	rc = -EOPNOTSUPP;
@@ -192,6 +200,137 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
   return sqlite3_finalize(stmt);
 }
 
+static int
+jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
+{
+  const unsigned char *sub_key;
+  const unsigned char *query;
+  jfs_list_t *row;
+
+  size_t sub_key_len;
+  size_t query_len;
+
+  int has_subquery;
+  int is_subquery;
+  int sub_inode;
+  int rc;
+
+  row = malloc(sizeof(*row));
+  if(!row) {
+	sqlite3_finalize(stmt);
+	return -ENOMEM;
+  }
+  
+  row->sub_key = NULL;
+  row->query = NULL;
+
+  rc = sqlite3_step(stmt);
+  if(rc == SQLITE_ROW) {
+	has_subquery = sqlite3_column_int(stmt, 0);
+	is_subquery = sqlite3_column_int(stmt, 1);
+	sub_inode = sqlite3_column_int(stmt, 2);
+
+	sub_key = sqlite3_column_text(stmt, 3);
+	sub_key_len = sqlite3_column_bytes(stmt, 3) + 1;
+	if(sub_key_len) {
+	  row->sub_key = malloc(sizeof(*row->sub_key) * sub_key_len);
+	  if(!row->sub_key) {
+		sqlite3_finalize(stmt);
+		free(row);
+		return -ENOMEM;
+	  }
+	  
+	  strncpy(row->sub_key, (const char *)sub_key, sub_key_len);
+	}
+
+	
+	query = sqlite3_column_text(stmt, 4);
+	query_len = sqlite3_column_bytes(stmt, 4) + 1;
+	if(query_len) {
+	  row->query = malloc(sizeof(*row->query) * query_len);
+	  if(!row->query) {
+		sqlite3_finalize(stmt);
+		free(row);
+		return -ENOMEM;
+	  }
+
+	  strncpy(row->query, (const char *)query, query_len);
+	}
+
+	*result = row;
+  }
+  else {
+	free(row);
+	printf("--sqlite row failed, rc:%d\n", rc);
+  }
+
+  return sqlite3_finalize(stmt);
+}
+
+static int
+jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
+{
+  const unsigned char *filename;
+  const unsigned char *datapath;
+  size_t filename_len;
+  size_t datapath_len;
+
+  jfs_list_t *head;
+  jfs_list_t *row;
+
+  int col_count;
+  int inode;
+  int rc;
+
+  head = NULL;
+  while((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+	row = malloc(sizeof(*row));
+	if(!row) {
+	  sqlite3_finalize(stmt);
+	  jfs_list_destroy(head, jfs_listattr_op);
+	  return -ENOMEM;
+	}
+
+	row->datapath = NULL;
+	row->filename = NULL;
+
+	col_count = sqlite3_column_count(stmt);
+	inode = sqlite3_column_int(stmt, 0);
+
+	filename = sqlite3_column_text(stmt, 1);
+	filename_len = sqlite3_column_bytes(stmt, 1) + 1;
+
+	row->filename = malloc(sizeof(*row->filename) * filename_len);
+	if(!row->filename) {
+	  sqlite3_finalize(stmt);
+	  jfs_list_destroy(head, jfs_readdir_op);
+	  return -ENOMEM;
+	}
+	strncpy(row->filename, (const char *)filename, filename_len);
+
+	if(col_count > 2) {
+	  datapath = sqlite3_column_text(stmt, 2);
+	  datapath_len = sqlite3_column_bytes(stmt, 2);
+	  
+	  row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
+	  if(!row->datapath) {
+		sqlite3_finalize(stmt);
+		jfs_list_destroy(head, jfs_readdir_op);
+		return -ENOMEM;
+	  }
+	  strncpy(row->datapath, (const char *)datapath, datapath_len);
+	}
+
+	jfs_list_add(&head, row);
+  }
+
+  if(rc == SQLITE_DONE) {
+	*result = head;
+  }
+  
+  return sqlite3_finalize(stmt);
+}
+
 /* 
  * Returns a linked list of xattr keys.
  */
@@ -229,7 +368,7 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size)
 	  jfs_list_destroy(head, jfs_listattr_op);
 	  return -ENOMEM;
 	}
-
+	
 	strncpy(row->key, (const char *)key, key_len);
 	buffer_size += key_len;
 

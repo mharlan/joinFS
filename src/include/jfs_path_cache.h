@@ -17,11 +17,17 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#include <fuse.h>
-#include <sys/types.h>
+#ifndef JOINFS_JFS_PATH_CACHE_H
+#define JOINFS_JFS_PATH_CACHE_H
 
-int jfs_dir_mkdir(const char *path, mode_t mode);
+void jfs_path_cache_init();
 
-int jfs_dir_rmdir(const char *path);
+void jfs_path_cache_destroy();
 
-int jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler);
+int jfs_path_cache_add(const char *path, const char *datapath);
+
+int jfs_path_cache_remove(const char *path);
+
+int jfs_path_cache_get_datapath(const char *path, char **datapath);
+
+#endif

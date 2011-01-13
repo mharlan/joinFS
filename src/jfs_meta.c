@@ -187,9 +187,6 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   }
 
   list_size = db_op->buffer_size;
-
-  printf("--Returned list of size:%d\n", list_size);
-
   if(buffer_size < list_size) {
 	jfs_db_op_destroy(db_op);
 	return list_size;

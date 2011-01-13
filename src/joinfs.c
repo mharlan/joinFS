@@ -37,6 +37,7 @@
 #include "jfs_meta.h"
 #include "jfs_security.h"
 #include "jfs_file_cache.h"
+#include "jfs_path_cache.h"
 #include "thr_pool.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
@@ -67,7 +68,9 @@ jfs_realpath(const char *path)
 {
   char *jfs_path;
   char *jfs_rpath;
+
   int path_len;
+  int rc;
 
   log_error("Called jfs_realpath, path:%s\n", path);
 
@@ -132,8 +135,9 @@ jfs_init(struct fuse_conn_info *conn)
   log_error("Starting joinFS. FUSE Major=%d Minor=%d\n",
 			conn->proto_major, conn->proto_minor);
 
-  /* initialize the static file cache */
+  /* initialize caches */
   jfs_file_cache_init();
+  jfs_path_cache_init();
   
   /* start sqlite in multithreaded mode */
   rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
@@ -194,6 +198,7 @@ jfs_destroy(void *arg)
   }
 
   jfs_file_cache_destroy();
+  jfs_path_cache_destroy();
 
   log_error("joinFS shutdown. Passed arg:%d.\n", arg);
   log_destroy();
@@ -275,7 +280,7 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   log_error("Called jfs_readdir, path:%s\n", path);
   
   jfs_path = jfs_realpath(path);
-  rc = jfs_dir_readdir(jfs_path, buf, filler, fi);
+  rc = jfs_dir_readdir(jfs_path, buf, filler);
   free(jfs_path);
 
   if(rc) {

@@ -19,13 +19,6 @@
 
 #ifndef JOINFS_JFS_FILE_CACHE_H
 #define JOINFS_JFS_FILE_CACHE_H
-/*
- * joinFS - File Module Caching Code
- * Matthew Harlan <mharlan@gwmail.gwu.edu>
- *
- * 30 % Demo
- * Very simple cache. Not intelligent at all.
- */
 
 /*
  * Initialize the jfs_file_cache.

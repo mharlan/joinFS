@@ -32,12 +32,20 @@
 typedef struct jfs_list jfs_list_t;
 struct jfs_list {
   jfs_list_t *next;
+
   int         inode;
   char       *datapath;
   char       *filename;
+
   int         keyid;
   char       *key;
   char       *value;
+
+  int         has_subquery;
+  int         is_subquery;
+  int         sub_inode;
+  char       *sub_key;
+  char       *query;
 };
 
 /*

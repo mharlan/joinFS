@@ -29,8 +29,9 @@ enum jfs_db_ops {
   jfs_key_op,
   jfs_attr_op,
   jfs_listattr_op,
+  jfs_readdir_op,
   jfs_dynamic_file_op,
-  jfs_folder_cache_op,
+  jfs_directory_cache_op,
   jfs_dynamic_folder_op,
   jfs_search_op
 };

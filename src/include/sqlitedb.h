@@ -53,8 +53,15 @@ struct jfs_db_op {
 
 /*
  * Creates a database operation.
+ *
+ * Returns a query buffer of size JFS_QUERY_MAX
  */
 int jfs_db_op_create(struct jfs_db_op **op);
+
+/*
+ * Create a database op with a specified query.
+ */
+int jfs_do_db_op_create(struct jfs_db_op **op, char *query);
 
 /*
  * Destroy a database operation.

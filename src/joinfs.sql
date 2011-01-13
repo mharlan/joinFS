@@ -66,5 +66,9 @@ CREATE TABLE reldata(inode INTEGER,
 					 PRIMARY KEY(inode, keyid, keyvalue));
 
 CREATE TABLE directories(inode INTEGER PRIMARY KEY,
-	   		 		     has_subquery INTEGER NOT NULL,
+	   		 		     dirpath TEXT NOT NULL,
+						 has_subquery INTEGER NOT NULL,
+						 is_subquery INTEGER NOT NULL,
+						 sub_inode INTEGER NOT NULL,
+						 sub_key TEXT,
 						 query TEXT);

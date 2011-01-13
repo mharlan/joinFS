@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #define JFS_FILE_CACHE_SIZE 1000
 
@@ -148,8 +149,8 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
   jfs_file_cache_t *result;
 
   check.syminode = syminode;
-  result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
+  result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
   if(!result) {
 	return -1;
   }
@@ -171,7 +172,7 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
   item = malloc(sizeof(*item));
   if(!item) {
 	printf("Failed to allocate memory for a file cache symlink.");
-	return -1;
+	return -ENOMEM;
   }
 
   item->syminode = syminode;
@@ -193,8 +194,8 @@ jfs_file_cache_remove(int syminode)
   int rc;
 
   check.syminode = syminode;
+
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
-  
   if(!rc) {
 	return -1;
   }
