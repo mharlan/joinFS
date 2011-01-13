@@ -31,13 +31,6 @@ int jfs_util_get_inode(const char *path);
 int jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode);
 
 /*
- * Determine if a path must be resolved as a database symlink.
- *
- * Returns the syminode if a db_symlink, otherwise 0 is returned.
- */
-int jfs_util_is_db_symlink(const char *path);
-
-/*
  * Get the datapath associated with a path.
  */
 int jfs_util_get_datapath(const char *path, char **datapath);

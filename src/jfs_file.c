@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode);
 static int create_datapath(char *uuid, char **datapath);
@@ -309,27 +310,33 @@ int
 jfs_file_rename(const char *from, const char *to)
 {
   struct jfs_db_op *db_op;
+  mode_t mode;
 
   char *filename;
-  int syminode;
+  int inode;
   int rc;
 
-  syminode = jfs_util_is_db_symlink(from);
-  if(syminode > 0) {
+  rc = jfs_util_get_inode_and_mode(from, &inode, &mode);
+  if(rc) {
+	return rc;
+  }
+
+  if(S_ISREG(mode)) {
 	filename = jfs_util_get_filename(to);
 	
 	rc = jfs_db_op_create(&db_op);
 	if(rc) {
 	  return rc;
 	}
-
+	
 	db_op->op = jfs_write_op;
+
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-			 filename, syminode);
-
+			 filename, inode);
+  
 	jfs_write_pool_queue(db_op);
-
+  
 	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
@@ -337,7 +344,7 @@ jfs_file_rename(const char *from, const char *to)
 	}
 	jfs_db_op_destroy(db_op);
   }
-
+  
   rc = rename(from, to);
   if(rc) {
 	return -errno;

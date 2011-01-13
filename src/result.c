@@ -232,7 +232,7 @@ jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 
 	sub_key = sqlite3_column_text(stmt, 3);
 	sub_key_len = sqlite3_column_bytes(stmt, 3) + 1;
-	if(sub_key_len) {
+	if(sub_key_len > 1) {
 	  row->sub_key = malloc(sizeof(*row->sub_key) * sub_key_len);
 	  if(!row->sub_key) {
 		sqlite3_finalize(stmt);
@@ -246,7 +246,7 @@ jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	
 	query = sqlite3_column_text(stmt, 4);
 	query_len = sqlite3_column_bytes(stmt, 4) + 1;
-	if(query_len) {
+	if(query_len > 1) {
 	  row->query = malloc(sizeof(*row->query) * query_len);
 	  if(!row->query) {
 		sqlite3_finalize(stmt);

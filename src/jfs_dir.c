@@ -131,6 +131,8 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
   DIR *dp;
   int rc;
 
+  printf("--jfs_dir_readdir called\n");
+
   dp = opendir(path);
   if(dp == NULL) {
 	rc = jfs_path_cache_get_datapath(path, &datapath);
@@ -144,6 +146,8 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 	}
   }
   else {
+	printf("--SYSTEM READDIR EXECUTING\n");
+
 	while((de = readdir(dp)) != NULL) {
 	  memset(&st, 0, sizeof(st));
 	  st.st_ino = de->d_ino;
@@ -192,6 +196,8 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   int dirinode;
   int rc;
 
+  printf("--jfs_dir_db_filler called\n");
+
   filename = jfs_util_get_filename(path);
 
   rc = jfs_util_get_inode_and_mode(path, &dirinode, &mode);
@@ -203,6 +209,10 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   rc = jfs_dir_get_directory_info(dirinode, filename, &has_subquery, &sub_inode, &query);
   if(rc) {
 	return rc;
+  }
+
+  if(query == NULL) {
+	return 0;
   }
 
   rc = jfs_do_db_op_create(&db_op, query);
@@ -299,6 +309,8 @@ jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery
 
   int is_subquery;
   int rc;
+
+  printf("--jfs_dir_get_directory_info called\n");
   
   rc = jfs_db_op_create(&db_op);
   if(rc) {
@@ -310,6 +322,8 @@ jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery
 		   "SELECT has_subquery, is_subquery, sub_inode, sub_key, query FROM directories WHERE inode=%d;",
 		   dirinode);
 
+  printf("--DIRECTORY QUERY:%s\n", db_op->query);
+
   jfs_read_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
@@ -318,15 +332,22 @@ jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery
 	return rc;
   }
 
+  printf("--Checking results...\n");
+
   if(db_op->result == NULL) {
+	db_op->rc = 1;
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return 0;
   }
 
   if(db_op->result->query == NULL) {
+	printf("--STATIC DIRECTORY\n");
+
 	jfs_db_op_destroy(db_op);
-	return -1;
+	return 0;
   }
+
+  printf("--DYNAMIC DIRECTORY\n");
 
   *has_subquery = db_op->result->has_subquery;
   is_subquery = db_op->result->is_subquery;

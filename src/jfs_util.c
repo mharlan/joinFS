@@ -23,6 +23,7 @@
 #include "jfs_util.h"
 #include "joinfs.h"
 
+#include <fuse.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -67,127 +68,140 @@ jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode)
 }
 
 int
-jfs_util_is_db_symlink(const char *path)
-{
-  mode_t mode;
-  int inode;
-  int rc;
-
-  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-  if(rc) {
-	return rc;
-  }
-
-  if(S_ISREG(mode)) {
-	return inode;
-  }
-
-  return 0;
-}
-
-int
 jfs_util_get_datapath(const char *path, char **datapath)
 {
   char *dpath;
-  int syminode;
+  mode_t mode;
+
+  int inode;
   int rc;
 
   printf("--jfs_util_get_datapath called\n");
 
-  syminode = jfs_util_is_db_symlink(path);
-  if(syminode < 1) {
+  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
+  if(rc) {
 	rc = jfs_path_cache_get_datapath(path, datapath);
 	return rc;
   }
 
-  printf("--Checking cache for syminode:%d\n", syminode);
-
-  rc = jfs_file_cache_get_datapath(syminode, &dpath);
-  if(rc) {
-	rc = jfs_util_file_cache_failure(syminode, &dpath, NULL);
-	if(rc) {
-	  return rc;
-	}
+  if(S_ISDIR(mode)) {
+	*datapath = (char *)path;
+	return 0;
   }
-  *datapath = dpath;
+  else if(S_ISREG(mode)) {
+	printf("--Checking cache for syminode:%d\n", inode);
 
-  printf("--Found datapath:%s\n", dpath);
+	rc = jfs_file_cache_get_datapath(inode, &dpath);
+	if(rc) {
+	  rc = jfs_util_file_cache_failure(inode, &dpath, NULL);
+	  if(rc) {
+		return rc;
+	  }
+	}
+	*datapath = dpath;
 
-  return 0;
+	printf("--Found datapath:%s\n", dpath);
+
+	return 0;
+  }
+  else {
+	return -1;
+  }
 }
 
 int
 jfs_util_get_datainode(const char *path)
 {
   char *datapath;
+  mode_t mode;
 
-  int syminode;
+  int inode;
   int datainode;
   int rc;
 
   printf("--jfs_util_get_datainode called\n");
 
-  syminode = jfs_util_is_db_symlink(path);
-  if(syminode < 1) {
+  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
+  if(rc) {
 	rc = jfs_path_cache_get_datapath(path, &datapath);
 	if(rc) {
-	  return jfs_util_get_inode(path);
-	}
+	  return rc;
+	}	
 
 	return jfs_util_get_inode(datapath);
   }
 
-  printf("--Checking cache for syminode:%d\n", syminode);
-
-  datainode = jfs_file_cache_get_datainode(syminode);
-  if(datainode < 1) {
-	rc = jfs_util_file_cache_failure(syminode, NULL, &datainode);
-	if(rc) {
-	  return rc;
-	}
+  if(S_ISDIR(mode)) {
+	return inode;
   }
+  else if(S_ISREG(mode)) {
+	printf("--Checking cache for syminode:%d\n", inode);
+	
+	datainode = jfs_file_cache_get_datainode(inode);
+	if(datainode < 1) {
+	  rc = jfs_util_file_cache_failure(inode, NULL, &datainode);
+	  if(rc) {
+		return rc;
+	  }
+	}
 
-  printf("--Found datainode:%d\n", datainode);
+	printf("--Found datainode:%d\n", datainode);
   
-  return datainode;
+	return datainode;
+  }
+  else {
+	return -1;
+  }
 }
 
 int
 jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *datainode)
 {
   char *dpath;
-  int syminode;
+  mode_t mode;
+
+  int inode;
   int rc;
 
   printf("--jfs_util_get_datapath_and_datainode called\n");
 
-  syminode = jfs_util_is_db_symlink(path);
-  if(syminode < 1) {
-	rc = jfs_path_cache_get_datapath(path, datapath);
-	if(rc) {
-	  *datapath = (char *)path;
-	  *datainode = jfs_util_get_inode(path);
-	}
-
-	*datainode = jfs_util_get_inode(*datapath);
-
-	return 0;
-  }
-
-  printf("--Checking cache for syminode:%d\n", syminode);
-
-  rc = jfs_file_cache_get_datapath_and_datainode(syminode, &dpath, datainode);
+  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
   if(rc) {
-	rc = jfs_util_file_cache_failure(syminode, &dpath, datainode);
+	rc = jfs_path_cache_get_datapath(path, &dpath);
 	if(rc) {
 	  return rc;
 	}
+	
+	*datapath = dpath;
+	*datainode = jfs_util_get_inode(dpath);
+	
+	return 0;
   }
-  *datapath = dpath;
 
-  printf("--Retrieved datapath:%s, datainode:%d\n", dpath, *datainode);
-  
-  return 0;
+  if(S_ISDIR(mode)) {
+	*datainode = inode;
+	*datapath = (char *)path;
+	return 0;
+  }
+  else if(S_ISREG(mode)) {
+	printf("--Checking cache for syminode:%d\n", inode);
+	
+	rc = jfs_file_cache_get_datapath_and_datainode(inode, &dpath, datainode);
+	if(rc) {
+	  rc = jfs_util_file_cache_failure(inode, &dpath, datainode);
+	  if(rc) {
+		return rc;
+	  }
+	}
+	*datapath = dpath;
+	
+	printf("--Retrieved datapath:%s, datainode:%d\n", dpath, *datainode);
+	
+	return 0;
+  }
+  else {
+	return -1;
+  }
 }
 
 char *

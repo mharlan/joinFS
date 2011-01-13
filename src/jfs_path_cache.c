@@ -151,7 +151,7 @@ jfs_path_cache_get_datapath(const char *path, char **datapath)
   result = sglib_hashed_jfs_path_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return -1;
+	return -ENOENT;
   }
 
   *datapath = result->datapath;
