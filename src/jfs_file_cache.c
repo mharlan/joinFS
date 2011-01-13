@@ -112,7 +112,7 @@ jfs_file_cache_get_datainode(int syminode)
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return 0;
+	return -1;
   }
 
   return result->datainode;
@@ -123,8 +123,8 @@ jfs_file_cache_get_datainode(int syminode)
  *
  * Returns 0 if not in the cache.
  */
-char *
-jfs_file_cache_get_datapath(int syminode)
+int
+jfs_file_cache_get_datapath(int syminode, char **datapath)
 {
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
@@ -133,17 +133,16 @@ jfs_file_cache_get_datapath(int syminode)
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return 0;
+	return -1;
   }
 
-  printf("File cache returned syminode:%d, datainode:%d, datapath:%s\n",
-		 result->syminode, result->datainode, result->datapath);
+  *datapath = result->datapath;
 
-  return result->datapath;
+  return 0;
 }
 
-char *
-jfs_file_cache_get_datapath_and_datainode(int syminode, int *datainode)
+int
+jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *datainode)
 {
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
@@ -152,14 +151,13 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, int *datainode)
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return 0;
+	return -1;
   }
 
-  printf("File cache returned syminode:%d, datainode:%d, datapath:%s\n",
-		 result->syminode, result->datainode, result->datapath);
-
   *datainode = result->datainode;
-  return result->datapath;
+  *datapath = result->datapath;
+
+  return 0;
 }
 
 /*

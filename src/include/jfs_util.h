@@ -40,12 +40,12 @@ int jfs_util_is_db_symlink(const char *path);
 /*
  * Get the datapath associated with a path.
  */
-int jfs_util_get_datapath(const char *path, char *datapath);
+int jfs_util_get_datapath(const char *path, char **datapath);
 
 /*
  * Get both the datapath and datainode associated with a file.
  */
-int jfs_util_get_datapath_and_datainode(const char *path, char *datapath, int *datainode);
+int jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *datainode);
 
 /*
  * Retrieve the datainode associated with a path.

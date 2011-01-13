@@ -33,7 +33,7 @@
 #include <sqlite3.h>
 #include <sys/types.h>
 
-static int jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt);
+static int jfs_do_write_op(sqlite3_stmt *stmt);
 static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt);
@@ -48,9 +48,11 @@ jfs_db_result(struct jfs_db_op *db_op)
 {
   int rc;
 
+  printf("--PACKING JFS QUERY RESULTS--\n");
+
   switch(db_op->op) {
   case(jfs_write_op):
-	rc = jfs_do_write_op(db_op->db, db_op->stmt);
+	rc = jfs_do_write_op(db_op->stmt);
 	break;
   case(jfs_attr_op):
 	rc = jfs_do_attr_op(&db_op->result, db_op->stmt);
@@ -69,7 +71,7 @@ jfs_db_result(struct jfs_db_op *db_op)
 	break;
   default:
 	rc = -EOPNOTSUPP;
-	log_error("jfs_t:%d not implemented yet.\n");
+	log_error("jfs_db_op #:%d not yet implemented.\n", db_op->op);
   }
 
   return rc;
@@ -81,8 +83,8 @@ jfs_db_result(struct jfs_db_op *db_op)
 int 
 jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
-  jfs_list_t *row;
   const unsigned char* value;
+  jfs_list_t *row;
   int value_len;
   int rc;
 
@@ -93,10 +95,7 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt)
   }
 
   rc = sqlite3_step(stmt);
-  if(rc != SQLITE_ROW) {
-	free(row);
-  }
-  else {
+  if(rc == SQLITE_ROW) {
 	value = sqlite3_column_text(stmt, 0);
 	value_len = sqlite3_column_bytes(stmt, 0) + 1;
 
@@ -109,6 +108,9 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	strncpy(row->value, (const char *)value, value_len);
 
 	*result = row;
+  }
+  else {
+	free(row);
   }
 
   return sqlite3_finalize(stmt);
@@ -131,14 +133,14 @@ jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt)
   }
 
   rc = sqlite3_step(stmt);
-  if(rc != SQLITE_ROW) {
-	free(row);
-  }
-  else {
+  if(rc == SQLITE_ROW) {
 	keyid = sqlite3_column_int(stmt, 0);
 
 	row->keyid = keyid;
 	*result = row;
+  }
+  else {
+	free(row);
   }
 
   return sqlite3_finalize(stmt);
@@ -163,10 +165,7 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
   }
 
   rc = sqlite3_step(stmt);
-  if(rc != SQLITE_ROW) {
-	free(row);
-  }
-  else {
+  if(rc == SQLITE_ROW) {
 	datapath = sqlite3_column_text(stmt, 0);
 	path_len = sqlite3_column_bytes(stmt, 0) + 1;
 	inode = sqlite3_column_int(stmt, 1);
@@ -182,6 +181,12 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	row->inode = inode;
 	  
 	*result = row;
+
+	printf("--jfs_file_cache_op--DATAPATH(%s) INODE(%d)\n", row->datapath, row->inode);
+  }
+  else {
+	free(row);
+	printf("--sqlite row failed, rc:%d\n", rc);
   }
 
   return sqlite3_finalize(stmt);
@@ -233,6 +238,7 @@ jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size)
 
   if(rc == SQLITE_DONE) {
 	*result = head;
+	*buff_size = buffer_size;
   }
   
   return sqlite3_finalize(stmt);
@@ -271,7 +277,7 @@ jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt)
  * Performs a database write operation.
  */
 static int
-jfs_do_write_op(sqlite3 *db, sqlite3_stmt *stmt)
+jfs_do_write_op(sqlite3_stmt *stmt)
 {
   int rc;
 

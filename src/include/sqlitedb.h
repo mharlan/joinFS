@@ -54,7 +54,7 @@ struct jfs_db_op {
 /*
  * Creates a database operation.
  */
-struct jfs_db_op *jfs_db_op_create();
+int jfs_db_op_create(struct jfs_db_op **op);
 
 /*
  * Destroy a database operation.

@@ -19,6 +19,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <attr/xattr.h>
 
 #define LIST_MAX 1024
@@ -27,8 +29,10 @@
 int
 main()
 {
+  struct stat buf;
   char *buffer;
   size_t buff_size;
+  int rc;
   int i;
   
   buffer = malloc(sizeof(*buffer) * LIST_MAX);
@@ -37,10 +41,28 @@ main()
 	return -1;
   }
 
-  setxattr(TEST_FILE, "attr1", "hello", 5, XATTR_CREATE);
-  setxattr(TEST_FILE, "attr2", "world", 5, XATTR_CREATE);
-  setxattr(TEST_FILE, "media codec", "mpeg 3", 6, XATTR_CREATE);
-  setxattr(TEST_FILE, "artist", "Grizzly Bear", 12, XATTR_CREATE);
+  printf("--TESTING GETATTR FOR FILE:%s\n", TEST_FILE);
+  rc = stat(TEST_FILE, &buf);
+  if(rc) {
+	printf("--ERROR CODE:%d, returned, getattr test failed.\n", -errno);
+  }
+
+  rc = setxattr(TEST_FILE, "attr1", "hello", 5, XATTR_CREATE);
+  if(rc) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = setxattr(TEST_FILE, "attr2", "world", 5, XATTR_CREATE);
+  if(rc) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = setxattr(TEST_FILE, "media codec", "mpeg 3", 6, XATTR_CREATE);
+  if(rc) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = setxattr(TEST_FILE, "artist", "Grizzly Bear", 12, XATTR_CREATE);
+  if(rc) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
 
   buff_size = listxattr(TEST_FILE, buffer, LIST_MAX);
   if(buff_size > LIST_MAX) {
@@ -48,31 +70,59 @@ main()
 	buffer = malloc(sizeof(*buffer) * buff_size);
 	buff_size = listxattr(TEST_FILE, buffer, buff_size);
   }
-
-  printf("Listxattr result for path:%s\nBuffer Size:%d\n", TEST_FILE, buff_size);
-  for(i = 0; i < buff_size; ++i) {
-	if(buffer[i] == '\0') {
-	  printf("\\0");
-	}
-	else printf("%c", buffer[i]);
+  else if(buff_size < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
   }
-  printf("\n");
-
-  getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  else {
+	printf("Listxattr result for path:%s\nBuffer Size:%d\n", TEST_FILE, buff_size);
+	for(i = 0; i < buff_size; ++i) {
+	  if(buffer[i] == '\0') {
+		printf("\\0");
+	  }
+	  else printf("%c", buffer[i]);
+	}
+	printf("\n");
+  }
+	
+  rc = getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  if(rc < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
   printf("attr1:%s\n", buffer);
-  getxattr(TEST_FILE, "attr2", buffer, buff_size);
+  rc = getxattr(TEST_FILE, "attr2", buffer, buff_size);
+  if(rc < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
   printf("attr2:%s\n", buffer);
-  getxattr(TEST_FILE, "media codec", buffer, buff_size);
+  rc = getxattr(TEST_FILE, "media codec", buffer, buff_size);
+  if(rc < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
   printf("media codec:%s\n", buffer);
-  getxattr(TEST_FILE, "artist", buffer, buff_size);
+  rc = getxattr(TEST_FILE, "artist", buffer, buff_size);
+  if(rc < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
   printf("artist:%s\n", buffer);
 
-  setxattr(TEST_FILE, "attr1", "nandos is tasty", 15, XATTR_REPLACE);
-  getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  rc = setxattr(TEST_FILE, "attr1", "nandos is tasty", 15, XATTR_REPLACE);
+  if(rc) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  if(rc < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
   printf("New attr1:%s\n", buffer);
 
-  setxattr(TEST_FILE, "attr1", "shouldn't see this", 18, XATTR_CREATE);
-  getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  rc = setxattr(TEST_FILE, "attr1", "shouldn't see this", 18, XATTR_CREATE);
+  if(rc) {
+	printf("--(SUCCESS!)ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  if(rc < 0) {
+	printf("--ERROR CODE:%d, returned\n", -errno);
+  }
   printf("attr1 again:%s\n", buffer);
 
   return 0;

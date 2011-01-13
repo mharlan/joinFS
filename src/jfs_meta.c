@@ -35,9 +35,12 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 				  size_t size, int flags)
 {
   struct jfs_db_op *db_op;
+
   int datainode;
   int keyid;
   int rc;
+
+  printf("--jfs_meta_setxattr called\n");
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
@@ -49,7 +52,11 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 	return datainode;
   }
 
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_write_op;
 
   if(flags == XATTR_CREATE) {
@@ -68,10 +75,11 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 			 datainode, keyid, value);
   }
 
-  jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
+  printf("--Executing query:%s\n", db_op->query);
 
-  rc = db_op->rc;
+  jfs_write_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	return rc;
@@ -90,27 +98,40 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   int datainode;
   int rc;
 
+  printf("--jfs_meta_getxattr called\n");
+
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
   }
   
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_attr_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
 		   datainode, key);
 
-  jfs_read_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
+  printf("--Executing query:%s\n", db_op->query);
 
-  rc = db_op->rc;
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	return rc;
   }
-  
+
+  if(db_op->result == NULL) {
+	return -ENOATTR;
+  }
+
+  printf("--Returned value:%s\n", db_op->result->value);
+
   size = strlen(db_op->result->value) + 1;
   if(buffer_size >= size) {
 	strncpy(value, db_op->result->value, size);
@@ -126,40 +147,54 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   struct sglib_jfs_list_t_iterator it;
   struct jfs_db_op *db_op;
   jfs_list_t *item;
-  char *list_pos;
+
   size_t list_size;
   size_t attr_size;
+
+  char *list_pos;
   int datainode;
-  int pos;
   int rc;
+
+  printf("--jfs_meta_listxattr called\n");
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
   }
   
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_listattr_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
 		   datainode);
 
-  jfs_read_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
+  printf("--Executing query:%s\n", db_op->query);
 
-  rc = db_op->rc;
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	return rc;
   }
 
+  if(db_op->result == NULL) {
+	return 0;
+  }
+
   list_size = db_op->buffer_size;
+
+  printf("--Returned list of size:%d\n", list_size);
+
   if(buffer_size < list_size) {
 	jfs_db_op_destroy(db_op);
 	return list_size;
   }
 
-  pos = 0;
   list_pos = list;
   for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
 	  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
@@ -172,6 +207,8 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 	free(item);
   }
 
+  printf("--Returning list:%s\n", list);
+
   return list_size;
 }
 
@@ -179,25 +216,33 @@ int
 jfs_meta_removexattr(const char *path, const char *key)
 {
   struct jfs_db_op *db_op;
+
   int datainode;
   int rc;
+
+  printf("--jfs_meta_removexattr called\n");
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
   }
   
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_write_op;
 
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "DELETE FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
 		   datainode, key);
 
-  jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
+  printf("--Executing query:%s\n", db_op->query);
 
-  rc = db_op->rc;
+  jfs_write_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	return rc;

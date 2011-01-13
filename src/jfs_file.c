@@ -34,7 +34,7 @@
 #include <sys/time.h>
 
 static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode);
-static int create_datapath(char *uuid, char *datapath);
+static int create_datapath(char *uuid, char **datapath);
 
 /*
  * Create a joinFS static file. The file is added
@@ -73,10 +73,12 @@ jfs_file_create(const char *path, mode_t mode)
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
 
-  rc = create_datapath(uuid, datapath);
+  rc = create_datapath(uuid, &datapath);
   if(rc) {
 	return rc;
   }
+
+  printf("--CREATING FILE AT DATAPATH:%s\n", datapath);
 
   filename = jfs_util_get_filename(path);
 
@@ -118,7 +120,6 @@ jfs_file_mknod(const char *path, mode_t mode)
   int syminode;
   int rc;
 
-  log_error("Called jfs_file_mknod.");
   rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
   if(rc < 0) {
 	return -errno;
@@ -137,10 +138,12 @@ jfs_file_mknod(const char *path, mode_t mode)
   uuid = jfs_create_uuid();
   jfs_generate_uuid(uuid);
 
-  rc = create_datapath(uuid, datapath);
+  rc = create_datapath(uuid, &datapath);
   if(rc) {
 	return rc;
   }
+
+  printf("--CREATING FILE AT DATAPATH:%s\n", datapath);
 
   filename = jfs_util_get_filename(path);
 
@@ -183,16 +186,19 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
   int rc;
 
   /* first add to the files table */
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO files VALUES(NULL, %d, %d, \"%s\", \"%s\");",
-		   datainode, mode, datapath, filename);
+		   "INSERT OR ROLLBACK INTO files VALUES(%d, \"%s\", \"%s\");",
+		   datainode, datapath, filename);
   
   jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
 
-  rc = db_op->rc;
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	free(datapath);
@@ -201,16 +207,19 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
   jfs_db_op_destroy(db_op);
 
   /* now add to symlinks */
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO symlinks VALUES(%d,%d,(SELECT fileid FROM files WHERE inode=%d));",
-		   syminode, datainode, datainode);
+		   "INSERT OR ROLLBACK INTO symlinks VALUES(%d,%d);",
+		   syminode, datainode);
   
   jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
 
-  rc = db_op->rc;
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	free(datapath);
@@ -228,13 +237,14 @@ int
 jfs_file_unlink(const char *path)
 {
   struct jfs_db_op *db_op;
+
   char *datapath;
   int datainode;
   int syminode;
   int rc;
 
   syminode = jfs_util_get_inode(path);
-  rc = jfs_util_get_datapath_and_datainode(path, datapath, &datainode);
+  rc = jfs_util_get_datapath_and_datainode(path, &datapath, &datainode);
   if(rc) {
 	return rc;
   }
@@ -245,32 +255,38 @@ jfs_file_unlink(const char *path)
   }
   
   if(datainode > 0) {
-	db_op = jfs_db_op_create();
+	rc = jfs_db_op_create(&db_op);
+	if(rc) {
+	  return rc;
+	}
+
 	db_op->op = jfs_write_op;
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "DELETE FROM files WHERE inode=%d;",
 			 datainode);
 
 	jfs_write_pool_queue(db_op);
-	jfs_db_op_wait(db_op);
 
-	rc = db_op->rc;
+	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
 
-	db_op = jfs_db_op_create();
+	rc = jfs_db_op_create(&db_op);
+	if(rc) {
+	  return rc;
+	}
+
 	db_op->op = jfs_write_op;
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "DELETE FROM symlinks WHERE datainode=%d;",
 			 datainode);
 
 	jfs_write_pool_queue(db_op);
-	jfs_db_op_wait(db_op);
 
-	rc = db_op->rc;
+	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
 	  return rc;
@@ -293,6 +309,7 @@ int
 jfs_file_rename(const char *from, const char *to)
 {
   struct jfs_db_op *db_op;
+
   char *filename;
   int syminode;
   int rc;
@@ -301,16 +318,19 @@ jfs_file_rename(const char *from, const char *to)
   if(syminode > 0) {
 	filename = jfs_util_get_filename(to);
 	
-	db_op = jfs_db_op_create();
+	rc = jfs_db_op_create(&db_op);
+	if(rc) {
+	  return rc;
+	}
+
 	db_op->op = jfs_write_op;
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
 			 filename, syminode);
 
 	jfs_write_pool_queue(db_op);
-	jfs_db_op_wait(db_op);
 
-	rc = db_op->rc;
+	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
 	  return rc;
@@ -335,7 +355,7 @@ jfs_file_truncate(const char *path, off_t size)
   char *datapath;
   int rc;
 
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
@@ -380,7 +400,7 @@ jfs_file_open(const char *path, int flags)
 	}
   }
 
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
@@ -402,7 +422,7 @@ jfs_file_getattr(const char *path, struct stat *stbuf)
   char *datapath;
   int rc;
 
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
@@ -421,7 +441,7 @@ jfs_file_utimes(const char *path, const struct timeval tv[2])
   char *datapath;
   int rc;
   
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
@@ -449,18 +469,20 @@ jfs_file_utimes(const char *path, const struct timeval tv[2])
  * The datapath must be freed if not added to the cache.
  */
 static int
-create_datapath(char *uuid, char *datapath)
+create_datapath(char *uuid, char **datapath)
 {
+  char *dpath;
   int path_len;
 
   path_len = JFS_CONTEXT->datapath_len + JFS_UUID_LEN + 1;
-  datapath = malloc(sizeof(*datapath) * path_len);
-  if(!datapath) {
+  dpath = malloc(sizeof(*datapath) * path_len);
+  if(!dpath) {
 	jfs_destroy_uuid(uuid);
 	return -ENOMEM;
   }
-  snprintf(datapath, path_len, "%s/%s", JFS_CONTEXT->datapath, uuid);
+  snprintf(dpath, path_len, "%s/%s", JFS_CONTEXT->datapath, uuid);
   jfs_destroy_uuid(uuid);
+  *datapath = dpath;
 
   return 0;
 }

@@ -48,16 +48,19 @@ jfs_dir_mkdir(const char *path, mode_t mode)
 	return dirinode;
   }
 
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "INSERT OR ROLLBACK INTO directories VALUES(%d, 0, NULL);",
 		   dirinode);
 
   jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
 
-  rc = db_op->rc;
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	return rc;
@@ -79,16 +82,19 @@ jfs_dir_rmdir(const char *path)
 	return dirinode;
   }
 
-  db_op = jfs_db_op_create();
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "DELETE FROM directories WHERE inode=%d;",
 		   dirinode);
 
   jfs_write_pool_queue(db_op);
-  jfs_db_op_wait(db_op);
 
-  rc = db_op->rc;
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
 	return rc;
@@ -133,5 +139,3 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler, struct fuse
 
   return 0;
 }
-
-

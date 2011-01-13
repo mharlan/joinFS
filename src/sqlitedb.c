@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <sqlite3.h>
 #include <pthread.h>
 
@@ -42,33 +43,35 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
 /*
  * Creates a database operation.
  */
-struct jfs_db_op *
-jfs_db_op_create()
+int
+jfs_db_op_create(struct jfs_db_op **op)
 {
   struct jfs_db_op *db_op;
 
   db_op = malloc(sizeof(*db_op));
   if(!db_op) {
 	log_error("Failed to allocate memory for db_op.\n");
-	return 0;
+	return -ENOMEM;
   }
 
   db_op->query = malloc(sizeof(*db_op->query) * JFS_QUERY_MAX);
   if(!db_op->query) {
 	log_error("Failed to allocate memory for db_op query.\n");
-	return 0;
+	return -ENOMEM;
   }
 
   db_op->db = NULL;
   db_op->stmt = NULL;
+  db_op->result = NULL;
   db_op->done = 0;
   db_op->rc = 0;
-  memset(db_op->query, 0, JFS_QUERY_MAX);
 
   pthread_cond_init(&db_op->cond, NULL);
   pthread_mutex_init(&db_op->mut, NULL);
 
-  return db_op;
+  *op = db_op;
+
+  return 0;
 }
 
 /*
@@ -77,10 +80,7 @@ jfs_db_op_create()
 void
 jfs_db_op_destroy(struct jfs_db_op *db_op)
 {
-  struct sglib_jfs_list_t_iterator it;
-  jfs_list_t *item;
-
-  printf("Database operation destroy called.\n");
+  printf("--PERFORMING JFS DB OP CLEANUP\n");
 
   if(!db_op->rc) {
 	switch(db_op->op) {
@@ -96,11 +96,7 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 	  free(db_op->result);
 	  break;
 	case(jfs_listattr_op):
-	  for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
-		  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
-		free(item->key);
-		free(item);
-	  }
+	  jfs_list_destroy(db_op->result, jfs_listattr_op);
 	  break;
 	case(jfs_dynamic_file_op):
 	  free(db_op->result);
@@ -128,6 +124,8 @@ jfs_db_op_wait(struct jfs_db_op *db_op)
 	pthread_cond_wait(&db_op->cond, &db_op->mut);
   }
   pthread_mutex_unlock(&db_op->mut);
+
+  printf("--QUERY FINISHED, RC:%d\n", db_op->rc);
 
   return db_op->rc;
 }
@@ -191,22 +189,26 @@ jfs_query(struct jfs_db_op *db_op)
   sqlite3_stmt *stmt;
   int rc;
 
+  printf("--JFS QUERY STARTED--\n");
+
   rc = setup_stmt(db_op->db, &stmt, db_op->query);
   if(rc) {
 	log_error("Setup statement failed for query=%s\n",
 			  db_op->query);
 
-	db_op->rc = rc;
-	db_op->done = 1;
-
     return rc;
   }
+
+  printf("--QUERY STATEMENT IS READY--\n");
 
   db_op->stmt = stmt;
   rc = jfs_db_result(db_op);
   if(rc) {
 	log_error("Query:%s failed for db_op=%d\n", db_op->query, db_op->op);
+	return rc;
   }
 
-  return rc;
+  printf("--QUERY RESULT IS READY--\n");
+
+  return 0;
 }

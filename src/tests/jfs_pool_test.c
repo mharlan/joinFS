@@ -111,8 +111,10 @@ void *read_thrd_func(void *arg)
   int rc;
   int q_val = (int)arg;
   
-  db_op = jfs_db_op_create();
-  if(!db_op) return 0;
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
 
   db_op->op = jfs_key_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
@@ -123,17 +125,15 @@ void *read_thrd_func(void *arg)
   printf("--READ--Performing job #%d and sleeping.\n", q_val);
 
   jfs_pool_queue(read_pool, db_op);
-  jfs_db_op_wait(db_op);
 
-  rc = db_op->rc;
+  rc = jfs_db_op_wait(db_op);
   if(rc) {
+	printf("Read query failed for job %d, rc=%d\n", q_val, rc);
+  }
+  else {
 	printf("--READ--Job #%d Waking Up\n", q_val);
 	printf("--READ--Result inode:%d\n", db_op->result->keyid);
   }
-  else {
-	printf("Read query failed for job %d\n", q_val);
-  }
-  
   jfs_db_op_destroy(db_op);
 
   pthread_exit(0);
@@ -145,8 +145,10 @@ void *write_thrd_func(void *arg)
   int rc;
   int q_val = (int)arg;
   
-  db_op = jfs_db_op_create();
-  if(!db_op) return 0;
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
 
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
@@ -157,17 +159,15 @@ void *write_thrd_func(void *arg)
   printf("--WRITE--Performing job #-%d and sleeping.\n", q_val);
 
   jfs_pool_queue(write_pool, db_op);
-  jfs_db_op_wait(db_op);
+  rc = jfs_db_op_wait(db_op);
   
-  rc = db_op->rc;
   printf("--WRITE--Job #-%d Waking Up\n", q_val);
   if(rc) {
-	printf("Write was successful.\n");
+	printf("Write query failed for job %d, rc=%d.\n", q_val, rc);
   }
   else {
-	printf("Write query failed for job %d.\n", q_val);
+	printf("Write was successful.\n");
   }
-  
   jfs_db_op_destroy(db_op);
 
   pthread_exit(0);

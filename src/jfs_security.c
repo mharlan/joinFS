@@ -31,7 +31,7 @@ jfs_security_chmod(const char *path, mode_t mode)
   char *datapath;
   int rc;
 
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
@@ -50,7 +50,7 @@ jfs_security_chown(const char *path, uid_t uid, gid_t gid)
   char *datapath;
   int rc;
 
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
@@ -69,7 +69,7 @@ jfs_security_access(const char *path, int mask)
   char *datapath;
   int rc;
 
-  rc = jfs_util_get_datapath(path, datapath);
+  rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
 	return rc;
   }
