@@ -210,9 +210,6 @@ jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
   size_t sub_key_len;
   size_t query_len;
 
-  int has_subquery;
-  int is_subquery;
-  int sub_inode;
   int rc;
 
   row = malloc(sizeof(*row));
@@ -226,12 +223,13 @@ jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 
   rc = sqlite3_step(stmt);
   if(rc == SQLITE_ROW) {
-	has_subquery = sqlite3_column_int(stmt, 0);
-	is_subquery = sqlite3_column_int(stmt, 1);
-	sub_inode = sqlite3_column_int(stmt, 2);
+	row->has_subquery = sqlite3_column_int(stmt, 0);
+	row->is_subquery = sqlite3_column_int(stmt, 1);
+	row->uses_filename = sqlite3_column_int(stmt, 2);
+	row->sub_inode = sqlite3_column_int(stmt, 3);
 
-	sub_key = sqlite3_column_text(stmt, 3);
-	sub_key_len = sqlite3_column_bytes(stmt, 3) + 1;
+	sub_key = sqlite3_column_text(stmt, 4);
+	sub_key_len = sqlite3_column_bytes(stmt, 4) + 1;
 	if(sub_key_len > 1) {
 	  row->sub_key = malloc(sizeof(*row->sub_key) * sub_key_len);
 	  if(!row->sub_key) {
@@ -244,8 +242,8 @@ jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	}
 
 	
-	query = sqlite3_column_text(stmt, 4);
-	query_len = sqlite3_column_bytes(stmt, 4) + 1;
+	query = sqlite3_column_text(stmt, 5);
+	query_len = sqlite3_column_bytes(stmt, 5) + 1;
 	if(query_len > 1) {
 	  row->query = malloc(sizeof(*row->query) * query_len);
 	  if(!row->query) {
@@ -295,30 +293,43 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	row->filename = NULL;
 
 	col_count = sqlite3_column_count(stmt);
-	inode = sqlite3_column_int(stmt, 0);
-
-	filename = sqlite3_column_text(stmt, 1);
-	filename_len = sqlite3_column_bytes(stmt, 1) + 1;
-
-	row->filename = malloc(sizeof(*row->filename) * filename_len);
-	if(!row->filename) {
-	  sqlite3_finalize(stmt);
-	  jfs_list_destroy(head, jfs_readdir_op);
-	  return -ENOMEM;
-	}
-	strncpy(row->filename, (const char *)filename, filename_len);
-
-	if(col_count > 2) {
-	  datapath = sqlite3_column_text(stmt, 2);
-	  datapath_len = sqlite3_column_bytes(stmt, 2);
+	if(col_count == 1) {
+	  filename = sqlite3_column_text(stmt, 0);
+	  filename_len = sqlite3_column_bytes(stmt, 0) + 1;
 	  
-	  row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
-	  if(!row->datapath) {
+	  row->filename = malloc(sizeof(*row->filename) * filename_len);
+	  if(!row->filename) {
 		sqlite3_finalize(stmt);
 		jfs_list_destroy(head, jfs_readdir_op);
 		return -ENOMEM;
 	  }
-	  strncpy(row->datapath, (const char *)datapath, datapath_len);
+	  strncpy(row->filename, (const char *)filename, filename_len);
+	}
+	else {
+	  inode = sqlite3_column_int(stmt, 0);
+	  filename = sqlite3_column_text(stmt, 1);
+	  filename_len = sqlite3_column_bytes(stmt, 1) + 1;
+
+	  row->filename = malloc(sizeof(*row->filename) * filename_len);
+	  if(!row->filename) {
+		sqlite3_finalize(stmt);
+		jfs_list_destroy(head, jfs_readdir_op);
+		return -ENOMEM;
+	  }
+	  strncpy(row->filename, (const char *)filename, filename_len);
+	  
+	  if(col_count == 3) {
+		datapath = sqlite3_column_text(stmt, 2);
+		datapath_len = sqlite3_column_bytes(stmt, 2);
+	  
+		row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
+		if(!row->datapath) {
+		  sqlite3_finalize(stmt);
+		  jfs_list_destroy(head, jfs_readdir_op);
+		  return -ENOMEM;
+		}
+		strncpy(row->datapath, (const char *)datapath, datapath_len);
+	  }
 	}
 
 	jfs_list_add(&head, row);

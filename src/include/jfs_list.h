@@ -43,6 +43,7 @@ struct jfs_list {
 
   int         has_subquery;
   int         is_subquery;
+  int         uses_filename;
   int         sub_inode;
   char       *sub_key;
   char       *query;

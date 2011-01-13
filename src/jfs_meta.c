@@ -35,12 +35,22 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 				  size_t size, int flags)
 {
   struct jfs_db_op *db_op;
+  char *safe_value;
 
   int datainode;
   int keyid;
   int rc;
 
-  printf("--jfs_meta_setxattr called\n");
+  printf("--jfs_meta_setxattr called, passed xattr of size:%d\n", (int)size);
+
+  safe_value = malloc(sizeof(*safe_value) * (size + 1));
+  if(!value) {
+	return -ENOMEM;
+  }
+  memcpy(safe_value, value, size);
+  safe_value[size] = '\0';
+
+  printf("--Copied safe_value:%s\n", safe_value);
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
@@ -62,17 +72,17 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   if(flags == XATTR_CREATE) {
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "INSERT OR ROLLBACK INTO metadata VALUES(%d,%d,\"%s\");",
-			 datainode, keyid, value);
+			 datainode, keyid, safe_value);
   }
   else if(flags == XATTR_REPLACE) {
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
-			 datainode, keyid, value);
+			 datainode, keyid, safe_value);
   }
   else {
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "INSERT OR REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
-			 datainode, keyid, value);
+			 datainode, keyid, safe_value);
   }
 
   printf("--Executing query:%s\n", db_op->query);

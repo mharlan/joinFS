@@ -58,9 +58,9 @@ CREATE TABLE metadata(inode INTEGER NOT NULL,
 					  FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT,
 					  PRIMARY KEY(inode, keyid));
 
-CREATE TABLE reldata(inode INTEGER,
-					 keyid INTEGER,
-					 keyvalue TEXT,
+CREATE TABLE reldata(inode INTEGER NOT NULL,
+					 keyid INTEGER NOT NULL,
+					 keyvalue TEXT NOT NULL,
 					 FOREIGN KEY(inode) REFERENCES files(inode) ON DELETE CASCADE,
 					 FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT,
 					 PRIMARY KEY(inode, keyid, keyvalue));
@@ -69,6 +69,7 @@ CREATE TABLE directories(inode INTEGER PRIMARY KEY,
 	   		 		     dirpath TEXT NOT NULL,
 						 has_subquery INTEGER NOT NULL,
 						 is_subquery INTEGER NOT NULL,
+						 uses_filename INTEGER NOT NULL,
 						 sub_inode INTEGER NOT NULL,
 						 sub_key TEXT,
 						 query TEXT);

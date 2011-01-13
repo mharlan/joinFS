@@ -434,6 +434,8 @@ jfs_file_getattr(const char *path, struct stat *stbuf)
 	return rc;
   }
 
+  printf("--GETTING ATTRS FOR datapath:%s\n", datapath);
+
   rc = stat(datapath, stbuf);
   if(rc) {
 	return -errno;

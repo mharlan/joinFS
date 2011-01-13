@@ -355,7 +355,7 @@ jfs_mkdir(const char *path, mode_t mode)
   log_error("Called jfs_mkdir, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  rc = jfs_dir_mkdir(jfs_path, mode);
+  rc = jfs_dir_mkdir(path, jfs_path, mode);
   free(jfs_path);
 
   if(rc) {

@@ -20,7 +20,7 @@
 #include <fuse.h>
 #include <sys/types.h>
 
-int jfs_dir_mkdir(const char *path, mode_t mode);
+int jfs_dir_mkdir(const char *path, const char *jfs_path, mode_t mode);
 
 int jfs_dir_rmdir(const char *path);
 
