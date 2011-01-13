@@ -181,6 +181,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   int has_subquery;
   int sub_inode;
   int dirinode;
+  int inode;
   int rc;
 
   printf("--jfs_dir_db_filler called for path:%s\n", path);
@@ -268,10 +269,8 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	else {
 	  printf("---Dynamic file datapath:%s.\n", item->datapath);
 
-	  rc = stat(item->datapath, &st);
+	  rc = jfs_util_get_inode_and_mode(item->datapath, &inode, &mode);
 	  if(rc) {
-		safe_jfs_list_destroy(&it, item);
-		jfs_db_op_destroy(db_op);
 		return rc;
 	  }
 
@@ -284,7 +283,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	  }
 	  strncpy(datapath, item->datapath, datapath_len);
 
-	  st.st_ino = item->inode;
+	  st.st_ino = inode;
 	  st.st_mode = mode;
 	}
 

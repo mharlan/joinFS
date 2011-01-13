@@ -34,7 +34,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-static int jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode);
+static int jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, char *filename, int mode);
 static int create_datapath(char *uuid, char **datapath);
 
 /*
@@ -96,7 +96,7 @@ jfs_file_create(const char *path, mode_t mode)
 	return datainode;
   }
 
-  rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
+  rc = jfs_file_db_add(path, syminode, datainode, datapath, filename, mode);
   if(rc) {
 	log_error("New file database inserts failed.\n");
   }
@@ -165,7 +165,7 @@ jfs_file_mknod(const char *path, mode_t mode)
 	return datainode;
   }
   
-  rc = jfs_file_db_add(syminode, datainode, datapath, filename, mode);
+  rc = jfs_file_db_add(path, syminode, datainode, datapath, filename, mode);
   if(rc < 0) {
 	log_error("New file database inserts failed.\n");
   }
@@ -181,7 +181,7 @@ jfs_file_mknod(const char *path, mode_t mode)
  * into a single sqlite3_stmt
  */
 static int
-jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int mode)
+jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, char *filename, int mode)
 {
   struct jfs_db_op *db_op;
   int rc;
@@ -215,8 +215,8 @@ jfs_file_db_add(int syminode, int datainode, char *datapath, char *filename, int
 
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO symlinks VALUES(%d,%d);",
-		   syminode, datainode);
+		   "INSERT OR ROLLBACK INTO symlinks VALUES(%d,\"%s\",%d);",
+		   syminode, path, datainode);
   
   jfs_write_pool_queue(db_op);
 
@@ -271,6 +271,7 @@ jfs_file_unlink(const char *path)
 	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
+	  printf("--Unlink Database Error:%d\n", rc);
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
@@ -290,6 +291,26 @@ jfs_file_unlink(const char *path)
 	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
+	  return rc;
+	}
+	jfs_db_op_destroy(db_op);
+
+	rc = jfs_db_op_create(&db_op);
+	if(rc) {
+	  return rc;
+	}
+
+	db_op->op = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "DELETE FROM metadata WHERE inode=%d;",
+			 datainode);
+
+	jfs_write_pool_queue(db_op);
+
+	rc = jfs_db_op_wait(db_op);
+	if(rc) {
+	  jfs_db_op_destroy(db_op);
+	  printf("--Unlink metadata error:%d\n", rc);
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
@@ -313,6 +334,7 @@ jfs_file_rename(const char *from, const char *to)
   mode_t mode;
 
   char *filename;
+  int new_inode;
   int inode;
   int rc;
 
@@ -320,6 +342,19 @@ jfs_file_rename(const char *from, const char *to)
   if(rc) {
 	return rc;
   }
+
+  rc = rename(from, to);
+  if(rc) {
+	return -errno;
+  }
+
+  new_inode = jfs_util_get_inode(to);
+  if(new_inode < 1) {
+	return new_inode;
+  }
+
+  printf("Renamed:%s, inode:%d || to %s, inode%d\n",
+		 from, inode, to, new_inode);
 
   if(S_ISREG(mode)) {
 	filename = jfs_util_get_filename(to);
@@ -330,7 +365,6 @@ jfs_file_rename(const char *from, const char *to)
 	}
 	
 	db_op->op = jfs_write_op;
-
 	snprintf(db_op->query, JFS_QUERY_MAX,
 			 "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
 			 filename, inode);
@@ -343,11 +377,50 @@ jfs_file_rename(const char *from, const char *to)
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
+
+	rc = jfs_db_op_create(&db_op);
+	if(rc) {
+	  return rc;
+	}
+	
+	db_op->op = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "UPDATE OR ROLLBACK symlinks SET syminode=%d WHERE syminode=%d;",
+			 new_inode, inode);
+  
+	jfs_write_pool_queue(db_op);
+  
+	rc = jfs_db_op_wait(db_op);
+	if(rc) {
+	  jfs_db_op_destroy(db_op);
+	  return rc;
+	}
+	jfs_db_op_destroy(db_op);
+  }
+  else if(S_ISDIR(mode)) {
+	rc = jfs_db_op_create(&db_op);
+	if(rc) {
+	  return rc;
+	}
+	
+	db_op->op = jfs_write_op;
+	snprintf(db_op->query, JFS_QUERY_MAX,
+			 "UPDATE OR ROLLBACK directories SET inode=%d WHERE inode=%d;",
+			 inode, new_inode);
+	
+	jfs_write_pool_queue(db_op);
+	
+	rc = jfs_db_op_wait(db_op);
+	if(rc) {
+	  jfs_db_op_destroy(db_op);
+	  return 0;
+	}
+	jfs_db_op_destroy(db_op);
   }
   
-  rc = rename(from, to);
+  rc = jfs_db_op_create(&db_op);
   if(rc) {
-	return -errno;
+	return rc;
   }
   
   return 0;
@@ -394,6 +467,8 @@ jfs_file_open(const char *path, int flags)
 	  if(rc) {
 		return -errno;
 	  }
+
+	  printf("**(OPEN CALLED: With create, doesn't exist) path:%s, flags:%d\n", path, flags);
 
 	  return jfs_file_create(path, flags);
 	}

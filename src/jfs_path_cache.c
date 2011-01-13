@@ -52,7 +52,6 @@ jfs_path_cache_t_hash(jfs_path_cache_t *item)
   path_len = strlen(item->path);
 
   hash = (path_len * (path_len / 2)) % JFS_PATH_CACHE_SIZE;
-  printf("--PATH CACHE--Path:%s, hashed to (%d)\n", item->path, hash);
 
   return hash;
 }
@@ -126,8 +125,8 @@ jfs_path_cache_add(char *path, char *datapath)
 	return -ENOMEM;
   }
 
-  item->datapath = malloc(sizeof(*item->path) * path_len);
-  if(!item->path) {
+  item->datapath = malloc(sizeof(*item->datapath) * datapath_len);
+  if(!item->datapath) {
 	free(item->path);
 	free(item);
 	return -ENOMEM;
@@ -139,12 +138,15 @@ jfs_path_cache_add(char *path, char *datapath)
   //remove it if path is already in path cache to update datapath
   rc = sglib_hashed_jfs_path_cache_t_delete_if_member(hashtable, item, &exists);
   if(rc) {
+	printf("---Path existed, removing old datapath:%s, adding new datapath:%s\n", exists->datapath, item->datapath);
 	free(exists->path);
 	free(exists->datapath);
 	free(exists);
   }
 
   sglib_hashed_jfs_path_cache_t_add(hashtable, item);
+
+  printf("---Added to file cache.\n");
 
   return 0;
 }

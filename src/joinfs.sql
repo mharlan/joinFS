@@ -45,6 +45,7 @@ CREATE TABLE files(inode INTEGER PRIMARY KEY NOT NULL,
 				   filename TEXT NOT NULL);
 
 CREATE TABLE symlinks(syminode INTEGER PRIMARY KEY NOT NULL,
+	   		          sympath TEXT NOT NULL,
 					  datainode INTEGER NOT NULL,
 					  FOREIGN KEY(datainode) REFERENCES files(inode) ON DELETE CASCADE);
 
