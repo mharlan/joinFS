@@ -32,7 +32,6 @@ typedef struct jfs_path_cache jfs_path_cache_t;
 struct jfs_path_cache {
   char             *path;
   char             *datapath;
-
   jfs_path_cache_t *next;
 };
 
@@ -47,7 +46,7 @@ static unsigned int
 jfs_path_cache_t_hash(jfs_path_cache_t *item)
 {
   size_t path_len;
-  int hash;
+  unsigned int hash;
 
   path_len = strlen(item->path);
 

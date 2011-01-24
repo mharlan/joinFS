@@ -106,7 +106,7 @@ jfs_file_cache_destroy()
 int
 jfs_file_cache_get_datainode(int syminode)
 {
-  jfs_file_cache_t check;
+  jfs_file_cache_t  check;
   jfs_file_cache_t *result;
 
   check.syminode = syminode;
@@ -199,7 +199,7 @@ jfs_file_cache_remove(int syminode)
   if(!rc) {
 	return -1;
   }
-
+  
   free(elem->datapath);
   free(elem);
 
