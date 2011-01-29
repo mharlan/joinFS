@@ -70,7 +70,6 @@ jfs_realpath(const char *path)
   char *jfs_rpath;
 
   int path_len;
-  int rc;
 
   log_error("Called jfs_realpath, path:%s\n", path);
 

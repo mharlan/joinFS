@@ -1,80 +1,53 @@
 CC=gcc
 INCLUDE=-I include/
-CFLAGS=$(INCLUDE) -D_FILE_OFFSET_BITS=64 -Wall -o
-SQL=-W -O2 -Wl,-R/usr/local/lib -lsqlite3
-THRDS=-lpthread
-TIME=-lrt
-UUID=/lib/libuuid.so.1.3.0
-FUSE=`pkg-config fuse --cflags --libs` -lfuse
-STDFLAGS=$(TIME) $(THRDS) $(SQL) $(CFLAGS)
-ALLFLAGS=$(FUSE) $(UUID) $(STDFLAGS)
-OBJS1=obj/error_log.o obj/sqlitedb.o obj/thr_pool.o obj/result.o obj/jfs_list.o
-OBJS2=obj/jfs_file.o obj/jfs_file_cache.o obj/joinfs.o obj/jfs_uuid.o
-OBJS3=obj/jfs_meta.o obj/jfs_util.o obj/jfs_security.o obj/jfs_dir.o
-OBJS4=obj/jfs_path_cache.o 
-OBJS=$(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4)
-TESTS=tests/jfs_pool_test tests/jfs_uuid_test tests/jfs_realpath_test tests/jfs_meta_test
+CFLAGS=-D_FILE_OFFSET_BITS=64 -Wall
 
-all: ../demo/joinfs
+SQLLIB=-W -O2 -Wl,-R/usr/local/lib -lsqlite3
+UUIDLIB=/lib/libuuid.so.1.3.0
+FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
+LIBS=-lpthread -lrt $(SQLLIB) $(UUIDLIB) $(FUSELIB)
 
-tests: $(OBJS) $(TESTS)
+SRC=error_log.c \
+    sqlitedb.c \
+    thr_pool.c \
+    result.c \
+    jfs_list.c \
+    jfs_file.c \
+    jfs_file_cache.c \
+    joinfs.c \
+    jfs_uuid.c \
+    jfs_meta.c \
+    jfs_util.c \
+    jfs_security.c \
+    jfs_dir.c \
+    jfs_path_cache.c \
+    jfs_key_cache.c \
+    jfs_dir_cache.c
 
-../demo/joinfs: $(OBJS)
-	$(CC) -ggdb -O0 $(ALLFLAGS) ../demo/joinfs $(OBJS)
+OBJS=$(SRC:%.c=obj/%.o)
 
-tests/jfs_meta_test:
-	$(CC) -ggdb -O0 $(CFLAGS) tests/jfs_meta_test tests/jfs_meta_test.c
+TESTSRC=tests/jfs_pool_test.c \
+	tests/jfs_uuid_test.c \
+	tests/jfs_realpath_test.c \
+	tests/jfs_meta_test.c
 
-tests/jfs_realpath_test:
-	$(CC) -ggdb -O0 $(CFLAGS) tests/jfs_realpath_test tests/jfs_realpath_test.c
+TESTOBJS=obj/error_log.o \
+	 obj/sqlitedb.o \
+	 obj/thr_pool.o \
+	 obj/result.o \
+	 obj/jfs_list.o \
+	 obj/jfs_uuid.o
 
-tests/jfs_uuid_test: obj/jfs_uuid.o obj/error_log.o
-	$(CC) -ggdb -O0 $(UUID) $(CFLAGS) tests/jfs_uuid_test tests/jfs_uuid_test.c obj/jfs_uuid.o obj/error_log.o
+TESTS=$(TESTSRC:%.c=%)
 
-tests/jfs_pool_test: $(OBJS1)
-	$(CC) -ggdb -O0 $(STDFLAGS) tests/jfs_pool_test tests/jfs_pool_test.c $(OBJS1)
+all: $(OBJS) $(TESTS)
+	$(CC) -ggdb -O0 $(CFLAGS) $(LIBS) $(OBJS) -o ../demo/joinfs
 
-obj/jfs_path_cache.o:
-	$(CC) -c $(CFLAGS) obj/jfs_path_cache.o jfs_path_cache.c
+tests/%: tests/%.c
+	$(CC) -ggdb -O0 $(CFLAGS) $(INCLUDE) $(LIBS) $(TESTOBJS) tests/$*.c -o tests/$*
 
-obj/jfs_dir.o:
-	$(CC) -c $(CFLAGS) obj/jfs_dir.o jfs_dir.c
-
-obj/jfs_security.o:
-	$(CC) -c $(CFLAGS) obj/jfs_security.o jfs_security.c	
-
-obj/jfs_util.o:
-	$(CC) -c $(CFLAGS) obj/jfs_util.o jfs_util.c
-
-obj/jfs_meta.o:
-	$(CC) -c $(CFLAGS) obj/jfs_meta.o jfs_meta.c
-
-obj/jfs_uuid.o:
-	$(CC) -c $(CFLAGS) obj/jfs_uuid.o jfs_uuid.c
-
-obj/joinfs.o:
-	$(CC) -c $(CFLAGS) obj/joinfs.o joinfs.c
-
-obj/jfs_file_cache.o:
-	$(CC) -c $(CFLAGS) obj/jfs_file_cache.o jfs_file_cache.c
-
-obj/jfs_file.o:
-	$(CC) -c $(FUSE) $(CFLAGS) obj/jfs_file.o jfs_file.c
-
-obj/result.o: 
-	$(CC) -c $(CFLAGS) obj/result.o result.c
-
-obj/thr_pool.o:
-	$(CC) -c $(CFLAGS) obj/thr_pool.o thr_pool.c
-
-obj/sqlitedb.o:
-	$(CC) -c $(CFLAGS) obj/sqlitedb.o sqlitedb.c
-
-obj/jfs_list.o:
-	$(CC) -c $(CFLAGS) obj/jfs_list.o jfs_list.c
-
-obj/error_log.o:
-	$(CC) -c $(CFLAGS) obj/error_log.o error_log.c 
+obj/%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $*.c -o obj/$*.o
 
 clean:
 	rm -rf obj/*.o $(TESTS) ../demo/joinfs

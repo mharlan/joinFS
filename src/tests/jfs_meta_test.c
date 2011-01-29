@@ -33,7 +33,7 @@ main()
   char *buffer;
   size_t buff_size;
   int rc;
-  int i;
+  size_t i;
   
   buffer = malloc(sizeof(*buffer) * LIST_MAX);
   if(!buffer) {
@@ -70,7 +70,7 @@ main()
 	buffer = malloc(sizeof(*buffer) * buff_size);
 	buff_size = listxattr(TEST_FILE, buffer, buff_size);
   }
-  else if(buff_size < 0) {
+  else if(buff_size == 0) {
 	printf("--ERROR CODE:%d, returned\n", -errno);
   }
   else {

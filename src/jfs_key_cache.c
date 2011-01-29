@@ -21,13 +21,17 @@
 #include "sglib.h"
 
 #include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 
 #define JFS_KEY_CACHE_SIZE 1000
 
 typedef struct jfs_key_cache jfs_key_cache_t;
 struct jfs_key_cache {
   int              keyid;
-  car             *keytext;
+  char            *keytext;
   jfs_key_cache_t *next;
 };
 
@@ -69,7 +73,7 @@ jfs_key_cache_init()
 }
 
 void
-jfs_file_cache_destroy()
+jfs_key_cache_destroy()
 {
   struct sglib_hashed_jfs_key_cache_t_iterator it;
   jfs_key_cache_t *item;
@@ -87,7 +91,7 @@ jfs_key_cache_get_keyid(const char *keytext)
   jfs_key_cache_t  check;
   jfs_key_cache_t *result;
 
-  check.keytext = keytext;
+  check.keytext = (char *)keytext;
   result = sglib_hashed_jfs_key_cache_t_find_member(hashtable, &check);
 
   if(!result) {
@@ -100,7 +104,7 @@ jfs_key_cache_get_keyid(const char *keytext)
 int
 jfs_key_cache_add(int keyid, const char *keytext)
 {
-  jfs_file_key_t *item;
+  jfs_key_cache_t *item;
 
   item = malloc(sizeof(*item));
   if(!item) {
@@ -118,11 +122,11 @@ jfs_key_cache_add(int keyid, const char *keytext)
 int
 jfs_key_cache_remove(const char *keytext)
 {
-  jfs_file_cache_t check;
-  jfs_file_cache_t *elem;
+  jfs_key_cache_t check;
+  jfs_key_cache_t *elem;
   int rc;
 
-  check.keytext = keytext;
+  check.keytext = (char *)keytext;
 
   rc = sglib_hashed_jfs_key_cache_t_delete_if_member(hashtable, &check, &elem);
   if(!rc) {
