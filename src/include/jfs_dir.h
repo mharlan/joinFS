@@ -20,6 +20,16 @@
 #include <fuse.h>
 #include <sys/types.h>
 
+typedef struct jfs_dir jfs_dir_t;
+struct jfs_dir {
+  int is_subquery;
+  int has_subquery;
+  int path_items;
+
+  const char *sub_key;
+  const char *query;
+};
+
 int jfs_dir_mkdir(const char *path, const char *jfs_path, mode_t mode);
 
 int jfs_dir_rmdir(const char *path);

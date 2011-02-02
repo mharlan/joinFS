@@ -41,6 +41,7 @@ int
 jfs_dir_mkdir(const char *path, const char *jfs_path, mode_t mode)
 {
   struct jfs_db_op *db_op;
+  jfs_dir_t *dir;
 
   int dirinode;
   int rc;

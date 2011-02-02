@@ -46,7 +46,7 @@ static jfs_file_cache_t *hashtable[JFS_FILE_CACHE_SIZE];
 static unsigned int 
 jfs_file_cache_t_hash(jfs_file_cache_t *item)
 {
-  int hash;
+  unsigned int hash;
 
   hash = item->syminode % JFS_FILE_CACHE_SIZE;
   printf("Symionde:%d, hashed to (%d)\n", item->syminode, hash);

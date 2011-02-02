@@ -17,19 +17,27 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#include "jfs_dir_cache.h"
-#include "sglib.h"
+#ifndef JOINFS_JFS_META_CACHE_H
+#define JOINFS_JFS_META_CACHE_H
 
-#include <errno.h>
+/*
+ * Initialize the jfs_meta_cache.
+ *
+ * Called when joinFS gets mounted.
+ */
+void jfs_meta_cache_init();
 
-typedef struct jfs_directory_cache jfs_dir_cache_t;
-struct jfs_directory_cache {
-  int   is_subquery;
-  int   has_subquery;
-  int   path_items;
+/*
+ * Destroy the jfs_meta_cache.
+ *
+ * Called when joinFS gets dismount.
+ */
+void jfs_meta_cache_destroy();
 
-  char *sub_key;
-  char *query;
+int jfs_meta_cache_get_value(int inode, int keyid, char **value);
 
-  jfs_dir_cache_t *next;
-};
+int jfs_meta_cache_add(int inode, int keyid, const char *value);
+
+int jfs_meta_cache_remove(int inode, int keyid);
+
+#endif

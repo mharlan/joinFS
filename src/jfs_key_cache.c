@@ -31,7 +31,7 @@
 typedef struct jfs_key_cache jfs_key_cache_t;
 struct jfs_key_cache {
   int              keyid;
-  char            *keytext;
+  const char      *keytext;
   jfs_key_cache_t *next;
 };
 
@@ -62,9 +62,9 @@ SGLIB_DEFINE_LIST_FUNCTIONS(jfs_key_cache_t, JFS_KEY_CACHE_T_CMP, next)
  * SGLIB generator macros for hashtable function prototypes.
  */
 SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_key_cache_t, JFS_KEY_CACHE_SIZE,
-										 jfs_key_cache_t_hash)
+                                         jfs_key_cache_t_hash)
 SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_key_cache_t, JFS_KEY_CACHE_SIZE,
-										jfs_key_cache_t_hash)
+                                        jfs_key_cache_t_hash)
 
 void
 jfs_key_cache_init()
@@ -79,9 +79,9 @@ jfs_key_cache_destroy()
   jfs_key_cache_t *item;
 
   for(item = sglib_hashed_jfs_key_cache_t_it_init(&it, hashtable);
-	  item != NULL; item = sglib_hashed_jfs_key_cache_t_it_next(&it)) {
-	free(item->keytext);
-	free(item);
+      item != NULL; item = sglib_hashed_jfs_key_cache_t_it_next(&it)) {
+    free(item->keytext);
+    free(item);
   }
 }
 
@@ -91,11 +91,11 @@ jfs_key_cache_get_keyid(const char *keytext)
   jfs_key_cache_t  check;
   jfs_key_cache_t *result;
 
-  check.keytext = (char *)keytext;
+  check.keytext = keytext;
   result = sglib_hashed_jfs_key_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return -1;
+    return -1;
   }
 
   return result->keyid;
@@ -105,10 +105,10 @@ int
 jfs_key_cache_add(int keyid, const char *keytext)
 {
   jfs_key_cache_t *item;
-
+  
   item = malloc(sizeof(*item));
   if(!item) {
-	return -ENOMEM;
+    return -ENOMEM;
   }
 
   item->keyid = keyid;
@@ -126,11 +126,11 @@ jfs_key_cache_remove(const char *keytext)
   jfs_key_cache_t *elem;
   int rc;
 
-  check.keytext = (char *)keytext;
+  check.keytext = keytext;
 
   rc = sglib_hashed_jfs_key_cache_t_delete_if_member(hashtable, &check, &elem);
   if(!rc) {
-	return -1;
+    return -1;
   }
   
   free(elem->keytext);
