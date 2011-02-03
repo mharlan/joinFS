@@ -20,6 +20,7 @@
 #include "sqlitedb.h"
 #include "jfs_file_cache.h"
 #include "jfs_path_cache.h"
+#include "jfs_key_cache.h"
 #include "jfs_util.h"
 #include "joinfs.h"
 
@@ -230,8 +231,11 @@ jfs_util_get_keyid(const char *key)
   //hit the cache first
   keyid = jfs_key_cache_get_keyid(key);
   if(keyid > 0) {
+    printf("--!!--Key cache hit, returning keyid:%d for key:%s\n", keyid, key);
     return keyid;
   }
+
+  printf("--!!--Key cache miss for key:%s, attempting insert\n", key);
 
   //cache miss, insert, but ignore if it exists
   rc = jfs_db_op_create(&db_op);
@@ -252,6 +256,8 @@ jfs_util_get_keyid(const char *key)
 	return rc;
   }
   jfs_db_op_destroy(db_op);
+
+  printf("--!!--Getting the keyid from the database.\n");
 
   //go out to the database for the keyid
   rc = jfs_db_op_create(&db_op);

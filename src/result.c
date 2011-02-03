@@ -35,7 +35,7 @@
 
 static int jfs_do_write_op(sqlite3_stmt *stmt);
 static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
-static int jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size);
 static int jfs_do_meta_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt);

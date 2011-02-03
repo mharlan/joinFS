@@ -194,7 +194,7 @@ jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, c
 
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO files VALUES(%d, \"%s\", \"%s\");",
+		   "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
 		   datainode, datapath, filename);
   
   jfs_write_pool_queue(db_op);

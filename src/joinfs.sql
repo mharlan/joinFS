@@ -4,7 +4,6 @@ DROP TABLE IF EXISTS symlinks;
 DROP TABLE IF EXISTS keys;
 DROP TABLE IF EXISTS metadata;
 DROP TABLE IF EXISTS reldata;
-DROP TABLE IF EXISTS directories;
 
 CREATE TABLE test_table(id INTEGER PRIMARY KEY,
 	   		 			name TEXT NOT NULL);
@@ -65,12 +64,3 @@ CREATE TABLE reldata(inode INTEGER NOT NULL,
 					 FOREIGN KEY(inode) REFERENCES files(inode) ON DELETE CASCADE,
 					 FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT,
 					 PRIMARY KEY(inode, keyid, keyvalue));
-
-CREATE TABLE directories(inode INTEGER PRIMARY KEY,
-	   		 		     dirpath TEXT NOT NULL,
-						 has_subquery INTEGER NOT NULL,
-						 is_subquery INTEGER NOT NULL,
-						 uses_filename INTEGER NOT NULL,
-						 sub_inode INTEGER NOT NULL,
-						 sub_key TEXT,
-						 query TEXT);

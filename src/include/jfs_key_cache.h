@@ -39,12 +39,12 @@ void jfs_key_cache_destroy();
  *
  * Returns 0 if not in the cache.
  */
-int jfs_key_cache_get_keyid(char *keytext);
+int jfs_key_cache_get_keyid(const char *keytext);
 
 /*
  * Add a symlink to the jfs_file_cache.
  */
-int jfs_key_cache_add(int keyid, char *keytext);
+int jfs_key_cache_add(int keyid, const char *keytext);
 
 /*
  * Remove a symlink reference from the file cache.

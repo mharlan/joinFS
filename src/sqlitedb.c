@@ -99,21 +99,11 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 	  free(db_op->result->datapath);
 	  free(db_op->result);
 	  break;
-	case(jfs_key_op):
+	case(jfs_key_cache_op):
 	  free(db_op->result);
 	  break;
-	case(jfs_attr_op):
+	case(jfs_meta_cache_op):
 	  free(db_op->result->value);
-	  free(db_op->result);
-	  break;
-	case(jfs_directory_cache_op):
-	  if(db_op->result->query != NULL) {
-		free(db_op->result->query);
-	  }
-	  
-	  if(db_op->result->sub_key != NULL) {
-		free(db_op->result->sub_key);
-	  }
 	  free(db_op->result);
 	  break;
 	case(jfs_listattr_op):

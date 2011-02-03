@@ -28,6 +28,8 @@ int jfs_meta_setxattr(const char *path, const char *key, const char *value,
 int jfs_meta_getxattr(const char *path, const char *key, void *value,
 					  size_t size);
 
+int jfs_meta_do_getxattr(const char *path, const char *key, char **value);
+
 int jfs_meta_listxattr(const char *path, char *list, size_t size);
 
 int jfs_meta_removexattr(const char *path, const char *key);

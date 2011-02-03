@@ -19,8 +19,10 @@
 
 #include "error_log.h"
 #include "jfs_dir.h"
+#include "jfs_dynamic_dir.h"
 #include "sqlitedb.h"
 #include "jfs_util.h"
+#include "jfs_meta.h"
 #include "jfs_path_cache.h"
 #include "joinfs.h"
 
@@ -32,28 +34,30 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <attr/xattr.h>
 
+static int jfs_dir_is_dynamic(const char *path);
 static int jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler);
-static int jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery, int *sub_inode, char **query);
+static int jfs_dir_get_directory_info(const char *path, int *has_subquery, int *sub_inode, char **query);
 static void safe_jfs_list_destroy(struct sglib_jfs_list_t_iterator *it, jfs_list_t *item);
 
 int 
-jfs_dir_mkdir(const char *path, const char *jfs_path, mode_t mode)
+jfs_dir_mkdir(const char *path, mode_t mode)
 {
   struct jfs_db_op *db_op;
-  jfs_dir_t *dir;
-
-  int dirinode;
+  char *filename;
+  int inode;
   int rc;
 
-  rc = mkdir(jfs_path, mode);
+  rc = mkdir(path, mode);
   if(rc) {
 	return -errno;
   }
 
-  dirinode = jfs_util_get_inode(jfs_path);
-  if(dirinode < 0) {
-	return dirinode;
+  filename = jfs_util_get_filename(path);
+  inode = jfs_util_get_inode(path);
+  if(inode < 1) {
+    return inode;
   }
 
   rc = jfs_db_op_create(&db_op);
@@ -63,22 +67,19 @@ jfs_dir_mkdir(const char *path, const char *jfs_path, mode_t mode)
 
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO directories VALUES(%d,\"%s\",0,0,0,0,NULL,NULL);",
-		   dirinode, path);
+		   "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
+		   inode, path, filename);
 
   jfs_write_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
-
-	if(rc == SQLITE_CONSTRAINT) {
-	  return -EEXIST;
-	}
-
 	return rc;
   }
   jfs_db_op_destroy(db_op);
+
+  jfs_meta_setxattr(path, JFS_DIR_IS_DYNAMIC, JFS_DIR_XATTR_FALSE, 1, XATTR_CREATE);
 
   return 0;
 }
@@ -87,12 +88,17 @@ int
 jfs_dir_rmdir(const char *path)
 {
   struct jfs_db_op *db_op;
-  int dirinode;
+  int inode;
   int rc;
 
-  dirinode = jfs_util_get_inode(path);
-  if(dirinode < 0) {
-	return dirinode;
+  inode = jfs_util_get_inode(path);
+  if(inode < 0) {
+	return inode;
+  }
+
+  rc = rmdir(path);
+  if(rc) {
+	return -errno;
   }
 
   rc = jfs_db_op_create(&db_op);
@@ -102,8 +108,8 @@ jfs_dir_rmdir(const char *path)
 
   db_op->op = jfs_write_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "DELETE FROM directories WHERE inode=%d;",
-		   dirinode);
+		   "DELETE FROM files WHERE inode=%d;",
+		   inode);
 
   jfs_write_pool_queue(db_op);
 
@@ -113,11 +119,6 @@ jfs_dir_rmdir(const char *path)
 	return rc;
   }
   jfs_db_op_destroy(db_op);
-
-  rc = rmdir(path);
-  if(rc) {
-	return -errno;
-  }
 
   return 0;
 }
@@ -154,9 +155,11 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 	}
   }
 
-  rc = jfs_dir_db_filler(path, buf, filler);
-  if(rc) {
-	return rc;
+  if(jfs_dir_is_dynamic(path)) {
+    rc = jfs_dir_db_filler(path, buf, filler);
+    if(rc) {
+      return rc;
+    }
   }
 
   return 0;
@@ -170,7 +173,6 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   struct stat st;
   jfs_list_t *item;
 
-  char *filename;
   char *query;
   char *buffer;
   char *datapath;
@@ -189,7 +191,6 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 
   has_subquery = 0;
   sub_inode = 0;
-  filename = jfs_util_get_filename(path);
 
   rc = jfs_util_get_inode_and_mode(path, &dirinode, &mode);
   if(rc) {
@@ -205,7 +206,7 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   }
 
   query = NULL;
-  rc = jfs_dir_get_directory_info(dirinode, filename, &has_subquery, &sub_inode, &query);
+  rc = jfs_dir_get_directory_info(path, &has_subquery, &sub_inode, &query);
   if(rc) {
 	return rc;
   }
@@ -319,88 +320,115 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 }
 
 static int
-jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery, int *sub_inode, char **query)
+jfs_dir_is_dynamic(const char *path)
 {
-  struct jfs_db_op *db_op;
+  char *is_dynamic;
+  int rc;
+  
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_IS_DYNAMIC, &is_dynamic);
+  if(rc) {
+    return 0;
+  }
+
+  if(strcmp(is_dynamic, JFS_DIR_XATTR_TRUE) == 0) {
+    return 1;
+  }
+
+  return 0;
+}
+
+static int
+jfs_dir_get_directory_info(const char *path, int *has_subquery, int *sub_inode, char **query)
+{
+  char *filename;
   char *quote_sub_key;
   char *quote_filename;
+
+  char *xattr_has_subquery;
+  char *xattr_is_subquery;
+  char *xattr_path_items;
+  char *xattr_sub_inode;
+  char *xattr_sub_key;
+  char *xattr_query;
 
   size_t query_len;
   size_t quote_sub_key_len;
   size_t quote_filename_len;
 
   int is_subquery;
-  int uses_filename;
+  int path_items;
   int rc;
 
-  printf("--jfs_dir_get_directory_info called\n");
-  
-  rc = jfs_db_op_create(&db_op);
+  printf("--jfs_dir_get_directory_info called, is a dynamic directory\n");
+
+  filename = jfs_util_get_filename(path);
+
+  //get the xattrs for dynamic dirs
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_HAS_SUBQUERY, &xattr_has_subquery);
   if(rc) {
-	return rc;
+    return rc;
   }
 
-  db_op->op = jfs_directory_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT has_subquery, is_subquery, uses_filename, sub_inode, sub_key, query FROM directories WHERE inode=%d;",
-		   dirinode);
+  printf("-----xattr_has_subquery:%s\n", xattr_has_subquery);
 
-  printf("--DIRECTORY QUERY:%s\n", db_op->query);
-
-  jfs_read_pool_queue(db_op);
-
-  rc = jfs_db_op_wait(db_op);
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_IS_SUBQUERY, &xattr_is_subquery);
   if(rc) {
-	jfs_db_op_destroy(db_op);
-	return rc;
+    return rc;
   }
 
-  printf("--Checking results...\n");
+  printf("-----xattr_is_subquery:%s\n", xattr_is_subquery);
 
-  if(db_op->result == NULL) {
-	db_op->rc = 1;
-	jfs_db_op_destroy(db_op);
-	return 0;
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_PATH_ITEMS, &xattr_path_items);
+  if(rc) {
+    return rc;
   }
 
-  if(db_op->result->query == NULL) {
-	printf("--STATIC DIRECTORY\n");
+  printf("-----xattr_path_items:%s\n", xattr_path_items);
 
-	jfs_db_op_destroy(db_op);
-	return 0;
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_SUB_INODE, &xattr_sub_inode);
+  if(rc) {
+    return rc;
   }
 
-  if(db_op->result->sub_key == NULL) {
-	jfs_db_op_destroy(db_op);
-	return -1;
+  printf("-----xattr_sub_inode:%s\n", xattr_sub_inode);
+
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_SUB_KEY, &xattr_sub_key);
+  if(rc) {
+    return rc;
   }
 
-  printf("--DYNAMIC DIRECTORY\n");
+  printf("-----xattr_sub_key:%s\n", xattr_sub_key);
 
-  *has_subquery = db_op->result->has_subquery;
-  is_subquery = db_op->result->is_subquery;
-  uses_filename = db_op->result->uses_filename;
-  *sub_inode = db_op->result->sub_inode;
+  rc = jfs_meta_do_getxattr(path, JFS_DIR_QUERY, &xattr_query);
+  if(rc) {
+    return rc;
+  }
 
-  quote_sub_key_len = strlen(db_op->result->sub_key) + 3;
-  query_len = strlen(db_op->result->query) + quote_sub_key_len + 3;
+  printf("-----xattr_query:%s\n", xattr_query);
+
+  *has_subquery = strcmp(xattr_has_subquery, JFS_DIR_XATTR_FALSE);
+  is_subquery = strcmp(xattr_is_subquery, JFS_DIR_XATTR_FALSE);
+  path_items = atoi(xattr_path_items);
+  *sub_inode = atoi(xattr_sub_inode);
+
+  quote_sub_key_len = strlen(xattr_sub_key) + 3;
+  query_len = strlen(xattr_query) + quote_sub_key_len + 3;
+
+  printf("---Building dynamic directory query.\n");
 
   quote_sub_key = malloc(sizeof(*quote_sub_key) * quote_sub_key_len);
   if(!quote_sub_key) {
-	jfs_db_op_destroy(db_op);
 	return -ENOMEM;
   }
+  snprintf(quote_sub_key, quote_sub_key_len, "\"%s\"", xattr_sub_key);
 
-  snprintf(quote_sub_key, quote_sub_key_len, "\"%s\"", db_op->result->sub_key);
+  printf("---Building query using format string:%s Using sub_key:%s\n", xattr_query, xattr_sub_key);
 
-  printf("---Building query using format string:%s Using sub_key:%s\n", db_op->result->query, db_op->result->sub_key);
-
-  if(uses_filename) {
+  if(path_items > 0) {
 	quote_filename_len = strlen(filename) + 3;
 	quote_filename = malloc(sizeof(*quote_filename) * quote_filename_len);
 	if(!quote_filename) {
 	  free(quote_sub_key);
-	  jfs_db_op_destroy(db_op);
 	  return -ENOMEM;
 	}
 	snprintf(quote_filename, quote_filename_len, "\"%s\"", filename);
@@ -411,26 +439,22 @@ jfs_dir_get_directory_info(int dirinode, const char *filename, int *has_subquery
 	if(!*query) {
 	  free(quote_sub_key);
 	  free(quote_filename);
-	  jfs_db_op_destroy(db_op);
 	  return -ENOMEM;
 	}
 
-	snprintf(*query, query_len, db_op->result->query, quote_sub_key, quote_filename);
+	snprintf(*query, query_len, xattr_query, quote_sub_key, quote_filename);
 	free(quote_filename);
   }
   else {
 	*query = malloc(sizeof(**query) * query_len);
 	if(!*query) {
 	  free(quote_sub_key);
-	  jfs_db_op_destroy(db_op);
 	  return -ENOMEM;
 	}
 
-	snprintf(*query, query_len, db_op->result->query, quote_sub_key);
+	snprintf(*query, query_len, xattr_query, quote_sub_key);
   }
   free(quote_sub_key);
-
-  jfs_db_op_destroy(db_op);
 
   return 0;
 }

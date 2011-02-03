@@ -20,6 +20,7 @@
 #include "jfs_list.h"
 #include "jfs_util.h"
 #include "jfs_meta.h"
+#include "jfs_meta_cache.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
 
@@ -108,14 +109,34 @@ int
 jfs_meta_getxattr(const char *path, const char *key, void *value,
 				  size_t buffer_size)
 {
-  struct jfs_db_op *db_op;
   char *cache_value;
   size_t size;
-  int keyid;
-  int datainode;
   int rc;
 
   printf("--jfs_meta_getxattr called\n");
+
+  rc = jfs_meta_do_getxattr(path, key, &cache_value);
+  if(rc) {
+    return rc;
+  }
+
+  size = strlen(cache_value) + 1;
+  if(buffer_size >= size) {
+    strncpy(value, cache_value, size);
+  }
+
+  return size;
+}
+
+int
+jfs_meta_do_getxattr(const char *path, const char *key, char **value)
+{
+  struct jfs_db_op *db_op;
+  char *cache_value;
+  size_t size;
+  int datainode;
+  int keyid;
+  int rc;
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
@@ -130,13 +151,8 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   //try the cache first
   rc = jfs_meta_cache_get_value(datainode, keyid, &cache_value);
   if(!rc) {
-    //cache hit
-    size = strlen(cache_value) + 1;
-    if(buffer_size >= size) {
-      strncpy(value, cache_value, size);
-    }
-
-    return size;
+    *value = cache_value;
+    return 0;    
   }
   
   //cache miss, go out to the db
@@ -145,11 +161,10 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 	return rc;
   }
 
-  db_op->op = jfs_attr_op;
-
+  db_op->op = jfs_meta_cache_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
-		   datainode, key);
+		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=%d;",
+		   datainode, keyid);
 
   printf("--Executing query:%s\n", db_op->query);
 
@@ -168,12 +183,18 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   printf("--Returned value:%s\n", db_op->result->value);
 
   size = strlen(db_op->result->value) + 1;
-  if(buffer_size >= size) {
-	strncpy(value, db_op->result->value, size);
+  cache_value = malloc(sizeof(*cache_value) * size);
+  if(!cache_value) {
+    return -ENOMEM;
   }
+
+  strncpy(cache_value, db_op->result->value, size);
   jfs_db_op_destroy(db_op);
 
-  return size;
+  jfs_meta_cache_add(datainode, keyid, cache_value);
+  *value = cache_value;
+
+  return 0;
 }
 
 int

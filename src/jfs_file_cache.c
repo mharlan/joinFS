@@ -169,8 +169,6 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
 {
   jfs_file_cache_t *item;
 
-  jfs_file_cache_remove(syminode);
-
   item = malloc(sizeof(*item));
   if(!item) {
 	printf("Failed to allocate memory for a file cache symlink.");

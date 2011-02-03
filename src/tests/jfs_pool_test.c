@@ -116,7 +116,7 @@ void *read_thrd_func(void *arg)
 	return rc;
   }
 
-  db_op->op = jfs_key_op;
+  db_op->op = jfs_key_cache_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT id FROM test_table WHERE name=\"%d\";",
 		   (q_val % 30) + 1);
