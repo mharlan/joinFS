@@ -44,7 +44,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   printf("--jfs_meta_setxattr called, passed xattr of size:%d\n", (int)size);
 
   safe_value = malloc(sizeof(*safe_value) * (size + 1));
-  if(!value) {
+  if(!safe_value) {
 	return -ENOMEM;
   }
   memcpy(safe_value, value, size);
@@ -54,11 +54,13 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
+    free(safe_value);
 	return keyid;
   }
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
+    free(safe_value);
 	return datainode;
   }
 
@@ -91,10 +93,13 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 
   rc = jfs_db_op_wait(db_op);
   if(rc) {
+    free(safe_value);
 	jfs_db_op_destroy(db_op);
 	return rc;
   }
   jfs_db_op_destroy(db_op);
+
+  jfs_meta_cache_add(datainode, keyid, safe_value);
 
   return 0;
 }
@@ -104,17 +109,37 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
 				  size_t buffer_size)
 {
   struct jfs_db_op *db_op;
+  char *cache_value;
   size_t size;
+  int keyid;
   int datainode;
   int rc;
 
   printf("--jfs_meta_getxattr called\n");
 
+  keyid = jfs_util_get_keyid(key);
+  if(keyid < 1) {
+    return keyid;
+  }
+
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
   }
+
+  //try the cache first
+  rc = jfs_meta_cache_get_value(datainode, keyid, &cache_value);
+  if(!rc) {
+    //cache hit
+    size = strlen(cache_value) + 1;
+    if(buffer_size >= size) {
+      strncpy(value, cache_value, size);
+    }
+
+    return size;
+  }
   
+  //cache miss, go out to the db
   rc = jfs_db_op_create(&db_op);
   if(rc) {
 	return rc;
@@ -224,10 +249,16 @@ jfs_meta_removexattr(const char *path, const char *key)
 {
   struct jfs_db_op *db_op;
 
+  int keyid;
   int datainode;
   int rc;
 
   printf("--jfs_meta_removexattr called\n");
+
+  keyid = jfs_util_get_keyid(key);
+  if(keyid < 1) {
+    return keyid;
+  }
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
@@ -240,10 +271,9 @@ jfs_meta_removexattr(const char *path, const char *key)
   }
 
   db_op->op = jfs_write_op;
-
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "DELETE FROM metadata WHERE inode=%d and keyid=(SELECT keyid FROM keys WHERE keytext=\"%s\");",
-		   datainode, key);
+		   "DELETE FROM metadata WHERE inode=%d and keyid=%d;",
+		   datainode, keyid);
 
   printf("--Executing query:%s\n", db_op->query);
 
@@ -255,6 +285,8 @@ jfs_meta_removexattr(const char *path, const char *key)
 	return rc;
   }
   jfs_db_op_destroy(db_op);
+
+  jfs_meta_cache_remove(datainode, keyid);
 
   return 0;
 }

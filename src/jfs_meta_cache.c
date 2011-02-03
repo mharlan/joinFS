@@ -103,9 +103,11 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
 }
 
 int
-jfs_meta_cache_add(int inode, int keyid, const char *value)
+jfs_meta_cache_add(int inode, int keyid, char *value)
 {
   jfs_meta_cache_t *item;
+
+  jfs_meta_cache_remove(inode, keyid);
 
   item = malloc(sizeof(*item));
   if(!item) {

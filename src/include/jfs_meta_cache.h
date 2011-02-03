@@ -36,7 +36,7 @@ void jfs_meta_cache_destroy();
 
 int jfs_meta_cache_get_value(int inode, int keyid, char **value);
 
-int jfs_meta_cache_add(int inode, int keyid, const char *value);
+int jfs_meta_cache_add(int inode, int keyid, char *value);
 
 int jfs_meta_cache_remove(int inode, int keyid);
 

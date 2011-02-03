@@ -36,9 +36,8 @@
 static int jfs_do_write_op(sqlite3_stmt *stmt);
 static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt);
-static int jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size);
-static int jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_meta_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt);
 
@@ -56,23 +55,20 @@ jfs_db_result(struct jfs_db_op *db_op)
   case(jfs_write_op):
 	rc = jfs_do_write_op(db_op->stmt);
 	break;
-  case(jfs_attr_op):
-	rc = jfs_do_attr_op(&db_op->result, db_op->stmt);
-	break;
   case(jfs_listattr_op):
 	rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->buffer_size);
 	break;
   case(jfs_file_cache_op):
 	rc = jfs_do_file_cache_op(&db_op->result, db_op->stmt);
 	break;
-  case(jfs_key_op):
-	rc = jfs_do_key_op(&db_op->result, db_op->stmt);
+  case(jfs_key_cache_op):
+	rc = jfs_do_key_cache_op(&db_op->result, db_op->stmt);
 	break;
   case(jfs_dynamic_file_op):
 	rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt);
 	break;
-  case(jfs_directory_cache_op):
-	rc = jfs_do_directory_cache_op(&db_op->result, db_op->stmt);
+  case(jfs_meta_cache_op):
+	rc = jfs_do_meta_cache_op(&db_op->result, db_op->stmt);
 	break;
   case(jfs_readdir_op):
 	rc = jfs_do_readdir_op(&db_op->result, db_op->stmt);
@@ -89,7 +85,7 @@ jfs_db_result(struct jfs_db_op *db_op)
  * Used for getting the value of an xattr.
  */
 int 
-jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt)
+jfs_do_meta_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   const unsigned char* value;
   jfs_list_t *row;
@@ -128,7 +124,7 @@ jfs_do_attr_op(jfs_list_t **result, sqlite3_stmt *stmt)
  * Used for getting the keyid in the system.
  */
 static int 
-jfs_do_key_op(jfs_list_t **result, sqlite3_stmt *stmt)
+jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   jfs_list_t *row;
   int keyid;
@@ -191,71 +187,6 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	*result = row;
 
 	printf("--jfs_file_cache_op--DATAPATH(%s) INODE(%d)\n", row->datapath, row->inode);
-  }
-  else {
-	free(row);
-	printf("--sqlite row failed, rc:%d\n", rc);
-  }
-
-  return sqlite3_finalize(stmt);
-}
-
-static int
-jfs_do_directory_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
-{
-  const unsigned char *sub_key;
-  const unsigned char *query;
-  jfs_list_t *row;
-
-  size_t sub_key_len;
-  size_t query_len;
-
-  int rc;
-
-  row = malloc(sizeof(*row));
-  if(!row) {
-	sqlite3_finalize(stmt);
-	return -ENOMEM;
-  }
-  
-  row->sub_key = NULL;
-  row->query = NULL;
-
-  rc = sqlite3_step(stmt);
-  if(rc == SQLITE_ROW) {
-	row->has_subquery = sqlite3_column_int(stmt, 0);
-	row->is_subquery = sqlite3_column_int(stmt, 1);
-	row->uses_filename = sqlite3_column_int(stmt, 2);
-	row->sub_inode = sqlite3_column_int(stmt, 3);
-
-	sub_key = sqlite3_column_text(stmt, 4);
-	sub_key_len = sqlite3_column_bytes(stmt, 4) + 1;
-	if(sub_key_len > 1) {
-	  row->sub_key = malloc(sizeof(*row->sub_key) * sub_key_len);
-	  if(!row->sub_key) {
-		sqlite3_finalize(stmt);
-		free(row);
-		return -ENOMEM;
-	  }
-	  
-	  strncpy(row->sub_key, (const char *)sub_key, sub_key_len);
-	}
-
-	
-	query = sqlite3_column_text(stmt, 5);
-	query_len = sqlite3_column_bytes(stmt, 5) + 1;
-	if(query_len > 1) {
-	  row->query = malloc(sizeof(*row->query) * query_len);
-	  if(!row->query) {
-		sqlite3_finalize(stmt);
-		free(row);
-		return -ENOMEM;
-	  }
-
-	  strncpy(row->query, (const char *)query, query_len);
-	}
-
-	*result = row;
   }
   else {
 	free(row);

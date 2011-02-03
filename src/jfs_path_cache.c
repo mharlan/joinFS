@@ -110,6 +110,8 @@ jfs_path_cache_add(char *path, char *datapath)
 
   int rc;
 
+  jfs_path_cache_remove(path);
+
   item = malloc(sizeof(*item));
   if(!item) {
 	return -ENOMEM;

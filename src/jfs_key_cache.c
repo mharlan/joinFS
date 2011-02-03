@@ -31,7 +31,8 @@
 typedef struct jfs_key_cache jfs_key_cache_t;
 struct jfs_key_cache {
   int              keyid;
-  const char      *keytext;
+  char            *keytext;
+
   jfs_key_cache_t *next;
 };
 
@@ -86,7 +87,7 @@ jfs_key_cache_destroy()
 }
 
 int
-jfs_key_cache_get_keyid(const char *keytext)
+jfs_key_cache_get_keyid(char *keytext)
 {
   jfs_key_cache_t  check;
   jfs_key_cache_t *result;
@@ -102,9 +103,11 @@ jfs_key_cache_get_keyid(const char *keytext)
 }
 
 int
-jfs_key_cache_add(int keyid, const char *keytext)
+jfs_key_cache_add(int keyid, char *keytext)
 {
   jfs_key_cache_t *item;
+
+  jfs_key_cache_remove(keytext);
   
   item = malloc(sizeof(*item));
   if(!item) {
@@ -112,7 +115,7 @@ jfs_key_cache_add(int keyid, const char *keytext)
   }
 
   item->keyid = keyid;
-  item->keytext = (char *)keytext;
+  item->keytext = keytext;
 
   sglib_hashed_jfs_key_cache_t_add(hashtable, item);
 
@@ -120,7 +123,7 @@ jfs_key_cache_add(int keyid, const char *keytext)
 }
 
 int
-jfs_key_cache_remove(const char *keytext)
+jfs_key_cache_remove(char *keytext)
 {
   jfs_key_cache_t check;
   jfs_key_cache_t *elem;

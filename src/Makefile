@@ -22,21 +22,21 @@ SRC=error_log.c \
     jfs_dir.c \
     jfs_path_cache.c \
     jfs_key_cache.c \
-    jfs_dir_cache.c
+    jfs_meta_cache.c
 
 OBJS=$(SRC:%.c=obj/%.o)
 
 TESTSRC=tests/jfs_pool_test.c \
-	tests/jfs_uuid_test.c \
-	tests/jfs_realpath_test.c \
-	tests/jfs_meta_test.c
+		tests/jfs_uuid_test.c \
+		tests/jfs_realpath_test.c \
+		tests/jfs_meta_test.c
 
 TESTOBJS=obj/error_log.o \
-	 obj/sqlitedb.o \
-	 obj/thr_pool.o \
-	 obj/result.o \
-	 obj/jfs_list.o \
-	 obj/jfs_uuid.o
+	 	 obj/sqlitedb.o \
+	 	 obj/thr_pool.o \
+	 	 obj/result.o \
+	 	 obj/jfs_list.o \
+	 	 obj/jfs_uuid.o
 
 TESTS=$(TESTSRC:%.c=%)
 

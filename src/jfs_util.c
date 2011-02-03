@@ -227,7 +227,13 @@ jfs_util_get_keyid(const char *key)
   int keyid;
   int rc;
 
-  //insert or fail if it exists
+  //hit the cache first
+  keyid = jfs_key_cache_get_keyid(key);
+  if(keyid > 0) {
+    return keyid;
+  }
+
+  //cache miss, insert, but ignore if it exists
   rc = jfs_db_op_create(&db_op);
   if(rc) {
 	return rc;
@@ -246,14 +252,14 @@ jfs_util_get_keyid(const char *key)
 	return rc;
   }
   jfs_db_op_destroy(db_op);
-  
-  //return the keyid
+
+  //go out to the database for the keyid
   rc = jfs_db_op_create(&db_op);
   if(rc) {
 	return rc;
   }
 
-  db_op->op = jfs_key_op;
+  db_op->op = jfs_key_cache_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT keyid FROM keys WHERE keytext=\"%s\";",
 		   key);
@@ -266,12 +272,15 @@ jfs_util_get_keyid(const char *key)
 	return rc;
   }
 
+  //this should never happen
   if(db_op->result == NULL) {
 	return -EINVAL;
   }
 
   keyid = db_op->result->keyid;
   jfs_db_op_destroy(db_op);
+
+  jfs_key_cache_add(keyid, key);
 
   return keyid;
 }
