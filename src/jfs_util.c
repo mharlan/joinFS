@@ -77,7 +77,7 @@ jfs_util_get_datapath(const char *path, char **datapath)
   int inode;
   int rc;
 
-  printf("--jfs_util_get_datapath called\n");
+  log_error("--jfs_util_get_datapath called\n");
 
   rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
   if(rc) {
@@ -90,7 +90,7 @@ jfs_util_get_datapath(const char *path, char **datapath)
 	return 0;
   }
   else if(S_ISREG(mode)) {
-	printf("--Checking cache for syminode:%d\n", inode);
+	log_error("--Checking cache for syminode:%d\n", inode);
 
 	rc = jfs_file_cache_get_datapath(inode, &dpath);
 	if(rc) {
@@ -101,7 +101,7 @@ jfs_util_get_datapath(const char *path, char **datapath)
 	}
 	*datapath = dpath;
 
-	printf("--Found datapath:%s\n", dpath);
+	log_error("--Found datapath:%s\n", dpath);
 
 	return 0;
   }
@@ -120,7 +120,7 @@ jfs_util_get_datainode(const char *path)
   int datainode;
   int rc;
 
-  printf("--jfs_util_get_datainode called\n");
+  log_error("--jfs_util_get_datainode called\n");
 
   rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
   if(rc) {
@@ -136,7 +136,7 @@ jfs_util_get_datainode(const char *path)
 	return inode;
   }
   else if(S_ISREG(mode)) {
-	printf("--Checking cache for syminode:%d\n", inode);
+	log_error("--Checking cache for syminode:%d\n", inode);
 	
 	datainode = jfs_file_cache_get_datainode(inode);
 	if(datainode < 1) {
@@ -146,7 +146,7 @@ jfs_util_get_datainode(const char *path)
 	  }
 	}
 
-	printf("--Found datainode:%d\n", datainode);
+	log_error("--Found datainode:%d\n", datainode);
   
 	return datainode;
   }
@@ -164,7 +164,7 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
   int inode;
   int rc;
 
-  printf("--jfs_util_get_datapath_and_datainode called\n");
+  log_error("--jfs_util_get_datapath_and_datainode called\n");
 
   rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
   if(rc) {
@@ -185,7 +185,7 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
 	return 0;
   }
   else if(S_ISREG(mode)) {
-	printf("--Checking cache for syminode:%d\n", inode);
+	log_error("--Checking cache for syminode:%d\n", inode);
 	
 	rc = jfs_file_cache_get_datapath_and_datainode(inode, &dpath, datainode);
 	if(rc) {
@@ -196,7 +196,7 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
 	}
 	*datapath = dpath;
 	
-	printf("--Retrieved datapath:%s, datainode:%d\n", dpath, *datainode);
+	log_error("--Retrieved datapath:%s, datainode:%d\n", dpath, *datainode);
 	
 	return 0;
   }
@@ -231,11 +231,11 @@ jfs_util_get_keyid(const char *key)
   //hit the cache first
   keyid = jfs_key_cache_get_keyid(key);
   if(keyid > 0) {
-    printf("--!!--Key cache hit, returning keyid:%d for key:%s\n", keyid, key);
+    log_error("--!!--Key cache hit, returning keyid:%d for key:%s\n", keyid, key);
     return keyid;
   }
 
-  printf("--!!--Key cache miss for key:%s, attempting insert\n", key);
+  log_error("--!!--Key cache miss for key:%s, attempting insert\n", key);
 
   //cache miss, insert, but ignore if it exists
   rc = jfs_db_op_create(&db_op);
@@ -257,7 +257,7 @@ jfs_util_get_keyid(const char *key)
   }
   jfs_db_op_destroy(db_op);
 
-  printf("--!!--Getting the keyid from the database.\n");
+  log_error("--!!--Getting the keyid from the database.\n");
 
   //go out to the database for the keyid
   rc = jfs_db_op_create(&db_op);
@@ -300,7 +300,7 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
   int inode;
   int rc;
 
-  printf("--CACHE-MISS-jfs_util_file_cache_failure\n");
+  log_error("--CACHE-MISS-jfs_util_file_cache_failure\n");
   rc = jfs_db_op_create(&db_op);
   if(rc) {
 	return rc;
@@ -311,7 +311,7 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
 		   "SELECT datapath, inode FROM files WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
 		   syminode);
 
-  printf("--EXECUTING QUERY:%s\n", db_op->query);
+  log_error("--EXECUTING QUERY:%s\n", db_op->query);
   
   jfs_read_pool_queue(db_op);
 
@@ -336,7 +336,7 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
   strncpy(path, db_op->result->datapath, path_len);
   jfs_db_op_destroy(db_op);
 
-  printf("--RESULTS-- PATH(%s) INODE(%d)\n", path, inode);
+  log_error("--RESULTS-- PATH(%s) INODE(%d)\n", path, inode);
 
   if(datapath != NULL) {
 	*datapath = path;

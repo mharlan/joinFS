@@ -38,6 +38,7 @@
 #include "jfs_security.h"
 #include "jfs_file_cache.h"
 #include "jfs_path_cache.h"
+#include "jfs_datapath_cache.h"
 #include "jfs_key_cache.h"
 #include "jfs_meta_cache.h"
 #include "thr_pool.h"
@@ -94,11 +95,11 @@ jfs_realpath(const char *path)
   
   jfs_rpath = realpath(jfs_path, NULL);
   if(!jfs_rpath) {
-	printf("realpath failed, resolved path:%s to jfs_path:%s\n", path, jfs_path);
+	log_error("realpath failed, resolved path:%s to jfs_path:%s\n", path, jfs_path);
 	return jfs_path;
   }
 
-  printf("Transformed path:%s to jfs_path:%s to jfs_realpath:%s\n", path, jfs_path, jfs_rpath);
+  log_error("Transformed path:%s to jfs_path:%s to jfs_realpath:%s\n", path, jfs_path, jfs_rpath);
   free(jfs_path);
 
   return jfs_rpath;
@@ -139,6 +140,7 @@ jfs_init(struct fuse_conn_info *conn)
   /* initialize caches */
   jfs_file_cache_init();
   jfs_path_cache_init();
+  jfs_datapath_cache_init();
   jfs_key_cache_init();
   jfs_meta_cache_init();
   
@@ -202,6 +204,7 @@ jfs_destroy(void *arg)
 
   jfs_file_cache_destroy();
   jfs_path_cache_destroy();
+  jfs_datapath_cache_destroy();
   jfs_key_cache_destroy();
   jfs_meta_cache_destroy();
 
@@ -564,7 +567,7 @@ jfs_open(const char *path, struct fuse_file_info *fi)
   char *jfs_path;
   int fd;
 
-  printf("Called jfs_file_open, path:%s, flags:%d\n", path, fi->flags);
+  log_error("Called jfs_file_open, path:%s, flags:%d\n", path, fi->flags);
 
   jfs_path = jfs_realpath(path);
   fd = jfs_file_open(jfs_path, fi->flags);
@@ -587,7 +590,7 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
 {
   int rc;
 
-  printf("Called jfs_read, path:%s, fi->fh:%llu\n", path, fi->fh);
+  log_error("Called jfs_read, path:%s, fi->fh:%llu\n", path, fi->fh);
 
   rc = pread(fi->fh, buf, size, offset);
 
@@ -596,7 +599,7 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
     return -errno;
   }
 
-  printf("Pread return %d bytes in buf:%s, expected:%d\n", rc, buf, size);
+  log_error("Pread return %d bytes in buf:%s, expected:%d\n", rc, buf, size);
 
   return rc;
 }
@@ -607,7 +610,7 @@ jfs_write(const char *path, const char *buf, size_t size,
 {
   int rc;
 
-  printf("Called jfs_write, path:%s fi->fh:%llu\n", path, fi->fh);
+  log_error("Called jfs_write, path:%s fi->fh:%llu\n", path, fi->fh);
 
   rc = pwrite(fi->fh, buf, size, offset);
   if (rc == -1) {

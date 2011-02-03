@@ -18,6 +18,7 @@
  ********************************************************************/
 
 #include "error_log.h"
+#include "jfs_datapath_cache.h"
 #include "jfs_path_cache.h"
 #include "sglib.h"
 
@@ -31,7 +32,8 @@
 typedef struct jfs_path_cache jfs_path_cache_t;
 struct jfs_path_cache {
   char             *path;
-  char             *datapath;
+  int               datainode;
+
   jfs_path_cache_t *next;
 };
 
@@ -75,7 +77,7 @@ SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_path_cache_t, JFS_PATH_CACHE_SIZE,
 void 
 jfs_path_cache_init()
 {
-  printf("JFS_FILE_CACHE_INIT\n");
+  log_error("JFS_FILE_CACHE_INIT\n");
 
   sglib_hashed_jfs_path_cache_t_init(hashtable);
 }
@@ -89,26 +91,19 @@ jfs_path_cache_destroy()
   struct sglib_hashed_jfs_path_cache_t_iterator it;
   jfs_path_cache_t *item;
   
-  printf("JFS_PATH_CACHE_CLEANUP\n");
+  log_error("JFS_PATH_CACHE_CLEANUP\n");
 
   for(item = sglib_hashed_jfs_path_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_path_cache_t_it_next(&it)) {
 	free(item->path);
-	free(item->datapath);
 	free(item);
   }
 }
 
 int
-jfs_path_cache_add(char *path, char *datapath)
+jfs_path_cache_add(int datainode, char *path, char *datapath)
 {
   jfs_path_cache_t *item;
-  jfs_path_cache_t *exists;
-
-  size_t path_len;
-  size_t datapath_len;
-
-  int rc;
 
   jfs_path_cache_remove(path);
 
@@ -117,37 +112,11 @@ jfs_path_cache_add(char *path, char *datapath)
 	return -ENOMEM;
   }
 
-  path_len = strlen(path) + 1;
-  datapath_len = strlen(datapath) + 1;
-
-  item->path = malloc(sizeof(*item->path) * path_len);
-  if(!item->path) {
-	free(item);
-	return -ENOMEM;
-  }
-
-  item->datapath = malloc(sizeof(*item->datapath) * datapath_len);
-  if(!item->datapath) {
-	free(item->path);
-	free(item);
-	return -ENOMEM;
-  }
-
-  strncpy(item->path, path, path_len);
-  strncpy(item->datapath, datapath, datapath_len);
-
-  //remove it if path is already in path cache to update datapath
-  rc = sglib_hashed_jfs_path_cache_t_delete_if_member(hashtable, item, &exists);
-  if(rc) {
-	printf("---Path existed, removing old datapath:%s, adding new datapath:%s\n", exists->datapath, item->datapath);
-	free(exists->path);
-	free(exists->datapath);
-	free(exists);
-  }
+  item->path = path;
+  item->datainode = datainode;
 
   sglib_hashed_jfs_path_cache_t_add(hashtable, item);
-
-  printf("---Added to file cache.\n");
+  jfs_datapath_cache_add(datainode, datapath);
 
   return 0;
 }
@@ -167,7 +136,6 @@ jfs_path_cache_remove(const char *path)
   }
 
   free(elem->path);
-  free(elem->datapath);
   free(elem);
 
   return 0;
@@ -180,14 +148,13 @@ jfs_path_cache_get_datapath(const char *path, char **datapath)
   jfs_path_cache_t *result;
 
   check.path = (char *)path;
-
   result = sglib_hashed_jfs_path_cache_t_find_member(hashtable, &check);
 
   if(!result) {
 	return -ENOENT;
   }
 
-  *datapath = result->datapath;
+  jfs_datapath_cache_get_datapath(result->datainode, datapath);
 
   return 0;
 }

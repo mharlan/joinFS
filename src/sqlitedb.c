@@ -89,7 +89,7 @@ jfs_do_db_op_create(struct jfs_db_op **op, char *query)
 void
 jfs_db_op_destroy(struct jfs_db_op *db_op)
 {
-  printf("--PERFORMING DB_OP CLEANUP\n");
+  log_error("--PERFORMING DB_OP CLEANUP\n");
 
   free(db_op->query);
 
@@ -136,7 +136,7 @@ jfs_db_op_wait(struct jfs_db_op *db_op)
   }
   pthread_mutex_unlock(&db_op->mut);
 
-  printf("--QUERY FINISHED, RC:%d\n", db_op->rc);
+  log_error("--QUERY FINISHED, RC:%d\n", db_op->rc);
 
   return db_op->rc;
 }
@@ -148,17 +148,20 @@ sqlite3 *
 jfs_open_db(int sqlite_attr)
 {
   const char *dbfile = JFSDB;
+  char err_msg[1024];
   sqlite3 *db;
   int rc;
 
-  printf("Opening db at:%s\n", dbfile);
+  log_error("Opening db at:%s\n", dbfile);
   rc = sqlite3_open_v2(dbfile, &db, sqlite_attr, NULL);
-  printf("RC:%d\n", rc);
+  log_error("RC:%d\n", rc);
   if(rc) {
     log_error("Failed to open database file at: %s\n", dbfile);
     sqlite3_close(db);
     exit(1);
   }
+
+  sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, &err_msg);
 
   return db;
 }
@@ -200,7 +203,7 @@ jfs_query(struct jfs_db_op *db_op)
   sqlite3_stmt *stmt;
   int rc;
 
-  printf("--JFS QUERY STARTED--\n");
+  log_error("--JFS QUERY STARTED--\n");
 
   rc = setup_stmt(db_op->db, &stmt, db_op->query);
   if(rc) {
@@ -210,7 +213,7 @@ jfs_query(struct jfs_db_op *db_op)
     return rc;
   }
 
-  printf("--QUERY STATEMENT IS READY--\n");
+  log_error("--QUERY STATEMENT IS READY--\n");
 
   db_op->stmt = stmt;
   rc = jfs_db_result(db_op);
@@ -219,7 +222,7 @@ jfs_query(struct jfs_db_op *db_op)
 	return rc;
   }
 
-  printf("--QUERY RESULT IS READY--\n");
+  log_error("--QUERY RESULT IS READY--\n");
 
   return 0;
 }

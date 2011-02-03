@@ -18,6 +18,7 @@
  ********************************************************************/
 
 #include "error_log.h"
+#include "jfs_datapath_cache.h"
 #include "jfs_file_cache.h"
 #include "sglib.h"
 
@@ -32,7 +33,7 @@ typedef struct jfs_file_cache jfs_file_cache_t;
 struct jfs_file_cache {
   int               syminode;
   int               datainode;
-  char             *datapath;
+
   jfs_file_cache_t *next;
 };
 
@@ -49,7 +50,6 @@ jfs_file_cache_t_hash(jfs_file_cache_t *item)
   unsigned int hash;
 
   hash = item->syminode % JFS_FILE_CACHE_SIZE;
-  printf("Symionde:%d, hashed to (%d)\n", item->syminode, hash);
 
   return hash;
 }
@@ -74,7 +74,7 @@ SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_file_cache_t, JFS_FILE_CACHE_SIZE,
 void 
 jfs_file_cache_init()
 {
-  printf("JFS_FILE_CACHE_INIT\n");
+  log_error("JFS_FILE_CACHE_INIT\n");
 
   sglib_hashed_jfs_file_cache_t_init(hashtable);
 }
@@ -88,15 +88,13 @@ jfs_file_cache_destroy()
   struct sglib_hashed_jfs_file_cache_t_iterator it;
   jfs_file_cache_t *item;
   
-  printf("JFS_FILE_CACHE_CLEANUP\n");
+  log_error("JFS_FILE_CACHE_CLEANUP\n");
 
   for(item = sglib_hashed_jfs_file_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
-	free(item->datapath);
 	free(item);
   }
 }
-
 
 /*
  * Get a datainode from the file cache.
@@ -137,7 +135,7 @@ jfs_file_cache_get_datapath(int syminode, char **datapath)
 	return -1;
   }
 
-  *datapath = result->datapath;
+  jfs_datapath_cache_get_datapath(result->datainode, datapath);
 
   return 0;
 }
@@ -156,7 +154,7 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
   }
 
   *datainode = result->datainode;
-  *datapath = result->datapath;
+  jfs_datapath_cache_get_datapath(result->datainode, datapath);
 
   return 0;
 }
@@ -171,17 +169,17 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
 
   item = malloc(sizeof(*item));
   if(!item) {
-	printf("Failed to allocate memory for a file cache symlink.");
+	log_error("Failed to allocate memory for a file cache symlink.");
 	return -ENOMEM;
   }
 
   item->syminode = syminode;
   item->datainode = datainode;
-  item->datapath = (char *)datapath;
 
-  printf("--CACHE ADD-- adding item syminode:%d, datainode:%d, datapath:%s\n",
-		 item->syminode, item->datainode, item->datapath);
+  log_error("--CACHE ADD-- adding item syminode:%d, datainode:%d, datapath:%s\n",
+		 item->syminode, item->datainode, datapath);
   sglib_hashed_jfs_file_cache_t_add(hashtable, item);
+  jfs_datapath_cache_add(datainode, (char *)datapath);
 
   return 0;
 }
@@ -200,7 +198,7 @@ jfs_file_cache_remove(int syminode)
 	return -1;
   }
   
-  free(elem->datapath);
+  jfs_datapath_cache_remove(elem->datainode);
   free(elem);
 
   return 0;

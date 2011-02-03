@@ -42,7 +42,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   int keyid;
   int rc;
 
-  printf("--jfs_meta_setxattr called, passed xattr of size:%d\n", (int)size);
+  log_error("--jfs_meta_setxattr called, passed xattr of size:%d\n", (int)size);
 
   safe_value = malloc(sizeof(*safe_value) * (size + 1));
   if(!safe_value) {
@@ -51,7 +51,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   memcpy(safe_value, value, size);
   safe_value[size] = '\0';
 
-  printf("--Copied safe_value:%s\n", safe_value);
+  log_error("--Copied safe_value:%s\n", safe_value);
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
@@ -88,7 +88,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 			 datainode, keyid, safe_value);
   }
 
-  printf("--Executing query:%s\n", db_op->query);
+  log_error("--Executing query:%s\n", db_op->query);
 
   jfs_write_pool_queue(db_op);
 
@@ -113,7 +113,7 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   size_t size;
   int rc;
 
-  printf("--jfs_meta_getxattr called\n");
+  log_error("--jfs_meta_getxattr called\n");
 
   rc = jfs_meta_do_getxattr(path, key, &cache_value);
   if(rc) {
@@ -166,7 +166,7 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
 		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=%d;",
 		   datainode, keyid);
 
-  printf("--Executing query:%s\n", db_op->query);
+  log_error("--Executing query:%s\n", db_op->query);
 
   jfs_read_pool_queue(db_op);
 
@@ -180,7 +180,7 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
 	return -ENOATTR;
   }
 
-  printf("--Returned value:%s\n", db_op->result->value);
+  log_error("--Returned value:%s\n", db_op->result->value);
 
   size = strlen(db_op->result->value) + 1;
   cache_value = malloc(sizeof(*cache_value) * size);
@@ -211,7 +211,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   int datainode;
   int rc;
 
-  printf("--jfs_meta_listxattr called\n");
+  log_error("--jfs_meta_listxattr called\n");
 
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
@@ -228,7 +228,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 		   "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
 		   datainode);
 
-  printf("--Executing query:%s\n", db_op->query);
+  log_error("--Executing query:%s\n", db_op->query);
 
   jfs_read_pool_queue(db_op);
 
@@ -260,7 +260,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 	free(item);
   }
 
-  printf("--Returning list:%s\n", list);
+  log_error("--Returning list:%s\n", list);
 
   return list_size;
 }
@@ -274,7 +274,7 @@ jfs_meta_removexattr(const char *path, const char *key)
   int datainode;
   int rc;
 
-  printf("--jfs_meta_removexattr called\n");
+  log_error("--jfs_meta_removexattr called\n");
 
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
@@ -296,7 +296,7 @@ jfs_meta_removexattr(const char *path, const char *key)
 		   "DELETE FROM metadata WHERE inode=%d and keyid=%d;",
 		   datainode, keyid);
 
-  printf("--Executing query:%s\n", db_op->query);
+  log_error("--Executing query:%s\n", db_op->query);
 
   jfs_write_pool_queue(db_op);
 

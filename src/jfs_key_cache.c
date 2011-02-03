@@ -92,7 +92,7 @@ jfs_key_cache_get_keyid(const char *keytext)
   jfs_key_cache_t  check;
   jfs_key_cache_t *result;
 
-  check.keytext = keytext;
+  check.keytext = (char *)keytext;
   result = sglib_hashed_jfs_key_cache_t_find_member(hashtable, &check);
 
   if(!result) {

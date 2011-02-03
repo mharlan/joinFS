@@ -49,7 +49,7 @@ jfs_db_result(struct jfs_db_op *db_op)
 {
   int rc;
 
-  printf("--PACKING JFS QUERY RESULTS--\n");
+  log_error("--PACKING JFS QUERY RESULTS--\n");
 
   switch(db_op->op) {
   case(jfs_write_op):
@@ -186,11 +186,11 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	  
 	*result = row;
 
-	printf("--jfs_file_cache_op--DATAPATH(%s) INODE(%d)\n", row->datapath, row->inode);
+	log_error("--jfs_file_cache_op--DATAPATH(%s) INODE(%d)\n", row->datapath, row->inode);
   }
   else {
 	free(row);
-	printf("--sqlite row failed, rc:%d\n", rc);
+	log_error("--sqlite row failed, rc:%d\n", rc);
   }
 
   return sqlite3_finalize(stmt);

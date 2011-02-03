@@ -79,7 +79,7 @@ jfs_file_create(const char *path, mode_t mode)
 	return rc;
   }
 
-  printf("--CREATING FILE AT DATAPATH:%s\n", datapath);
+  log_error("--CREATING FILE AT DATAPATH:%s\n", datapath);
 
   filename = jfs_util_get_filename(path);
 
@@ -144,7 +144,7 @@ jfs_file_mknod(const char *path, mode_t mode)
 	return rc;
   }
 
-  printf("--CREATING FILE AT DATAPATH:%s\n", datapath);
+  log_error("--CREATING FILE AT DATAPATH:%s\n", datapath);
 
   filename = jfs_util_get_filename(path);
 
@@ -271,7 +271,7 @@ jfs_file_unlink(const char *path)
 	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
-	  printf("--Unlink Database Error:%d\n", rc);
+	  log_error("--Unlink Database Error:%d\n", rc);
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
@@ -310,7 +310,7 @@ jfs_file_unlink(const char *path)
 	rc = jfs_db_op_wait(db_op);
 	if(rc) {
 	  jfs_db_op_destroy(db_op);
-	  printf("--Unlink metadata error:%d\n", rc);
+	  log_error("--Unlink metadata error:%d\n", rc);
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
@@ -353,7 +353,7 @@ jfs_file_rename(const char *from, const char *to)
 	return new_inode;
   }
 
-  printf("Renamed:%s, inode:%d || to %s, inode%d\n",
+  log_error("Renamed:%s, inode:%d || to %s, inode%d\n",
 		 from, inode, to, new_inode);
 
   if(S_ISREG(mode)) {
@@ -459,6 +459,8 @@ jfs_file_open(const char *path, int flags)
   int rc;
 
   if(flags & O_CREAT) {
+    log_error("!@__-------Open called with O_CREATE flag.\n");
+
 	rc = open(path, O_CREAT | O_EXCL | O_WRONLY);
 	if(rc > 0) {
 	  close(rc);
@@ -468,7 +470,7 @@ jfs_file_open(const char *path, int flags)
 		return -errno;
 	  }
 
-	  printf("**(OPEN CALLED: With create, doesn't exist) path:%s, flags:%d\n", path, flags);
+	  log_error("**(OPEN CALLED: With create, doesn't exist) path:%s, flags:%d\n", path, flags);
 
 	  return jfs_file_create(path, flags);
 	}
@@ -509,7 +511,7 @@ jfs_file_getattr(const char *path, struct stat *stbuf)
 	return rc;
   }
 
-  printf("--GETTING ATTRS FOR datapath:%s\n", datapath);
+  log_error("--GETTING ATTRS FOR datapath:%s\n", datapath);
 
   rc = stat(datapath, stbuf);
   if(rc) {

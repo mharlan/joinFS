@@ -17,17 +17,19 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_JFS_PATH_CACHE_H
-#define JOINFS_JFS_PATH_CACHE_H
+#ifndef JOINFS_JFS_DATAPATH_CACHE_H
+#define JOINFS_JFS_DATAPATH_CACHE_H
 
-void jfs_path_cache_init();
+void jfs_datapath_cache_init();
 
-void jfs_path_cache_destroy();
+void jfs_datapath_cache_destroy();
 
-int jfs_path_cache_add(int datainode, char *path, char *datapath);
+int jfs_datapath_cache_add(int inode, char *datapath);
 
-int jfs_path_cache_remove(const char *path);
+int jfs_datapath_cache_remove(int inode);
 
-int jfs_path_cache_get_datapath(const char *path, char **datapath);
+int jfs_datapath_cache_get_datapath(int inode, char **datapath);
+
+int jfs_datapath_cache_change_inode(int inode, int new_inode);
 
 #endif
