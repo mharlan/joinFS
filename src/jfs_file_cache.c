@@ -20,6 +20,7 @@
 #include "error_log.h"
 #include "jfs_datapath_cache.h"
 #include "jfs_file_cache.h"
+#include "jfs_util.h"
 #include "sglib.h"
 
 #include <stdlib.h>
@@ -33,13 +34,14 @@ typedef struct jfs_file_cache jfs_file_cache_t;
 struct jfs_file_cache {
   int               syminode;
   int               datainode;
+  char             *sympath;
 
   jfs_file_cache_t *next;
 };
 
 static jfs_file_cache_t *hashtable[JFS_FILE_CACHE_SIZE];
 
-#define JFS_FILE_CACHE_T_CMP(e1, e2) (e1->syminode - e2->syminode)
+#define JFS_FILE_CACHE_T_CMP(e1, e2) (!(((e1->syminode - e2->syminode) == 0) || ((e1->datainode - e2->datainode) == 0)))
 
 /*
  * Hash function for symlinks.
@@ -92,6 +94,7 @@ jfs_file_cache_destroy()
 
   for(item = sglib_hashed_jfs_file_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
+    free(item->sympath);
 	free(item);
   }
 }
@@ -141,6 +144,24 @@ jfs_file_cache_get_datapath(int syminode, char **datapath)
 }
 
 int
+jfs_file_cache_get_sympath(int datainode, char **sympath)
+{
+  jfs_file_cache_t check;
+  jfs_file_cache_t *result;
+
+  check.datainode = datainode;
+  result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
+
+  if(!result) {
+    return jfs_util_file_cache_sympath_failure(datainode, sympath);
+  }
+
+  *sympath = result->sympath;
+
+  return 0;
+}
+
+int
 jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *datainode)
 {
   jfs_file_cache_t check;
@@ -163,7 +184,7 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
  * Add a symlink to the jfs_file_cache.
  */
 int
-jfs_file_cache_add(int syminode, int datainode, const char *datapath)
+jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char *datapath)
 {
   jfs_file_cache_t *item;
 
@@ -175,6 +196,7 @@ jfs_file_cache_add(int syminode, int datainode, const char *datapath)
 
   item->syminode = syminode;
   item->datainode = datainode;
+  item->sympath = (char *)sympath;
 
   log_error("--CACHE ADD-- adding item syminode:%d, datainode:%d, datapath:%s\n",
 		 item->syminode, item->datainode, datapath);
@@ -199,6 +221,7 @@ jfs_file_cache_remove(int syminode)
   }
   
   jfs_datapath_cache_remove(elem->datainode);
+  free(elem->sympath);
   free(elem);
 
   return 0;

@@ -17,6 +17,7 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#include "error_log.h"
 #include "jfs_list.h"
 #include "jfs_util.h"
 #include "jfs_meta.h"

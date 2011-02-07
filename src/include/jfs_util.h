@@ -20,6 +20,8 @@
 #ifndef JOINFS_JFS_UTIL_H
 #define JOINFS_JFS_UTIL_H
 
+#include <sys/types.h>
+
 /*
  * Get the inode number associated with a path.
  */
@@ -29,6 +31,8 @@ int jfs_util_get_inode(const char *path);
  * Returns both the inode and mode for the path.
  */
 int jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode);
+
+int jfs_util_is_path_dynamic(const char *path);
 
 /*
  * Get the datapath associated with a path.
@@ -50,6 +54,10 @@ int jfs_util_get_datainode(const char *path);
  */
 char *jfs_util_get_filename(const char *path);
 
+int jfs_util_get_subpath(const char *path, char **subpath);
+
+int jfs_util_change_filename(const char *path, const char *filename, char **newpath);
+
 /*
  * Returns the id for the specified key.
  * 
@@ -64,5 +72,9 @@ int jfs_util_get_keyid(const char *key);
  * Returns -1 on error.
  */
 int jfs_util_get_datainode(const char *path);
+
+int jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode);
+
+int jfs_util_file_cache_sympath_failure(int datainode, char **spath);
 
 #endif

@@ -157,9 +157,13 @@ static int
 jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
   const unsigned char *datapath;
+  const unsigned char *sympath;
+
+  size_t datapath_len;
+  size_t sympath_len;
+
   jfs_list_t *row;
   int inode;
-  int path_len;
   int rc;
 
   row = malloc(sizeof(*row));
@@ -170,20 +174,32 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 
   rc = sqlite3_step(stmt);
   if(rc == SQLITE_ROW) {
-	datapath = sqlite3_column_text(stmt, 0);
-	path_len = sqlite3_column_bytes(stmt, 0) + 1;
-	inode = sqlite3_column_int(stmt, 1);
+    sympath = sqlite3_column_text(stmt, 0);
+    sympath_len = sqlite3_column_bytes(stmt, 0) + 1;
 
-	row->datapath = malloc(sizeof(*row->datapath) * path_len);
-	if(!row->datapath) {
+	datapath = sqlite3_column_text(stmt, 1);
+	datapath_len = sqlite3_column_bytes(stmt, 1) + 1;
+
+	inode = sqlite3_column_int(stmt, 2);
+
+    row->sympath = malloc(sizeof(*row->sympath) * sympath_len);
+	if(!row->sympath) {
 	  sqlite3_finalize(stmt);
 	  free(row);
 	  return -ENOMEM;
 	}
+	strncpy(row->sympath, (const char *)sympath, sympath_len);
 
-	strncpy(row->datapath, (const char *)datapath, path_len);
-	row->inode = inode;
-	  
+	row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
+	if(!row->datapath) {
+	  sqlite3_finalize(stmt);
+      free(row->sympath);
+	  free(row);
+	  return -ENOMEM;
+	}
+	strncpy(row->datapath, (const char *)datapath, datapath_len);
+
+	row->inode = inode;	  
 	*result = row;
 
 	log_error("--jfs_file_cache_op--DATAPATH(%s) INODE(%d)\n", row->datapath, row->inode);

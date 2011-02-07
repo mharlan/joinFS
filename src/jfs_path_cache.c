@@ -158,3 +158,19 @@ jfs_path_cache_get_datapath(const char *path, char **datapath)
 
   return 0;
 }
+
+int
+jfs_path_cache_get_datainode(const char *path)
+{
+  jfs_path_cache_t check;
+  jfs_path_cache_t *result;
+
+  check.path = (char *)path;
+  result = sglib_hashed_jfs_path_cache_t_find_member(hashtable, &check);
+
+  if(!result) {
+	return -ENOENT;
+  }
+
+  return result->datainode;
+}

@@ -22,6 +22,7 @@
 #include "jfs_file.h"
 #include "jfs_util.h"
 #include "jfs_file_cache.h"
+#include "jfs_path_cache.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
 
@@ -228,7 +229,7 @@ jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, c
   }
   jfs_db_op_destroy(db_op);
 
-  return jfs_file_cache_add(syminode, datainode, datapath);
+  return jfs_file_cache_add(syminode, path, datainode, datapath);
 }
 
 /*
@@ -239,88 +240,102 @@ jfs_file_unlink(const char *path)
 {
   struct jfs_db_op *db_op;
 
+  char *sympath;
   char *datapath;
+
   int datainode;
   int syminode;
   int rc;
 
+  //see if unlink was called on a dynamic path object
+  rc = jfs_util_is_path_dynamic(path);
+  if(rc < 0) {
+    return rc;
+  }
+  else if(rc == 1) {
+    datainode = jfs_path_cache_get_datainode(path);
+    rc = jfs_file_cache_get_sympath(datainode, &sympath);
+
+    return jfs_file_unlink(sympath);
+  }
+
   syminode = jfs_util_get_inode(path);
   rc = jfs_util_get_datapath_and_datainode(path, &datapath, &datainode);
   if(rc) {
-	return rc;
+    return rc;
   }
-
+  
   rc = unlink(path);
   if(rc) {
-	return -errno;
+    return -errno;
   }
   
   if(datainode > 0) {
-	rc = jfs_db_op_create(&db_op);
-	if(rc) {
-	  return rc;
-	}
-
-	db_op->op = jfs_write_op;
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "DELETE FROM files WHERE inode=%d;",
-			 datainode);
-
-	jfs_write_pool_queue(db_op);
-
-	rc = jfs_db_op_wait(db_op);
-	if(rc) {
-	  jfs_db_op_destroy(db_op);
-	  log_error("--Unlink Database Error:%d\n", rc);
-	  return rc;
-	}
-	jfs_db_op_destroy(db_op);
-
-	rc = jfs_db_op_create(&db_op);
-	if(rc) {
-	  return rc;
-	}
-
-	db_op->op = jfs_write_op;
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "DELETE FROM symlinks WHERE datainode=%d;",
-			 datainode);
-
-	jfs_write_pool_queue(db_op);
-
-	rc = jfs_db_op_wait(db_op);
-	if(rc) {
-	  jfs_db_op_destroy(db_op);
-	  return rc;
-	}
-	jfs_db_op_destroy(db_op);
-
-	rc = jfs_db_op_create(&db_op);
-	if(rc) {
-	  return rc;
-	}
-
-	db_op->op = jfs_write_op;
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "DELETE FROM metadata WHERE inode=%d;",
-			 datainode);
-
-	jfs_write_pool_queue(db_op);
-
-	rc = jfs_db_op_wait(db_op);
-	if(rc) {
-	  jfs_db_op_destroy(db_op);
-	  log_error("--Unlink metadata error:%d\n", rc);
-	  return rc;
-	}
-	jfs_db_op_destroy(db_op);
+    rc = jfs_db_op_create(&db_op);
+    if(rc) {
+      return rc;
+    }
+    
+    db_op->op = jfs_write_op;
+    snprintf(db_op->query, JFS_QUERY_MAX,
+             "DELETE FROM files WHERE inode=%d;",
+             datainode);
+    
+    jfs_write_pool_queue(db_op);
+    
+    rc = jfs_db_op_wait(db_op);
+    if(rc) {
+      jfs_db_op_destroy(db_op);
+      log_error("--Unlink Database Error:%d\n", rc);
+      return rc;
+    }
+    jfs_db_op_destroy(db_op);
+    
+    rc = jfs_db_op_create(&db_op);
+    if(rc) {
+      return rc;
+    }
+    
+    db_op->op = jfs_write_op;
+    snprintf(db_op->query, JFS_QUERY_MAX,
+             "DELETE FROM symlinks WHERE datainode=%d;",
+             datainode);
+    
+    jfs_write_pool_queue(db_op);
+    
+    rc = jfs_db_op_wait(db_op);
+    if(rc) {
+      jfs_db_op_destroy(db_op);
+      return rc;
+    }
+    jfs_db_op_destroy(db_op);
+    
+    rc = jfs_db_op_create(&db_op);
+    if(rc) {
+      return rc;
+    }
+    
+    db_op->op = jfs_write_op;
+    snprintf(db_op->query, JFS_QUERY_MAX,
+             "DELETE FROM metadata WHERE inode=%d;",
+             datainode);
+    
+    jfs_write_pool_queue(db_op);
+    
+    rc = jfs_db_op_wait(db_op);
+    if(rc) {
+      jfs_db_op_destroy(db_op);
+      log_error("--Unlink metadata error:%d\n", rc);
+      return rc;
+    }
+    jfs_db_op_destroy(db_op);
   }
-
+  
   rc = unlink(datapath);
   if(rc) {
-	return -errno;
+    return -errno;
   }
-
+  
   return jfs_file_cache_remove(syminode);
 }
 
@@ -333,16 +348,35 @@ jfs_file_rename(const char *from, const char *to)
   struct jfs_db_op *db_op;
   mode_t mode;
 
+  char *dynamic_to;
+  char *sympath;
   char *filename;
-  char *datapath;
 
   int old_datainode;
   int new_datainode;
-  int exists_inode;
 
   int new_inode;
+  int datainode;
   int inode;
   int rc;
+
+  filename = jfs_util_get_filename(to);
+
+  //see if rename was called on a dynamic path object
+  rc = jfs_util_is_path_dynamic(from);
+  if(rc < 0) {
+    return rc;
+  }
+  else if(rc == 1) {
+    datainode = jfs_path_cache_get_datainode(from);
+    rc = jfs_file_cache_get_sympath(datainode, &sympath);
+
+    rc = jfs_util_change_filename(sympath, filename, &dynamic_to);
+
+    printf("---DYNAMIC RENAME: from:%s, to:%s\n", sympath, dynamic_to);
+
+    return jfs_file_rename(sympath, dynamic_to);
+  }
 
   //see if to exists
   rc = jfs_util_get_inode(to);

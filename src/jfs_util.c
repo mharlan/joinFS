@@ -17,6 +17,7 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#include "error_log.h"
 #include "sqlitedb.h"
 #include "jfs_file_cache.h"
 #include "jfs_path_cache.h"
@@ -34,8 +35,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
-static int jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode);
 
 int 
 jfs_util_get_inode(const char *path)
@@ -65,6 +64,26 @@ jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode)
   *inode = buf.st_ino;
   *mode = buf.st_mode;
 
+  return 0;
+}
+
+int
+jfs_util_is_path_dynamic(const char *path)
+{
+  char *datapath;
+  int inode;
+  int rc;
+
+  inode = jfs_util_get_inode(path);
+  if(inode < 1) {
+	rc = jfs_path_cache_get_datapath(path, &datapath);
+    if(rc) {
+      return rc;
+    }
+
+    return 1;
+  }
+  
   return 0;
 }
 
@@ -215,6 +234,54 @@ jfs_util_get_filename(const char *path)
   return filename;
 }
 
+int
+jfs_util_get_subpath(const char *path, char **sub_path)
+{
+  char *subpath;
+  char *filename;
+  size_t sub_len;
+
+  filename = strrchr(path, '/') + 1;
+  sub_len = strlen(path) - strlen(filename);
+
+  subpath = malloc(sizeof(*subpath) * sub_len);
+  if(!subpath) {
+    return -ENOMEM;
+  }
+  strncpy(subpath, path, sub_len);
+
+  *sub_path = subpath;
+
+  return 0;
+}
+
+int
+jfs_util_change_filename(const char *path, const char *filename, char **newpath)
+{
+  char *subpath;
+  char *npath;
+  size_t npath_len;
+  int rc;
+
+  rc = jfs_util_get_subpath(path, &subpath);
+  if(rc) {
+    return rc;
+  }
+
+  npath_len = strlen(subpath) + strlen(filename) + 1;
+  npath = malloc(sizeof(*npath) * npath_len);
+  if(!npath) {
+    free(subpath);
+    return -ENOMEM;
+  }
+
+  snprintf(npath, npath_len, "%s%s", subpath, filename);
+  free(subpath);
+  *newpath = npath;
+
+  return 0;
+} 
+
 /*
  * Returns they keyid associated with a key in the system.
  *
@@ -291,12 +358,17 @@ jfs_util_get_keyid(const char *key)
   return keyid;
 }
 
-static int
+int
 jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
 {
   struct jfs_db_op *db_op;
-  char *path;
-  size_t path_len;
+
+  char *sympath;
+  char *dpath;
+
+  size_t sympath_len;
+  size_t dpath_len;
+
   int inode;
   int rc;
 
@@ -308,7 +380,7 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
 
   db_op->op = jfs_file_cache_op;
   snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT datapath, inode FROM files WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
+		   "SELECT s.sympath, f.datapath, f.inode FROM files AS f, symlinks AS S WHERE f.inode=s.datainode and s.syminode=%d;",
 		   syminode);
 
   log_error("--EXECUTING QUERY:%s\n", db_op->query);
@@ -326,25 +398,102 @@ jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode)
   }
  
   inode = db_op->result->inode;
-  path_len = strlen(db_op->result->datapath) + 1;
-  path = malloc(sizeof(*path) * path_len);
-  if(!path) {
+
+  dpath_len = strlen(db_op->result->datapath) + 1;
+  dpath = malloc(sizeof(*dpath) * dpath_len);
+  if(!dpath) {
 	jfs_db_op_destroy(db_op);
 	return -ENOMEM;
   }
+  strncpy(dpath, db_op->result->datapath, dpath_len);
 
-  strncpy(path, db_op->result->datapath, path_len);
+  sympath_len = strlen(db_op->result->sympath) + 1;
+  sympath = malloc(sizeof(*sympath) * sympath_len);
+  if(!sympath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(sympath, db_op->result->sympath, sympath_len);
+
   jfs_db_op_destroy(db_op);
 
-  log_error("--RESULTS-- PATH(%s) INODE(%d)\n", path, inode);
+  log_error("--RESULTS-- PATH(%s) INODE(%d)\n", dpath, inode);
 
   if(datapath != NULL) {
-	*datapath = path;
+	*datapath = dpath;
   }
 
   if(datainode != NULL) {
 	*datainode = inode;
   }
 
-  return jfs_file_cache_add(syminode, inode, path);
+  return jfs_file_cache_add(syminode, sympath, inode, dpath);
+}
+
+int
+jfs_util_file_cache_sympath_failure(int datainode, char **spath)
+{
+  struct jfs_db_op *db_op;
+
+  char *sympath;
+  char *dpath;
+
+  size_t sympath_len;
+  size_t dpath_len;
+
+  int syminode;
+  int rc;
+
+  log_error("--CACHE-MISS-jfs_util_file_cache_failure\n");
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
+  db_op->op = jfs_file_cache_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+           "SELECT s.sympath, f.datapath, s.syminode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and f.inode=%d;",
+		   datainode);
+
+  log_error("--EXECUTING QUERY:%s\n", db_op->query);
+  
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+	jfs_db_op_destroy(db_op);
+	return rc;
+  }
+
+  if(db_op->result == NULL) {
+	return -ENOENT;
+  }
+ 
+  syminode = db_op->result->inode;
+
+  dpath_len = strlen(db_op->result->datapath) + 1;
+  dpath = malloc(sizeof(*dpath) * dpath_len);
+  if(!dpath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(dpath, db_op->result->datapath, dpath_len);
+
+  sympath_len = strlen(db_op->result->sympath) + 1;
+  sympath = malloc(sizeof(*sympath) * sympath_len);
+  if(!sympath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(sympath, db_op->result->sympath, sympath_len);
+
+  jfs_db_op_destroy(db_op);
+
+  log_error("--RESULTS-- PATH(%s) INODE(%d)\n", dpath, datainode);
+
+  if(spath != NULL) {
+	*spath = sympath;
+  }
+
+  return jfs_file_cache_add(syminode, sympath, datainode, dpath);
 }

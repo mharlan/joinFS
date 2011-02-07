@@ -203,10 +203,15 @@ jfs_destroy(void *arg)
   }
 
   jfs_file_cache_destroy();
+  printf("File cache destroyed.\n");
   jfs_path_cache_destroy();
+  printf("Path cache destroyed.\n");
   jfs_datapath_cache_destroy();
+  printf("Datapath cache destroyed.\n");
   jfs_key_cache_destroy();
+  printf("Key cache destroyed.\n");
   jfs_meta_cache_destroy();
+  printf("Meta cache destroyed.\n");
 
   log_error("joinFS shutdown. Passed arg:%d.\n", arg);
   log_destroy();

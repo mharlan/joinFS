@@ -30,4 +30,6 @@ int jfs_path_cache_remove(const char *path);
 
 int jfs_path_cache_get_datapath(const char *path, char **datapath);
 
+int jfs_path_cache_get_datainode(const char *path);
+
 #endif

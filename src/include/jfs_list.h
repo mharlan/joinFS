@@ -38,6 +38,7 @@ struct jfs_list {
 
   int         inode;
   char       *datapath;
+  char       *sympath;
   char       *filename;
 
   int         keyid;
