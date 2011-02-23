@@ -17,44 +17,21 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#if !defined(_REENTRANT)
-#define	_REENTRANT
+#ifndef JFS_DYNAMIC_PATHS_H
+#define JFS_DYNAMIC_PATHS_H
+
+/*
+  Resolves a dynamic path into a datapath.
+
+  Returns 0 on success, -ENOENT on failure.
+ */
+int jfs_dynamic_path_resolution(const char *path, char **resolved_path);
+
+/*
+  Add a dynamic file to the dynamic path hierarchy.
+
+  Returns 0 on success, negative error code on failure.
+ */
+int jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datainode);
+
 #endif
-
-#include "error_log.h"
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <pthread.h>
-
-static FILE *log;
-static const char *log_path = "/home/joinfs/git/joinFS/demo/error_log.txt";
-//static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void log_init(void)
-{
-  log = fopen(log_path, "w+");
-  if(log) {
-	printf("Opened log file at path:%s\n", log_path);
-  }
-  else {
-	printf("ERROR: Open log file failed, path:%s\n", log_path);
-  }
-}
-
-void log_destroy(void)
-{
-  fclose(log);
-}
-
-void log_error(const char * format, ...)
-{
-  va_list args;
-  va_start(args, format);
-
-  //pthread_mutex_lock(&log_mutex);
-  vfprintf(log, format, args);
-  //pthread_mutex_unlock(&log_mutex);
-
-  va_end(args);
-}
