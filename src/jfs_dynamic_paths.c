@@ -62,11 +62,35 @@ SGLIB_DEFINE_LIST_FUNCTIONS(jfs_dirlist_t, JFS_DIRLIST_T_CMP, next)
 /*
   Resolves a dynamic path into a datapath.
 
-  Returns 0 on success, -ENOENT on failure.
+  Returns 0 on success, -ENOENT or -ENOMEM on failure.
  */
 int 
 jfs_dynamic_path_resolution(const char *path, char **resolved_path)
 {
+  char *path_copy;
+  char *token;
+
+  size_t path_len;
+  
+  path_len = strlen(path) + 1;
+  if(path_len < 3 || path[0] != '/') {
+    return -1;
+  }
+
+  //have to copy the path, can't modify a const
+  path_copy = malloc(sizeof(*path_copy) * path_len);
+  if(!path_copy) {
+    return -ENOMEM;
+  }
+  strncpy(path_copy, path, path_len);
+
+  token = strtok(&path_copy[1], "/");
+  while(token != null) {
+    //resolve the path and add the file
+    
+    token = strtok(NULL, "/");
+  }
+
   return 0;
 }
 
