@@ -28,6 +28,7 @@ enum jfs_db_ops {
   jfs_file_cache_op,
   jfs_key_cache_op,
   jfs_meta_cache_op,
+  jfs_datapath_cache_op,
   jfs_listattr_op,
   jfs_readdir_op,
   jfs_dynamic_file_op,

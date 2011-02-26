@@ -23,5 +23,6 @@
 void log_init(void);
 void log_destroy(void);
 void log_error(const char *format, ...);
+void log_msg(const char *format, ...);
 
 #endif

@@ -38,6 +38,7 @@ static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size);
 static int jfs_do_meta_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
+static int jfs_do_datapath_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_dynamic_file_op(jfs_list_t **result, sqlite3_stmt *stmt);
 
@@ -64,6 +65,9 @@ jfs_db_result(struct jfs_db_op *db_op)
   case(jfs_key_cache_op):
 	rc = jfs_do_key_cache_op(&db_op->result, db_op->stmt);
 	break;
+  case(jfs_datapath_cache_op):
+    rc = jfs_do_datapath_cache_op(&db_op->result, db_op->stmt);
+    break;
   case(jfs_dynamic_file_op):
 	rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt);
 	break;
@@ -145,6 +149,48 @@ jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
   }
   else {
 	free(row);
+  }
+
+  return sqlite3_finalize(stmt);
+}
+
+/*
+  Peforms a datapath cache db operation.
+ */
+static int
+jfs_do_datapath_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
+{
+  const unsigned char *datapath;
+  size_t datapath_len;
+
+  jfs_list_t *row;
+
+  int rc;
+
+  row = malloc(sizeof(*row));
+  if(!row) {
+	sqlite3_finalize(stmt);
+	return -ENOMEM;
+  }
+
+  rc = sqlite3_step(stmt);
+  if(rc == SQLITE_ROW) {
+	datapath = sqlite3_column_text(stmt, 0);
+	datapath_len = sqlite3_column_bytes(stmt, 0) + 1;
+
+	row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
+	if(!row->datapath) {
+	  sqlite3_finalize(stmt);
+	  free(row);
+	  return -ENOMEM;
+	}
+	strncpy(row->datapath, (const char *)datapath, datapath_len);
+
+	*result = row;
+  }
+  else {
+	free(row);
+	log_error("--sqlite row failed, rc:%d\n", rc);
   }
 
   return sqlite3_finalize(stmt);

@@ -37,10 +37,10 @@
 #include "jfs_meta.h"
 #include "jfs_security.h"
 #include "jfs_file_cache.h"
-#include "jfs_path_cache.h"
 #include "jfs_datapath_cache.h"
 #include "jfs_key_cache.h"
 #include "jfs_meta_cache.h"
+#include "jfs_dynamic_paths.h"
 #include "thr_pool.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
@@ -139,7 +139,7 @@ jfs_init(struct fuse_conn_info *conn)
 
   /* initialize caches */
   jfs_file_cache_init();
-  jfs_path_cache_init();
+  jfs_dynamic_path_init();
   jfs_datapath_cache_init();
   jfs_key_cache_init();
   jfs_meta_cache_init();
@@ -204,8 +204,6 @@ jfs_destroy(void *arg)
 
   jfs_file_cache_destroy();
   printf("File cache destroyed.\n");
-  jfs_path_cache_destroy();
-  printf("Path cache destroyed.\n");
   jfs_datapath_cache_destroy();
   printf("Datapath cache destroyed.\n");
   jfs_key_cache_destroy();

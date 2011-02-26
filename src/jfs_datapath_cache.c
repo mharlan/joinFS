@@ -20,6 +20,8 @@
 #include "error_log.h"
 #include "jfs_datapath_cache.h"
 #include "sglib.h"
+#include "sqlitedb.h"
+#include "joinfs.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -66,6 +68,8 @@ SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_datapath_cache_t, JFS_DATAPATH_CACH
 										 jfs_datapath_cache_t_hash)
 SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_datapath_cache_t, JFS_DATAPATH_CACHE_SIZE,
 										jfs_datapath_cache_t_hash)
+
+static int jfs_datapath_cache_miss(int inode, char **datapath);
 
 /*
  * Initialize the jfs_datapath_cache.
@@ -145,7 +149,7 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
   result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return -ENOENT;
+	return jfs_datapath_cache_miss(inode, datapath);
   }
 
   *datapath = result->datapath;
@@ -169,4 +173,52 @@ jfs_datapath_cache_change_inode(inode, new_inode)
   result->inode = new_inode;
 
   return 0;
+}
+
+/*
+  Handles the cache miss.
+ */
+static int
+jfs_datapath_cache_miss(int inode, char **datapath)
+{
+  struct jfs_db_op *db_op;
+  
+  char *path;
+  size_t path_len;
+
+  int rc;
+
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+    return rc;
+  }
+
+  db_op->op = jfs_datapath_cache_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+           "SELECT datapath FROM files WHERE inode=%d;", inode);
+
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+    jfs_db_op_destroy(db_op);
+    return rc;
+  }
+
+  if(db_op->result == NULL) {
+    return -ENOENT;
+  }
+
+  path_len = strlen(db_op->result->datapath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    return -ENOMEM;
+  }
+  strncpy(path, db_op->result->datapath, path_len);
+
+  jfs_db_op_destroy(db_op);
+
+  *datapath = path;
+
+  return jfs_datapath_cache_add(inode, path);
 }

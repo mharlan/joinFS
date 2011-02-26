@@ -23,7 +23,7 @@
 #include "sqlitedb.h"
 #include "jfs_util.h"
 #include "jfs_meta.h"
-#include "jfs_path_cache.h"
+#include "jfs_dynamic_paths.h"
 #include "joinfs.h"
 
 #include <fuse.h>
@@ -185,24 +185,18 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   int sub_inode;
   int dirinode;
   int inode;
+  int mask;
   int rc;
 
   log_error("--jfs_dir_db_filler called for path:%s\n", path);
 
   has_subquery = 0;
   sub_inode = 0;
+  mask = R_OK | F_OK; 
 
   rc = jfs_util_get_inode_and_mode(path, &dirinode, &mode);
   if(rc) {
-	rc = jfs_path_cache_get_datapath(path, &datapath);
-	if(rc) {
-	  return -errno;
-	}
-
-	rc = jfs_util_get_inode_and_mode(datapath, &dirinode, &mode);
-	if(rc) {
-	  return rc;
-	}
+    return rc;
   }
 
   query = NULL;
@@ -270,8 +264,6 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	  st.st_mode = mode;
 	}
 	else {
-	  log_error("---Dynamic file datapath:%s.\n", item->datapath);
-
 	  rc = jfs_util_get_inode_and_mode(item->datapath, &inode, &mode);
 	  if(rc) {
         free(buffer);
@@ -294,30 +286,43 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
 	  st.st_mode = mode;
 	}
 
-	if(filler(buf, item->filename, &st, 0) != 0) {
-	  safe_jfs_list_destroy(&it, item);
-      free(buffer);
-      free(datapath);
-	  jfs_db_op_destroy(db_op);
-	  return -ENOMEM;
-	}
+    //check access first
+    if(access(datapath, mask) == 0) {
+      printf("---Associated path:%s with datapath:%s in path cache.\n", buffer, datapath);
 
-	log_error("---Associated path:%s with datapath:%s in path cache.\n", buffer, datapath);
+      //add for display
+      if(filler(buf, item->filename, &st, 0) != 0) {
+        safe_jfs_list_destroy(&it, item);
+        free(buffer);
+        free(datapath);
+        jfs_db_op_destroy(db_op);
+        return -ENOMEM;
+      }
 
-	rc = jfs_path_cache_add(st.st_ino, buffer, datapath);
-	if(rc) {
-      free(buffer);
-      free(datapath);
-	  safe_jfs_list_destroy(&it, item);
-	  jfs_db_op_destroy(db_op);
-	  return rc;
-	}
+      //dynamic directory path
+      if(has_subquery) {
+        rc = jfs_dynamic_hierarchy_add_folder(buffer, datapath, st.st_ino);
+      }
+      //dynamic file path
+      else {
+        rc = jfs_dynamic_hierarchy_add_file(buffer, datapath, st.st_ino);
+      }
+
+      if(rc) {
+        free(buffer);
+        free(datapath);
+        safe_jfs_list_destroy(&it, item);
+        jfs_db_op_destroy(db_op);
+        return rc;
+      }
+    }
 
 	if(item->datapath != NULL) {
 	  free(item->datapath);
 	}
 	free(item->filename);
 	free(item);
+    free(buffer);
   }
 
   jfs_db_op_destroy(db_op);

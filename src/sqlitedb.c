@@ -97,8 +97,13 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 	switch(db_op->op) {
 	case(jfs_file_cache_op):
 	  free(db_op->result->datapath);
+      free(db_op->result->sympath);
 	  free(db_op->result);
 	  break;
+    case(jfs_datapath_cache_op):
+      free(db_op->result->datapath);
+      free(db_op->result);
+      break;
 	case(jfs_key_cache_op):
 	  free(db_op->result);
 	  break;
@@ -148,11 +153,12 @@ sqlite3 *
 jfs_open_db(int sqlite_attr)
 {
   const char *dbfile = JFSDB;
-  char err_msg[1024];
+  char *err_msg;
   sqlite3 *db;
   int rc;
 
-  log_error("Opening db at:%s\n", dbfile);
+  log_msg("Opening db at:%s\n", dbfile);
+
   rc = sqlite3_open_v2(dbfile, &db, sqlite_attr, NULL);
   log_error("RC:%d\n", rc);
   if(rc) {
@@ -181,7 +187,7 @@ jfs_close_db(sqlite3 *db)
 static int
 setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 {
-  const char* zTail;
+  const char *zTail;
   int rc;
 
   rc = sqlite3_prepare_v2(db, query, strlen(query), stmt, &zTail);
@@ -203,8 +209,6 @@ jfs_query(struct jfs_db_op *db_op)
   sqlite3_stmt *stmt;
   int rc;
 
-  log_error("--JFS QUERY STARTED--\n");
-
   rc = setup_stmt(db_op->db, &stmt, db_op->query);
   if(rc) {
 	log_error("Setup statement failed for query=%s\n",
@@ -221,8 +225,6 @@ jfs_query(struct jfs_db_op *db_op)
 	log_error("Query:%s failed for db_op=%d\n", db_op->query, db_op->op);
 	return rc;
   }
-
-  log_error("--QUERY RESULT IS READY--\n");
 
   return 0;
 }

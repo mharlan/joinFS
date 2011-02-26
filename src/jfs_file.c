@@ -22,7 +22,7 @@
 #include "jfs_file.h"
 #include "jfs_util.h"
 #include "jfs_file_cache.h"
-#include "jfs_path_cache.h"
+#include "jfs_dynamic_paths.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
 
@@ -253,8 +253,15 @@ jfs_file_unlink(const char *path)
     return rc;
   }
   else if(rc == 1) {
-    datainode = jfs_path_cache_get_datainode(path);
+    rc = jfs_dynamic_path_resolution(path, &datapath, &datainode);
+    if(rc) {
+      return rc;
+    }
+
     rc = jfs_file_cache_get_sympath(datainode, &sympath);
+    if(rc) {
+      return rc;
+    }
 
     return jfs_file_unlink(sympath);
   }
@@ -351,6 +358,7 @@ jfs_file_rename(const char *from, const char *to)
   char *dynamic_to;
   char *sympath;
   char *filename;
+  char *datapath;
 
   int old_datainode;
   int new_datainode;
@@ -368,10 +376,20 @@ jfs_file_rename(const char *from, const char *to)
     return rc;
   }
   else if(rc == 1) {
-    datainode = jfs_path_cache_get_datainode(from);
+    rc = jfs_dynamic_path_resolution(from, &datapath, &datainode);
+    if(rc) {
+      return rc;
+    }
+
     rc = jfs_file_cache_get_sympath(datainode, &sympath);
+    if(rc) {
+      return rc;
+    }
 
     rc = jfs_util_change_filename(sympath, filename, &dynamic_to);
+    if(rc) {
+      return rc;
+    }
 
     printf("---DYNAMIC RENAME: from:%s, to:%s\n", sympath, dynamic_to);
 

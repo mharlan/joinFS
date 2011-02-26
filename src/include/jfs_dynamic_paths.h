@@ -20,18 +20,22 @@
 #ifndef JFS_DYNAMIC_PATHS_H
 #define JFS_DYNAMIC_PATHS_H
 
+int jfs_dynamic_path_init(void);
+
 /*
   Resolves a dynamic path into a datapath.
 
   Returns 0 on success, -ENOENT on failure.
  */
-int jfs_dynamic_path_resolution(const char *path, char **resolved_path);
+int jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *datainode);
 
 /*
   Add a dynamic file to the dynamic path hierarchy.
 
   Returns 0 on success, negative error code on failure.
  */
-int jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datainode);
+int jfs_dynamic_hierarchy_add_file(char *path, char *datapath, int datainode);
+
+int jfs_dynamic_hierarchy_add_folder(char *path, char *datapath, int datainode);
 
 #endif

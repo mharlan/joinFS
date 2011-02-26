@@ -20,8 +20,9 @@
 #include "error_log.h"
 #include "jfs_datapath_cache.h"
 #include "jfs_file_cache.h"
-#include "jfs_util.h"
+#include "sqlitedb.h"
 #include "sglib.h"
+#include "joinfs.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -70,13 +71,16 @@ SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_file_cache_t, JFS_FILE_CACHE_SIZE,
 SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_file_cache_t, JFS_FILE_CACHE_SIZE,
 										jfs_file_cache_t_hash)
 
+static int jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainode);
+static int jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int *syminode);
+
 /*
  * Initialize the jfs_file_cache.
  */
 void 
 jfs_file_cache_init()
 {
-  log_error("JFS_FILE_CACHE_INIT\n");
+  log_msg("JFS_FILE_CACHE_INIT\n");
 
   sglib_hashed_jfs_file_cache_t_init(hashtable);
 }
@@ -90,7 +94,7 @@ jfs_file_cache_destroy()
   struct sglib_hashed_jfs_file_cache_t_iterator it;
   jfs_file_cache_t *item;
   
-  log_error("JFS_FILE_CACHE_CLEANUP\n");
+  log_msg("JFS_FILE_CACHE_CLEANUP\n");
 
   for(item = sglib_hashed_jfs_file_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
@@ -102,7 +106,7 @@ jfs_file_cache_destroy()
 /*
  * Get a datainode from the file cache.
  *
- * Returns 0 if not in the cache.
+ * Handles the cache miss.
  */
 int
 jfs_file_cache_get_datainode(int syminode)
@@ -110,20 +114,28 @@ jfs_file_cache_get_datainode(int syminode)
   jfs_file_cache_t  check;
   jfs_file_cache_t *result;
 
+  int datainode;
+  int rc;
+
   check.syminode = syminode;
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return -1;
+    rc = jfs_file_cache_miss(syminode, NULL, NULL, &datainode);
+    if(rc) {
+      return rc;
+    }
+
+	return datainode;
   }
 
   return result->datainode;
 }
 
 /*
- * Get a datainode from the file cache.
+ * Get a datapath from the file cache.
  *
- * Returns 0 if not in the cache.
+ * Handles the cache miss.
  */
 int
 jfs_file_cache_get_datapath(int syminode, char **datapath)
@@ -143,6 +155,11 @@ jfs_file_cache_get_datapath(int syminode, char **datapath)
   return 0;
 }
 
+/*
+  Get the hardlink path associated with a data file.
+
+  Handles the cache miss.
+ */
 int
 jfs_file_cache_get_sympath(int datainode, char **sympath)
 {
@@ -153,7 +170,7 @@ jfs_file_cache_get_sympath(int datainode, char **sympath)
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-    return jfs_util_file_cache_sympath_failure(datainode, sympath);
+    return jfs_file_cache_sympath_miss(datainode, sympath, NULL, NULL);
   }
 
   *sympath = result->sympath;
@@ -161,6 +178,11 @@ jfs_file_cache_get_sympath(int datainode, char **sympath)
   return 0;
 }
 
+/*
+  Get the datapath and datainode associate with the hardlink inode.
+
+  Handles the cache miss.
+ */
 int
 jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *datainode)
 {
@@ -171,7 +193,7 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
 
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
   if(!result) {
-	return -1;
+	return jfs_file_cache_miss(syminode, NULL, datapath, datainode);
   }
 
   *datainode = result->datainode;
@@ -181,7 +203,7 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
 }
 
 /*
- * Add a symlink to the jfs_file_cache.
+ * Add a hardlink to the jfs_file_cache.
  */
 int
 jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char *datapath)
@@ -198,14 +220,15 @@ jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char 
   item->datainode = datainode;
   item->sympath = (char *)sympath;
 
-  log_error("--CACHE ADD-- adding item syminode:%d, datainode:%d, datapath:%s\n",
-		 item->syminode, item->datainode, datapath);
   sglib_hashed_jfs_file_cache_t_add(hashtable, item);
   jfs_datapath_cache_add(datainode, (char *)datapath);
 
   return 0;
 }
 
+/*
+  Remove an item from the file cache. The item may still exist in the db.
+ */
 int
 jfs_file_cache_remove(int syminode)
 {
@@ -225,4 +248,148 @@ jfs_file_cache_remove(int syminode)
   free(elem);
 
   return 0;
+}
+
+/*
+  Function to handle a regular cache miss.
+ */
+static int
+jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainode)
+{
+  struct jfs_db_op *db_op;
+
+  char *spath;
+  char *dpath;
+
+  size_t sympath_len;
+  size_t dpath_len;
+
+  int inode;
+  int rc;
+
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
+  db_op->op = jfs_file_cache_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+           "SELECT s.sympath, f.datapath, f.inode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.syminode=%d;",
+		   syminode);
+
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+	jfs_db_op_destroy(db_op);
+	return rc;
+  }
+
+  if(db_op->result == NULL) {
+	return -ENOENT;
+  }
+
+  inode = db_op->result->inode;
+ 
+  dpath_len = strlen(db_op->result->datapath) + 1;
+  dpath = malloc(sizeof(*dpath) * dpath_len);
+  if(!dpath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(dpath, db_op->result->datapath, dpath_len);
+
+  sympath_len = strlen(db_op->result->sympath) + 1;
+  spath = malloc(sizeof(*sympath) * sympath_len);
+  if(!spath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(spath, db_op->result->sympath, sympath_len);
+
+  jfs_db_op_destroy(db_op);
+
+  if(sympath != NULL) {
+	*sympath = spath;
+  }
+  if(datapath != NULL) {
+    *datapath = dpath;
+  }
+  if(datainode != NULL) {
+    *datainode = inode;
+  }
+
+  return jfs_file_cache_add(syminode, spath, inode, dpath);
+}
+
+/*
+  Function to handle a sympath lookup cache miss.
+ */
+static int
+jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int *syminode)
+{
+  struct jfs_db_op *db_op;
+
+  char *spath;
+  char *dpath;
+
+  size_t sympath_len;
+  size_t dpath_len;
+
+  int inode;
+  int rc;
+
+  rc = jfs_db_op_create(&db_op);
+  if(rc) {
+	return rc;
+  }
+
+  db_op->op = jfs_file_cache_op;
+  snprintf(db_op->query, JFS_QUERY_MAX,
+           "SELECT s.sympath, f.datapath, s.syminode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.datainode=%d;",
+		   datainode);
+
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+	jfs_db_op_destroy(db_op);
+	return rc;
+  }
+
+  if(db_op->result == NULL) {
+	return -ENOENT;
+  }
+
+  inode = db_op->result->inode;
+ 
+  dpath_len = strlen(db_op->result->datapath) + 1;
+  dpath = malloc(sizeof(*dpath) * dpath_len);
+  if(!dpath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(dpath, db_op->result->datapath, dpath_len);
+
+  sympath_len = strlen(db_op->result->sympath) + 1;
+  spath = malloc(sizeof(*sympath) * sympath_len);
+  if(!spath) {
+	jfs_db_op_destroy(db_op);
+	return -ENOMEM;
+  }
+  strncpy(spath, db_op->result->sympath, sympath_len);
+
+  jfs_db_op_destroy(db_op);
+
+  if(sympath != NULL) {
+	*sympath = spath;
+  }
+  if(datapath != NULL) {
+    *datapath = dpath;
+  }
+  if(syminode != NULL) {
+    *syminode = inode;
+  }
+
+  return jfs_file_cache_add(inode, spath, datainode, dpath);
 }
