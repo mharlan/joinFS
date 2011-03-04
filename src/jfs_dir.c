@@ -126,6 +126,7 @@ jfs_dir_rmdir(const char *path)
 int 
 jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 {
+  char *datapath;
   struct stat st;
   struct dirent *de;
 
@@ -134,7 +135,12 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 
   log_error("--jfs_dir_readdir called\n");
 
-  dp = opendir(path);
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+
+  dp = opendir(datapath);
   if(dp != NULL) {
 	log_error("--SYSTEM READDIR EXECUTING\n");
 
@@ -155,8 +161,8 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 	}
   }
 
-  if(jfs_dir_is_dynamic(path)) {
-    rc = jfs_dir_db_filler(path, buf, filler);
+  if(jfs_dir_is_dynamic(datapath)) {
+    rc = jfs_dir_db_filler(datapath, buf, filler);
     if(rc) {
       return rc;
     }
@@ -213,8 +219,6 @@ jfs_dir_db_filler(const char *path, void *buf, fuse_fill_dir_t filler)
   if(rc) {
 	return rc;
   }
-
-  log_error("---readdir fill query:%s\n", db_op->query);
 
   db_op->op = jfs_readdir_op;
   jfs_read_pool_queue(db_op);

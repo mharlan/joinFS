@@ -69,23 +69,36 @@ jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode)
 }
 
 int
+jfs_util_is_realpath(const char *path)
+{
+  int mask;
+
+  mask = F_OK;
+
+  if(!access(path, mask)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+int
 jfs_util_is_path_dynamic(const char *path)
 {
   char *datapath;
   int inode;
   int rc;
 
-  inode = jfs_util_get_inode(path);
-  if(inode < 1) {
-	rc = jfs_dynamic_path_resolution(path, &datapath, &inode);
-    if(rc) {
-      return rc;
-    }
-
-    return 1;
+  if(jfs_util_is_realpath(path)) {
+    return 0;
   }
-  
-  return 0;
+
+  rc = jfs_dynamic_path_resolution(path, &datapath, &inode);
+  if(rc) {
+      return rc;
+  }
+
+  return 1;
 }
 
 int
@@ -97,9 +110,14 @@ jfs_util_get_datapath(const char *path, char **datapath)
   int inode;
   int rc;
 
-  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-  if(rc) {
-	return jfs_dynamic_path_resolution(path, datapath, &inode);
+  if(!jfs_util_is_realpath(path)) {
+    rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
+    return jfs_dynamic_path_resolution(path, datapath, &inode);
   }
 
   if(S_ISDIR(mode)) {
@@ -126,18 +144,23 @@ jfs_util_get_datainode(const char *path)
   char *datapath;
   mode_t mode;
 
-  int inode;
   int datainode;
+  int inode;
   int rc;
 
-  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-  if(rc) {
+  if(jfs_util_is_realpath(path)) {
+    rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
 	rc = jfs_dynamic_path_resolution(path, &datapath, &datainode);
 	if(rc) {
 	  return rc;
 	}	
 
-	return datainode;
+	return inode;
   }
 
   if(S_ISDIR(mode)) {
@@ -165,8 +188,13 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
   int inode;
   int rc;
 
-  rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-  if(rc) {
+  if(jfs_util_is_realpath(path)) {
+    rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
 	return jfs_dynamic_path_resolution(path, datapath, datainode);
   }
 
@@ -317,4 +345,24 @@ jfs_util_get_keyid(const char *key)
   jfs_key_cache_add(keyid, key);
 
   return keyid;
+}
+
+int
+jfs_util_strip_last_path_item(char *path)
+{
+  char *terminator;
+
+  terminator = strrchr(path, '/');
+  if(!terminator) {
+    return 1;
+  }
+  *terminator = '\0';
+
+  return 0;
+}
+
+char *
+jfs_util_get_last_path_item(const char *path)
+{
+  return strrchr(path, '\0');
 }

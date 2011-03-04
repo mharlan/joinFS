@@ -20,6 +20,7 @@ SRC=error_log.c \
     jfs_util.c \
     jfs_security.c \
     jfs_dir.c \
+	jfs_dir_query.c \
 	jfs_dynamic_paths.c \
 	jfs_datapath_cache.c \
     jfs_key_cache.c \

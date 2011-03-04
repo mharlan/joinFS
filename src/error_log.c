@@ -68,6 +68,7 @@ void log_msg(const char * format, ...)
   va_start(args, format);
 
   pthread_mutex_lock(&log_mutex);
+  fprintf(log, "----MSG----");
   vfprintf(log, format, args);
   pthread_mutex_unlock(&log_mutex);
 

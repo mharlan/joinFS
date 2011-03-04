@@ -32,6 +32,8 @@ int jfs_util_get_inode(const char *path);
  */
 int jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode);
 
+int jfs_util_is_realpath(const char *path);
+
 int jfs_util_is_path_dynamic(const char *path);
 
 /*
@@ -76,5 +78,9 @@ int jfs_util_get_datainode(const char *path);
 int jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode);
 
 int jfs_util_file_cache_sympath_failure(int datainode, char **spath);
+
+int jfs_util_strip_last_path_item(char *path);
+
+char *jfs_util_get_last_path_item(const char *path);
 
 #endif
