@@ -110,7 +110,7 @@ jfs_util_get_datapath(const char *path, char **datapath)
   int inode;
   int rc;
 
-  if(!jfs_util_is_realpath(path)) {
+  if(jfs_util_is_realpath(path)) {
     rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
     if(rc) {
       return rc;
@@ -364,5 +364,5 @@ jfs_util_strip_last_path_item(char *path)
 char *
 jfs_util_get_last_path_item(const char *path)
 {
-  return strrchr(path, '\0');
+  return strrchr(path, '/');
 }

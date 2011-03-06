@@ -544,7 +544,7 @@ jfs_file_open(const char *path, int flags)
   int rc;
 
   if(flags & O_CREAT) {
-    log_error("!@__-------Open called with O_CREATE flag.\n");
+    log_msg("!@__-------Open called with O_CREATE flag.\n");
 
 	rc = open(path, O_CREAT | O_EXCL | O_WRONLY);
 	if(rc > 0) {
@@ -555,7 +555,7 @@ jfs_file_open(const char *path, int flags)
 		return -errno;
 	  }
 
-	  log_error("**(OPEN CALLED: With create, doesn't exist) path:%s, flags:%d\n", path, flags);
+	  log_msg("**(OPEN CALLED: With create, doesn't exist) path:%s, flags:%d\n", path, flags);
 
 	  return jfs_file_create(path, flags);
 	}
