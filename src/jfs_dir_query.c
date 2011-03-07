@@ -28,12 +28,12 @@
 #include <errno.h>
 
 #define JFS_FOLDER_SIMPLE_QUERY "SELECT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid;"
-#define JFS_FOLDER_OUTER_QUERY  "SELECT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid AND m.inode=(%s);"
-#define JFS_FOLDER_INNER_QUERY  "SELECT f.inode FROM files AS f, metadata AS m, keys AS k WHERE f.inode=m.inode AND m.keyid=k.keyid "
-#define JFS_FILE_QUERY          "SELECT f.inode, f.filename, f.datapath FROM files AS f, metadata AS m, keys AS k WHERE f.inode=m.inode AND m.keyid=k.keyid "
+#define JFS_FOLDER_QUERY        "SELECT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid AND m.inode=(SELECT f.inode FROM files AS f, metadata AS m, keys AS k WHERE f.inode=m.inode and m.keyid=k.keyid and (%s));"
+#define JFS_FILE_QUERY          "SELECT f.inode, f.filename, f.datapath FROM files AS f, metadata AS m, keys AS k WHERE f.inode=m.inode AND m.keyid=k.keyid AND (%s);"
 
-#define JFS_KEY_ITEM   "AND k.keytext=\"%s\" "
-#define JFS_VALUE_ITEM "AND m.keyvalue=\"%s\" "
+#define JFS_SQL_OR        "OR "
+#define JFS_KEY_ITEM      "(k.keytext=\"%s\") "
+#define JFS_KEY_PAIR_ITEM "(k.keytext=\"%s\" AND m.keyvalue=\"%s\") "
 
 static int jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_current_len, 
                                    size_t *dir_query_len, char **dir_query);
@@ -149,36 +149,13 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   }
 
   //start building the query
-  if(is_folders) {
-    current_len = strlen(JFS_FOLDER_INNER_QUERY);
-    if(current_len >= query_len) {
-      rc = jfs_dir_expand_query(&query_len, &query);
-      if(rc) {
-        return rc;
-      }
-    }
-
-    strncpy(query, JFS_FOLDER_INNER_QUERY, query_len);
-  }
-  else {
-    current_len = strlen(JFS_FILE_QUERY);
-    if(current_len >= query_len) {
-      rc = jfs_dir_expand_query(&query_len, &query);
-      if(rc) {
-        return rc;
-      }
-    }
-
-    strncpy(query, JFS_FILE_QUERY, query_len);
-  }
-
   //get parent key_pairs and path values
   for(i = 0; i < items; ++i) {
     value = jfs_util_get_last_path_item(path);
     if(!value) {
       printf("Failed to get path value.\n");
-
-      return -1;
+      free(query);
+      return -EBADMSG;
     }
 
     *value = '\0';
@@ -186,55 +163,39 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
 
     values[i] = value;
 
-    printf("Value:%s, Getting datapath for path:%s\n", values[i], path);
-
     rc = jfs_util_get_datapath(path, &datapath);
     if(rc) {
+      free(query);
       return rc;
     }
 
     rc = jfs_meta_do_getxattr(datapath, JFS_DIR_KEY_PAIRS, &key_pairs);
     if(rc) {
+      free(query);
       return rc;
     }
 
     parent_key_pairs[i] = key_pairs;
-
-    printf("Parent(%s) key_pairs:%s\n", datapath, parent_key_pairs[i]);
   }
 
-  //add to the query
-  current_pos = current_len;
+  current_len = 0;
+  current_pos = 0;
   for(i = 0; i < items; ++i) {
-    rc = jfs_dir_parse_key_pairs(0, parent_key_pairs[i], &current_len, &query_len, &query);
+    rc = jfs_dir_parse_key_pairs(1, parent_key_pairs[i], &current_len, &query_len, &query);
     if(rc) {
+      free(query);
       return rc;
     }
 
-    value = values[i];
-    current_len += strlen(value) + strlen(JFS_VALUE_ITEM);
-    if(current_len >= query_len) {
-      rc = jfs_dir_expand_query(&query_len, &query);
-      if(rc) {
-        return rc;
-      }
-    }
-    sprintf(&query[current_pos], JFS_VALUE_ITEM, value);
-
-    current_pos = current_len;
-  }
-
-  if(is_folders) {
-    rc = jfs_dir_parse_key_pairs(1, dir_key_pairs, &current_len, &query_len, &query);
-    if(rc) {
-      return rc;
-    }
-
-    key = strrchr(dir_key_pairs, '=');
+    key = strrchr(parent_key_pairs[i], '=');
     if(!key) {
-      printf("Failed to get last key.\n");
+      free(query);
+      return -EBADMSG;
+    }
 
-      return -1;
+    if(*(key - 1) != 'k') {
+      free(query);
+      return -EBADMSG;
     }
     ++key;
     
@@ -243,41 +204,87 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       key[end] = '\0';
     }
 
-    printf("Current_len:%d, inner_query_len:%d\n", current_len, strlen(JFS_FOLDER_INNER_QUERY));
+    value = values[i];
+    current_len += strlen(key) + strlen(value) + strlen(JFS_KEY_PAIR_ITEM);
+    if(current_len >= query_len) {
+      rc = jfs_dir_expand_query(&query_len, &query);
+      if(rc) {
+        free(query);
+        return rc;
+      }
+    }
+    sprintf(&query[current_pos], JFS_KEY_PAIR_ITEM, key, value);
 
-    if(strcmp(query, JFS_FOLDER_INNER_QUERY) == 0) {
-      query_len = strlen(JFS_FOLDER_SIMPLE_QUERY) + strlen(key);
+    current_pos = current_len;
+  }
+
+  if(is_folders) {
+    rc = jfs_dir_parse_key_pairs(1, dir_key_pairs, &current_len, &query_len, &query);
+    if(rc) {
+      free(query);
+      return rc;
+    }
+
+    key = strrchr(dir_key_pairs, '=');
+    if(!key) {
+      free(query);
+      return -EBADMSG;
+    }
+
+    if(*(key - 1) != 'k') {
+      free(query);
+      return -EBADMSG;
+    }
+    ++key;
+    
+    end = strlen(key) - 1;
+    if(key[end] == ';') {
+      key[end] = '\0';
+    }
+
+    if(!strlen(query)) {
+      query_len = strlen(JFS_FOLDER_SIMPLE_QUERY) + strlen(key) + 1;
       outer_query = malloc(sizeof(*outer_query) * query_len);
       if(!outer_query) {
+        free(query);
         return -ENOMEM;
       }
       snprintf(outer_query, query_len, JFS_FOLDER_SIMPLE_QUERY, key);
     }
     else {
-      query_len = strlen(JFS_FOLDER_OUTER_QUERY) + strlen(key) + strlen(query);
+      query_len = strlen(JFS_FOLDER_QUERY) + strlen(key) + current_len;
       outer_query = malloc(sizeof(*outer_query) * query_len);
       if(!outer_query) {
+        free(query);
         return -ENOMEM;
       }
-      snprintf(outer_query, query_len, JFS_FOLDER_OUTER_QUERY, key, query);
+      snprintf(outer_query, query_len, JFS_FOLDER_QUERY, key, query);
     }
-
-    free(query);
-    *dir_query = outer_query;
   }
   else {
     rc = jfs_dir_parse_key_pairs(0, dir_key_pairs, &current_len, &query_len, &query);
     if(rc) {
+      free(query);
       return rc;
     }
 
-    printf("Query before semicolon:%s\n", query);
-
-    query[current_len - 1] = ';';
-    query[current_len] = '\0';
-
-    *dir_query = query;
+    if(!strlen(query)) {
+      free(query);
+      return -EBADMSG;
+    }
+    else {
+      query_len = strlen(JFS_FILE_QUERY) + current_len;
+      outer_query = malloc(sizeof(*outer_query) * query_len);
+      if(!outer_query) {
+        free(query);
+        return -ENOMEM;
+      }
+      snprintf(outer_query, query_len, JFS_FILE_QUERY, query);
+    }
   }
+
+  free(query);
+  *dir_query = outer_query;
   
   return 0;
 }
@@ -319,12 +326,13 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
   size_t query_len;
   size_t current_pos;
   size_t key_pairs_len;
+  size_t jfs_sql_or_len;
   size_t key_item_len;
-  size_t value_item_len;
+  size_t key_pair_item_len;
 
   int rc;
 
-  if(dir_key_pairs[0] == ';' || strlen(dir_key_pairs) < 4) {
+  if(!strlen(dir_key_pairs) || dir_key_pairs[0] == ';') {
     return 0;
   }
  
@@ -333,8 +341,9 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
   current_pos = current_len;
   query = *dir_query;
 
+  jfs_sql_or_len = strlen(JFS_SQL_OR);
   key_item_len = strlen(JFS_KEY_ITEM);
-  value_item_len = strlen(JFS_VALUE_ITEM);
+  key_pair_item_len = strlen(JFS_KEY_PAIR_ITEM);
   key_pairs_len = strlen(dir_key_pairs) + 1;
 
   key_pairs = malloc(sizeof(*key_pairs) * key_pairs_len);
@@ -346,21 +355,60 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
   //parse the key value pairs
   token = strtok(key_pairs, ";");
   while(token != NULL) {
+    //get the key
     if(token[0] == 'k') {
       key = strchr(token, '=');
       if(!key) {
         printf("Failed to extract key from key pair.\n");
 
-        return -1;
+        return -EBADMSG;
+      }
+
+      if(key != &token[1]) {
+        return -EBADMSG;
       }
       ++key;
 
       //last token, don't add to query, will be used later
       token = strtok(NULL, ";");
       if(skip_last && token == NULL) {
-        return 0;
+        break;
+      }
+    }
+    //must be a key before there is a value
+    else {
+      return -EBADMSG;
+    }
+    
+    //check if the next token is a value
+    if(token != NULL && token[0] == 'v') {
+      value = strchr(token, '=');
+      if(!value) {
+        printf("Failed to get value from key pair.\n");
+
+        return -EBADMSG;
       }
 
+      if(value != &token[1]) {
+        return -EBADMSG;
+      }
+      ++value;
+
+      printf("Adding key_pair key:%s, value:%s\n", key, value);
+      
+      current_len += strlen(value) + key_pair_item_len;
+      if(current_len >= query_len) {
+        rc = jfs_dir_expand_query(&query_len, &query);
+        if(rc) {
+          return rc;
+        }
+      }
+      sprintf(&query[current_pos], JFS_KEY_PAIR_ITEM, key, value);
+
+      current_pos = current_len;
+      token = strtok(NULL, ";");
+    }
+    else {
       printf("Adding key:%s\n", key);
       
       current_len += strlen(key) + key_item_len;
@@ -374,29 +422,21 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
 
       current_pos = current_len;
     }
-    else if(token[0] == 'v') {
-      value = strchr(token, '=');
-      if(!value) {
-        printf("Failed to get value from key pair.\n");
 
-        return -1;
-      }
-      ++value;
-
-      printf("Adding value:%s\n", value);
-      
-      current_len += strlen(value) + value_item_len;
-      if(current_len >= query_len) {
-        rc = jfs_dir_expand_query(&query_len, &query);
-        if(rc) {
-          return rc;
-        }
-      }
-      sprintf(&query[current_pos], JFS_VALUE_ITEM, value);
-
-      current_pos = current_len;
-      token = strtok(NULL, ";");
+    if(token == NULL) {
+      break;
     }
+
+    current_len += jfs_sql_or_len;
+    if(current_len >= query_len) {
+      rc = jfs_dir_expand_query(&query_len, &query);
+      if(rc) {
+        return rc;
+      }
+    }
+    strcpy(&query[current_pos], JFS_SQL_OR);
+
+    current_pos = current_len;
   }
 
   *dir_current_len = current_len;
