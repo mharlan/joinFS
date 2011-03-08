@@ -339,6 +339,8 @@ jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int 
   int inode;
   int rc;
 
+  printf("----Handling jfs_file_cache miss for datainode:%d\n", datainode);
+
   rc = jfs_db_op_create(&db_op);
   if(rc) {
 	return rc;

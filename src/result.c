@@ -313,7 +313,7 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	  
 	  if(col_count == 3) {
 		datapath = sqlite3_column_text(stmt, 2);
-		datapath_len = sqlite3_column_bytes(stmt, 2);
+		datapath_len = sqlite3_column_bytes(stmt, 2) + 1;
 	  
 		row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
 		if(!row->datapath) {

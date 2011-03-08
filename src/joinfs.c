@@ -633,7 +633,7 @@ jfs_statfs(const char *path, struct statvfs *stbuf)
   log_error("Called jfs_statvfs, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  rc = statvfs(jfs_path, stbuf);
+  rc = jfs_file_statfs(jfs_path, stbuf);
   free(jfs_path);
 
   if(rc == -1) {

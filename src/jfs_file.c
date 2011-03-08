@@ -248,11 +248,7 @@ jfs_file_unlink(const char *path)
   int rc;
 
   //see if unlink was called on a dynamic path object
-  rc = jfs_util_is_path_dynamic(path);
-  if(rc < 0) {
-    return rc;
-  }
-  else if(rc == 1) {
+  if(!jfs_util_is_realpath(path)) {
     rc = jfs_dynamic_path_resolution(path, &datapath, &datainode);
     if(rc) {
       return rc;
@@ -371,11 +367,8 @@ jfs_file_rename(const char *from, const char *to)
   filename = jfs_util_get_filename(to);
 
   //see if rename was called on a dynamic path object
-  rc = jfs_util_is_path_dynamic(from);
-  if(rc < 0) {
-    return rc;
-  }
-  else if(rc == 1) {
+
+  if(!jfs_util_is_realpath(from)) {
     rc = jfs_dynamic_path_resolution(from, &datapath, &datainode);
     if(rc) {
       return rc;
@@ -589,6 +582,7 @@ int
 jfs_file_getattr(const char *path, struct stat *stbuf)
 {
   char *datapath;
+
   int rc;
 
   rc = jfs_util_get_datapath(path, &datapath);
@@ -616,14 +610,7 @@ jfs_file_utimes(const char *path, const struct timeval tv[2])
   if(rc) {
 	return rc;
   }
-
-  if(strcmp(datapath, path)) {
-	rc = utimes(path, tv);
-	if(rc) {
-	  return -errno;
-	}
-  }
-  
+ 
   rc = utimes(datapath, tv);
   if(rc) {
 	return -errno;
@@ -654,6 +641,26 @@ create_datapath(char *uuid, char **datapath)
   snprintf(dpath, path_len, "%s/%s", JFS_CONTEXT->datapath, uuid);
   jfs_destroy_uuid(uuid);
   *datapath = dpath;
+
+  return 0;
+}
+
+int
+jfs_file_statfs(const char *path, struct statvfs *stbuf)
+{
+  char *datapath;
+  
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = statvfs(datapath, stbuf);
+  if(rc) {
+    return -errno;
+  }
 
   return 0;
 }

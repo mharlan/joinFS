@@ -48,6 +48,9 @@ int jfs_file_cache_get_datainode(int syminode);
  */
 int jfs_file_cache_get_datapath(int syminode, char **datapath);
 
+/*
+ * Get the path to the hardlink associated with the datainode.
+ */
 int jfs_file_cache_get_sympath(int datainode, char **sympath);
 
 /*

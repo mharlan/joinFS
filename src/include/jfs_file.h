@@ -66,4 +66,6 @@ int jfs_file_getattr(const char *path, struct stat *stbuf);
 
 int jfs_file_utimes(const char *path, const struct timeval tv[2]);
 
+int jfs_file_statfs(const char *path, struct statvfs *stbuf);
+
 #endif

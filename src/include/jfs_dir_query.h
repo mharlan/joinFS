@@ -22,6 +22,9 @@
 
 /*
   Builds the dynamic directory query.
+
+  Returns -EBADMSG for a badly formatted query.
+  Also returns -ENOMEM.
  */
 int jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, char **query);
 

@@ -25,6 +25,7 @@
 #include "jfs_util.h"
 #include "jfs_meta.h"
 #include "jfs_dynamic_paths.h"
+#include "jfs_file_cache.h"
 #include "joinfs.h"
 
 #include <fuse.h>
@@ -182,6 +183,7 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
   char *query;
   char *buffer;
   char *datapath;
+  char *hardlink;
 
   size_t buffer_len;
   size_t datapath_len;
@@ -258,16 +260,10 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
 	  st.st_ino = dirinode;
 	  st.st_mode = mode;
+
+      hardlink = datapath;
 	}
 	else {
-	  rc = jfs_util_get_inode_and_mode(item->datapath, &inode, &mode);
-	  if(rc) {
-        free(buffer);
-		safe_jfs_list_destroy(&it, item);
-		jfs_db_op_destroy(db_op);
-		return rc;
-	  }
-
 	  datapath_len = strlen(item->datapath) + 1;
 	  datapath = malloc(sizeof(*datapath) * datapath_len);
 	  if(!datapath) {
@@ -278,12 +274,29 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 	  }
 	  strncpy(datapath, item->datapath, datapath_len);
 
+      rc = jfs_util_get_inode_and_mode(datapath, &inode, &mode);
+	  if(rc) {
+        free(buffer);
+		safe_jfs_list_destroy(&it, item);
+		jfs_db_op_destroy(db_op);
+
+        printf("Failed to get inode and mode or:%s\n", datapath);
+
+		return rc;
+	  }
+
 	  st.st_ino = inode;
 	  st.st_mode = mode;
+
+      rc = jfs_file_cache_get_sympath(inode, &hardlink);
+      if(rc) {
+        return rc;
+      }
 	}
 
-    //check access first
-    if(access(datapath, mask) == 0) {
+    //check access to the hardlink
+    printf("Verifying access to hardlink:%s\n", hardlink);
+    if(access(hardlink, mask) == 0) {
       printf("---Associated path:%s with datapath:%s in path cache.\n", buffer, datapath);
 
       //add for display
