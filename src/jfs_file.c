@@ -367,7 +367,6 @@ jfs_file_rename(const char *from, const char *to)
   filename = jfs_util_get_filename(to);
 
   //see if rename was called on a dynamic path object
-
   if(!jfs_util_is_realpath(from)) {
     rc = jfs_dynamic_path_resolution(from, &datapath, &datainode);
     if(rc) {
@@ -386,7 +385,14 @@ jfs_file_rename(const char *from, const char *to)
 
     printf("---DYNAMIC RENAME: from:%s, to:%s\n", sympath, dynamic_to);
 
-    return jfs_file_rename(sympath, dynamic_to);
+    rc = jfs_file_rename(sympath, dynamic_to);
+
+    free(dynamic_to);
+    if(rc) {
+      return rc;
+    }
+
+    return 0;
   }
 
   //see if to exists
@@ -436,8 +442,8 @@ jfs_file_rename(const char *from, const char *to)
 	return new_inode;
   }
 
-  log_error("----Renamed:%s, inode:%d || to %s, inode%d\n",
-            from, inode, to, new_inode);
+  printf("----Renamed:%s, inode:%d || to %s, inode%d\n",
+         from, inode, to, new_inode);
 
   if(S_ISREG(mode)) {
 	filename = jfs_util_get_filename(to);
@@ -468,8 +474,8 @@ jfs_file_rename(const char *from, const char *to)
 	
 	db_op->op = jfs_write_op;
 	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "UPDATE OR ROLLBACK symlinks SET syminode=%d WHERE syminode=%d;",
-			 new_inode, inode);
+			 "UPDATE OR ROLLBACK symlinks SET syminode=%d, sympath=\"%s\" WHERE syminode=%d;",
+			 new_inode, to, inode);
   
 	jfs_write_pool_queue(db_op);
   
@@ -479,6 +485,10 @@ jfs_file_rename(const char *from, const char *to)
 	  return rc;
 	}
 	jfs_db_op_destroy(db_op);
+
+    //remove so the cache can be updated
+    //jfs_file_cache_update_sympath(inode, to);
+    jfs_file_cache_remove(inode);
   }
   else if(S_ISDIR(mode)) {
 	rc = jfs_db_op_create(&db_op);

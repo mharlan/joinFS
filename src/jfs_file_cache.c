@@ -226,6 +226,33 @@ jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char 
   return 0;
 }
 
+int
+jfs_file_cache_update_sympath(int syminode, const char *sympath)
+{
+  jfs_file_cache_t check;
+  jfs_file_cache_t *result;
+
+  size_t sympath_len;
+
+  check.syminode = syminode;
+
+  result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
+  if(!result) {
+	return -1;
+  }
+
+  sympath_len = strlen(sympath) + 1;
+  result->sympath = malloc(sizeof(*result->sympath) * sympath_len);
+  if(!result->sympath) {
+    return -ENOMEM;
+  }
+
+  free(result->sympath);
+  strncpy(result->sympath, sympath, sympath_len);
+
+  return 0;
+}
+
 /*
   Remove an item from the file cache. The item may still exist in the db.
  */

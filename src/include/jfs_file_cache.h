@@ -68,4 +68,6 @@ int jfs_file_cache_add(int syminode, const char *sympath, int datainode, const c
  */
 int jfs_file_cache_remove(int syminode);
 
+int jfs_file_cache_update_sympath(int syminode, const char *sympath);
+
 #endif
