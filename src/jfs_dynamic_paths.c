@@ -17,6 +17,7 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#include "jfs_util.h"
 #include "jfs_dynamic_paths.h"
 #include "jfs_datapath_cache.h"
 #include "sglib.h"
@@ -64,12 +65,19 @@ SGLIB_DEFINE_LIST_FUNCTIONS(jfs_dirlist_t, JFS_DIRLIST_T_CMP, next)
 
 static jfs_dirlist_t jfs_root;
 
+static void jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root);
+static int jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file, 
+                                          jfs_dirlist_t **dir, jfs_filelist_t **file_list, 
+                                          jfs_dirlist_t **dir_list, jfs_dirlist_t **parent);
+
 int
 jfs_dynamic_path_init(void)
 {
+  jfs_root.name = NULL;
   jfs_root.files = NULL;
   jfs_root.folders = NULL;
   jfs_root.next = NULL;
+  jfs_root.datainode = 0;
 
   return 0;
 }
@@ -79,8 +87,40 @@ jfs_dynamic_path_init(void)
 
   Returns 0 on success, -ENOENT or -ENOMEM on failure.
  */
-int 
+int
 jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *datainode)
+{
+  jfs_dirlist_t *dir;
+  jfs_filelist_t *file;
+
+  int rc;
+
+  dir = NULL;
+  file = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, NULL, NULL, NULL);
+  if(rc) {
+    return rc;
+  }
+
+  if(file) {
+    *datainode = file->datainode;
+  }
+  else {
+    *datainode = dir->datainode;
+  }
+
+  rc = jfs_datapath_cache_get_datapath(*datainode, resolved_path);
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+
+static int 
+jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file, 
+                               jfs_dirlist_t **dir, jfs_filelist_t **file_list, 
+                               jfs_dirlist_t **dir_list, jfs_dirlist_t **parent)
 {
   size_t path_len;
 
@@ -96,8 +136,25 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
   jfs_filelist_t  check_file;
   
   path_len = strlen(path) + 1;
-  if(path_len < 3 || path[0] != '/') {
-    return -1;
+  if(path_len < 1) {
+    return -ENOENT;
+  }
+  else if(path[0] != '/') {
+    return -ENOENT;
+  }
+
+  //root node?
+  if(path_len == 2) {
+    if(!dir) {
+      return -ENOENT;
+    }
+    *dir = &jfs_root;
+
+    if(dir_list) {
+      *dir_list = &jfs_root;
+    }
+
+    return 0;
   }
 
   //have to copy the path, can't modify a const
@@ -118,23 +175,43 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
       result_dir = sglib_jfs_dirlist_t_find_member(current_dir->folders, &check_dir);
 
       if(result_dir) {
-        *datainode = result_dir->datainode;
-        return jfs_datapath_cache_get_datapath(result_dir->datainode, resolved_path);
+        if(!dir) {
+          return -ENOENT;
+        }
+        *dir = result_dir;
+
+        if(dir_list) {
+          *dir_list = current_dir->folders;
+        }
+
+        return 0;
       }
       else {
         check_file.name = token;
         result_file = sglib_jfs_filelist_t_find_member(current_dir->files, &check_file);
         
         if(result_file) {
-          *datainode = result_file->datainode;
-          return jfs_datapath_cache_get_datapath(result_file->datainode, resolved_path);
+          if(!file) {
+            return -ENOENT;
+          }
+          *file = result_file;
+
+          if(file_list) {
+            *file_list = current_dir->files;
+          }
+
+          return 0;
         }
         else {
+          if(parent) {
+            *parent = current_dir;
+
+            return 0;
+          }
+
           return -ENOENT;
         }
       }
-
-      break;
     }
     //check folders only
     else {
@@ -144,10 +221,11 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
         return -ENOENT;
       }
     }
+
     token = strtok(NULL, "/");
   }
 
-  return 0;
+  return -ENOENT;
 }
 
 /*
@@ -156,157 +234,248 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
   Returns 0 on success, negative error code on failure.
  */
 int
-jfs_dynamic_hierarchy_add_file(char *path, char *datapath, int datainode)
+jfs_dynamic_hierarchy_add_file(const char *path, char *datapath, int datainode)
 {
   jfs_filelist_t *file;
+  jfs_dirlist_t  *parent;
 
-  jfs_dirlist_t *current_dir;
-  jfs_dirlist_t *result_dir;
-  jfs_dirlist_t *check_dir;
+  char *new_filename;
+  char *filename;
 
-  size_t token_len;
-
-  char *last_token;
-  char *token;
+  size_t filename_len;
 
   int rc;
 
-  if(strlen(path) < 2 || path[0] != '/') {
-    return -1;
-  } 
-
-  last_token = strrchr(path, '/') + 1;
-  token = strtok(&path[1], "/");
-  current_dir = &jfs_root;
-
-  while(token != NULL) {
-    token_len = strlen(token) + 1;
-
-    //resolve the path and add the file
-    if(token == last_token) {
-      file = malloc(sizeof(*file));
-      if(!file) {
-        return -ENOMEM;
-      }
-
-      file->name = malloc(sizeof(*file->name) * token_len);
-      if(!file->name) {
-        free(file);
-        return -ENOMEM;
-      }
-      strncpy(file->name, token, token_len);
-      file->datainode = datainode;
-      file->next = NULL;
-
-      sglib_jfs_filelist_t_add(&current_dir->files, file);
-
-      return jfs_datapath_cache_add(datainode, datapath);
-    }
-    //find the directory the file is in
-    else {
-      check_dir = malloc(sizeof(*check_dir));
-      if(!check_dir) {
-        return -ENOMEM;
-      }
-      
-      check_dir->name = malloc(sizeof(*check_dir->name) * token_len);
-      if(!check_dir->name) {
-        free(check_dir);
-        return -ENOMEM;
-      }
-      strncpy(check_dir->name, token, token_len);
-      
-      check_dir->datainode = 0;
-      check_dir->files = NULL;
-      check_dir->folders = NULL;
-      check_dir->next = NULL;
-      
-      rc = sglib_jfs_dirlist_t_add_if_not_member(&current_dir->folders, check_dir, &result_dir);
-      if(rc) { //item was inserted
-        current_dir = check_dir;
-      }
-      else { //was already in the list
-        current_dir = result_dir;
-
-        free(check_dir->name);
-        free(check_dir);
-      }
-    }
-
-    token = strtok(NULL, "/");
+  file = NULL;
+  parent = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, NULL, NULL, NULL, &parent);
+  if(rc) {
+    return rc;
   }
 
-  //shouldn't get here
-  return -1;
+  filename = jfs_util_get_filename(path);
+  filename_len = strlen(filename) + 1;
+  new_filename = malloc(sizeof(*new_filename) * filename_len);
+  if(!new_filename) {
+    return -ENOMEM;
+  }
+  strncpy(new_filename, filename, filename_len);
+
+  if(file) {
+    free(file->name);
+    file->name = new_filename;
+  }
+  else {
+    file = malloc(sizeof(*file));
+    if(!file) {
+      return -ENOMEM;
+    }
+
+    file->name = new_filename;
+    file->datainode = datainode;
+
+    sglib_jfs_filelist_t_add(&parent->files, file);
+
+    return jfs_datapath_cache_add(datainode, datapath);
+  }
+
+  return 0;
 }
 
 /*
   Add a folder to the dynamic hierarchy.
  */
 int
-jfs_dynamic_hierarchy_add_folder(char *path, char *datapath, int datainode)
+jfs_dynamic_hierarchy_add_folder(const char *path, char *datapath, int datainode)
 {
-  jfs_dirlist_t *check_dir;
-  jfs_dirlist_t *current_dir;
-  jfs_dirlist_t *result_dir;
+  jfs_dirlist_t *dir;
+  jfs_dirlist_t *parent;
 
-  size_t token_len;
-  char *token;
-  char *last_token;
+  char *new_filename;
+  char *filename;
+
+  size_t filename_len;
 
   int rc;
 
-  if(strlen(path) < 2 || path[0] != '/') {
-    return -1;
+  dir = NULL;
+  parent = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, NULL, NULL, &parent);
+  if(rc) {
+    return rc;
   }
-  
-  last_token = strrchr(path, '/') + 1;
-  token = strtok(&path[1], "/");
-  current_dir = &jfs_root;
 
-  while(token != NULL) {
-    token_len = strlen(token) + 1;
+  filename = jfs_util_get_filename(path);
+  filename_len = strlen(filename) + 1;
+  new_filename = malloc(sizeof(*new_filename) * filename_len);
+  if(!new_filename) {
+    return -ENOMEM;
+  }
+  strncpy(new_filename, filename, filename_len);
 
-    check_dir = malloc(sizeof(*check_dir));
-    if(!check_dir) {
+  if(dir) {
+    free(dir->name);
+    dir->name = new_filename;
+  }
+  else {
+    dir = malloc(sizeof(*dir));
+    if(!dir) {
       return -ENOMEM;
     }
 
-    check_dir->name = malloc(sizeof(*check_dir->name) * token_len);
-    if(!check_dir->name) {
-      free(check_dir);
-      return -ENOMEM;
-    }
-    strncpy(check_dir->name, token, token_len);
+    dir->name = new_filename;
+    dir->datainode = datainode;
 
-    check_dir->files = NULL;
-    check_dir->folders = NULL;
-    check_dir->next = NULL;
+    sglib_jfs_dirlist_t_add(&parent->folders, dir);
 
-    if(token == last_token) {
-      check_dir->datainode = datainode;
-      sglib_jfs_dirlist_t_add(&current_dir->folders, check_dir);
-
-      return jfs_datapath_cache_add(datainode, datapath);
-    }
-    else {
-      check_dir->datainode = 0;
-      rc = sglib_jfs_dirlist_t_add_if_not_member(&current_dir->folders, check_dir, &result_dir);
-
-      if(rc) { //item was inserted
-        current_dir = check_dir;
-      }
-      else { //was already in the list
-        current_dir = result_dir;
-
-        free(check_dir->name);
-        free(check_dir);
-      }
-    }
-
-    token = strtok(NULL, "/");
+    return jfs_datapath_cache_add(datainode, datapath);
   }
   
-  //shouldn't get here
-  return -1;
+  return 0;
+}
+
+int 
+jfs_dynamic_hierarchy_rename(const char *path, const char *filename)
+{
+  jfs_filelist_t *file;
+  jfs_dirlist_t  *dir;
+
+  char *new_filename;
+
+  size_t filename_len;
+
+  int rc;
+
+  dir = NULL;
+  file = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, NULL, NULL, NULL);
+  if(rc) {
+    return rc;
+  }
+
+  filename_len = strlen(filename) + 1;
+  new_filename = malloc(sizeof(*new_filename) * filename_len);
+  if(!new_filename) {
+    return -ENOMEM;
+  }
+  strncpy(new_filename, filename, filename_len);
+
+  if(file) {
+    free(file->name);
+    file->name = new_filename;
+  }
+  else {
+    free(dir->name);
+    dir->name = new_filename;
+  }
+
+  return 0;
+}
+
+int
+jfs_dynamic_hierarchy_destroy(void)
+{
+  jfs_dynamic_hierarchy_folder_cleanup(&jfs_root);
+
+  return 0;
+}
+
+int
+jfs_dynamic_hierarchy_unlink(const char *path)
+{
+  jfs_filelist_t *file_list;
+  jfs_filelist_t *file;
+
+  int rc;
+
+  file = NULL;
+  file_list = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, NULL, &file_list, NULL, NULL);
+  if(rc) {
+    return rc;
+  }
+
+  sglib_jfs_filelist_t_delete(&file_list, file);
+
+  return 0;
+}
+
+int
+jfs_dynamic_hierarchy_rmdir(const char *path)
+{
+  jfs_dirlist_t *dir_list;
+  jfs_dirlist_t *dir;
+
+  int not_empty;
+  int rc;
+
+  dir = NULL;
+  dir_list = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, NULL, &dir_list, NULL);
+  if(rc) {
+    return rc;
+  }
+
+  not_empty = 0;
+  if(dir->folders) {
+    not_empty += sglib_jfs_dirlist_t_len(dir->folders);
+    if(not_empty) {
+      return -ENOTEMPTY;
+    }
+  }
+
+  if(dir->files) {
+    not_empty += sglib_jfs_filelist_t_len(dir->files);
+    if(not_empty) {
+      return -ENOTEMPTY;
+    }
+  }
+  
+  sglib_jfs_dirlist_t_delete(&dir_list, dir);
+
+  return 0;
+}
+
+int
+jfs_dynamic_hierarchy_invalidate_folder(const char *path)
+{
+  jfs_dirlist_t  *root;
+
+  int rc;
+
+  root = NULL;
+  rc = jfs_dynamic_hierarchy_get_node(path, NULL, &root, NULL, NULL, NULL);
+  if(rc) {
+    return rc;
+  }
+
+  jfs_dynamic_hierarchy_folder_cleanup(root);
+
+  return 0;
+}
+
+/*
+  Recursively delete. Root is not deleted.
+ */
+static void
+jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root)
+{
+  struct sglib_jfs_filelist_t_iterator file_it;
+  struct sglib_jfs_dirlist_t_iterator  dir_it;
+
+  jfs_dirlist_t  *dir;
+  jfs_filelist_t *file;
+
+  for(file = sglib_jfs_filelist_t_it_init(&file_it, root->files);
+      file != NULL; file = sglib_jfs_filelist_t_it_next(&file_it)) {
+    free(file->name);
+    free(file);
+  }
+
+  for(dir = sglib_jfs_dirlist_t_it_init(&dir_it, root->folders);
+      dir != NULL; dir = sglib_jfs_dirlist_t_it_next(&dir_it)) {
+    jfs_dynamic_hierarchy_folder_cleanup(dir);
+    free(dir->name);
+    free(dir);
+  }
 }

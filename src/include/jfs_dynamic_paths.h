@@ -34,8 +34,44 @@ int jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dat
 
   Returns 0 on success, negative error code on failure.
  */
-int jfs_dynamic_hierarchy_add_file(char *path, char *datapath, int datainode);
+int jfs_dynamic_hierarchy_add_file(const char *path, char *datapath, int datainode);
 
-int jfs_dynamic_hierarchy_add_folder(char *path, char *datapath, int datainode);
+/*
+ * Add a folder to the dynamic hierarchy.
+ */
+int jfs_dynamic_hierarchy_add_folder(const char *path, char *datapath, int datainode);
+
+/*
+  Rename the file or folder at path to filename.
+ */
+int jfs_dynamic_hierarchy_rename(const char *path, const char *filename);
+
+/*
+  Destroy the entire dynamic hierarchy.
+ */
+int jfs_dynamic_hierarchy_destroy(void);
+
+/*
+  Removes a file from the dynamic hierarchy.
+ */
+int jfs_dynamic_hierarchy_unlink(const char *path);
+
+/*
+  Removes a directory from the dynamic hierachy.
+
+  The directory must be empty. 
+  Returns -ENOTEMPTY, -ENOMEM;
+
+  Use jfs_hierarchy_invalidate_folder to recursively delete the
+  contents of a folder.
+ */
+int jfs_dynamic_hierarchy_rmdir(const char *path);
+
+/*
+  Delete the contents of the folder from the hierarchy.
+
+  The folder itself remains.
+ */
+int jfs_dynamic_hierarchy_invalidate_folder(const char *path);
 
 #endif

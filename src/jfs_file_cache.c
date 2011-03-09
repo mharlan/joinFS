@@ -232,6 +232,7 @@ jfs_file_cache_update_sympath(int syminode, const char *sympath)
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
 
+  char *new_sympath;
   size_t sympath_len;
 
   check.syminode = syminode;
@@ -242,13 +243,14 @@ jfs_file_cache_update_sympath(int syminode, const char *sympath)
   }
 
   sympath_len = strlen(sympath) + 1;
-  result->sympath = malloc(sizeof(*result->sympath) * sympath_len);
-  if(!result->sympath) {
+  new_sympath = malloc(sizeof(*result->sympath) * sympath_len);
+  if(!new_sympath) {
     return -ENOMEM;
   }
 
   free(result->sympath);
-  strncpy(result->sympath, sympath, sympath_len);
+  strncpy(new_sympath, sympath, sympath_len);
+  result->sympath = new_sympath;
 
   return 0;
 }

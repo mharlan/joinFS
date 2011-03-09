@@ -92,6 +92,11 @@ jfs_dir_rmdir(const char *path)
   int inode;
   int rc;
 
+  //can't remove dynamic directories!!
+  if(!jfs_util_is_realpath(path)) {
+    return 0;
+  }
+
   inode = jfs_util_get_inode(path);
   if(inode < 0) {
 	return inode;
@@ -211,6 +216,13 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   if(query == NULL) {
 	return 0;
+  }
+
+  rc = jfs_dynamic_hierarchy_invalidate_folder(path);
+  if(rc) {
+    printf("Dynamic hierarchy cleanup failed.\n");
+
+    return rc;
   }
 
   rc = jfs_do_db_op_create(&db_op, query);
