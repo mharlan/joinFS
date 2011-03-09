@@ -101,8 +101,10 @@ jfs_file_cache_destroy()
   
   log_msg("JFS_FILE_CACHE_CLEANUP\n");
 
-  for(item = sglib_hashed_jfs_file_cache_t_it_init(&it,hashtable); 
+  for(item = sglib_hashed_jfs_file_cache_t_it_init(&it, hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
+    sglib_hashed_jfs_file_cache_t_delete(hashtable, item);
+
     free(item->sympath);
 	free(item);
   }

@@ -99,6 +99,8 @@ jfs_datapath_cache_destroy()
 
   for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
+    sglib_hashed_jfs_datapath_cache_t_delete(hashtable, item);
+
 	free(item->datapath);
 	free(item);
   }

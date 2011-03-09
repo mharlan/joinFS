@@ -393,6 +393,8 @@ jfs_file_rename(const char *from, const char *to)
     rc = jfs_file_do_rename(sympath, hardlink_to);
     free(hardlink_to);
     if(rc) {
+      printf("Dynamic rename failed, rc:%d\n", rc);
+
       return rc;
     }
 
@@ -400,7 +402,14 @@ jfs_file_rename(const char *from, const char *to)
   }
 
   //normal rename
-  return jfs_file_do_rename(from, to);
+  rc = jfs_file_do_rename(from, to);
+  if(rc) {
+    printf("Rename failed, rc:%d\n", rc);
+
+    return rc;
+  }
+
+  return 0;
 }
 
 static int
@@ -487,7 +496,7 @@ jfs_file_do_rename(const char *from, const char *to)
     
     db_op->op = jfs_write_op;
     snprintf(db_op->query, JFS_QUERY_MAX,
-             "UPDATE OR ROLLBACK files SET f.filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
+             "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
              filename, inode);
     
     jfs_write_pool_queue(db_op);
