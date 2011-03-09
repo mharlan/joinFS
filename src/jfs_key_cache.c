@@ -17,6 +17,10 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
 #include "jfs_key_cache.h"
 #include "sglib.h"
 
@@ -141,8 +145,10 @@ jfs_key_cache_remove(char *keytext)
     return -1;
   }
   
-  free(elem->keytext);
-  free(elem);
+  if(elem) {
+    free(elem->keytext);
+    free(elem);
+  }
 
   return 0;
 }

@@ -383,15 +383,15 @@ jfs_file_rename(const char *from, const char *to)
 
     printf("---DYNAMIC RENAME: from:%s, to:%s\n", sympath, hardlink_to);
 
-    //rename in the VFS
-    rc = jfs_file_do_rename(sympath, hardlink_to);
-    free(hardlink_to);
+    //perform the rename in the dynamic path hierarchy
+    rc = jfs_dynamic_hierarchy_rename(from, filename);
     if(rc) {
       return rc;
     }
 
-    //perform the rename in the dynamic path hierarchy
-    rc = jfs_dynamic_hierarchy_rename(from, filename);
+    //rename in the VFS
+    rc = jfs_file_do_rename(sympath, hardlink_to);
+    free(hardlink_to);
     if(rc) {
       return rc;
     }
@@ -446,6 +446,8 @@ jfs_file_do_rename(const char *from, const char *to)
     //cleanup the old to
     rc = jfs_file_unlink(to);
     if(rc) {
+      printf("--jfs_file_unlink failed:%d\n", rc);
+
       return rc;
     }
   }
@@ -453,9 +455,11 @@ jfs_file_do_rename(const char *from, const char *to)
   //get info for from
   rc = jfs_util_get_inode_and_mode(from, &inode, &mode);
   if(rc) {
+    printf("--jfs_util_get_inode_and_mode failed rc:%d\n", rc);
+
     return rc;
   }
-  
+
   //perform the rename
   rc = rename(from, to);
   if(rc) {
@@ -465,15 +469,17 @@ jfs_file_do_rename(const char *from, const char *to)
   //get the new inode for to
   new_inode = jfs_util_get_inode(to);
   if(new_inode < 0) {
+    printf("--jfs_util_get_inode failed for to, rc:%d\n", rc);
+
     return new_inode;
   }
   
-  printf("----Renamed from:%s, inode:%d, to:%s, new_inode%d\n",
-         from, inode, to, new_inode);
+  printf("----Renamed from:%s, inode:%d, to:%s, new_inode%d, mode:00x%x\n",
+         from, inode, to, new_inode, mode);
   
   if(S_ISREG(mode)) {
     filename = jfs_util_get_filename(to);
-    
+  
     rc = jfs_db_op_create(&db_op);
     if(rc) {
       return rc;
@@ -512,7 +518,10 @@ jfs_file_do_rename(const char *from, const char *to)
     }
     jfs_db_op_destroy(db_op);
     
-    jfs_file_cache_update_sympath(inode, to);
+    rc = jfs_file_cache_update_sympath(inode, to);
+    if(rc) {
+      return rc;
+    }
   }
   else if(S_ISDIR(mode) && new_inode != inode) {
     rc = jfs_db_op_create(&db_op);

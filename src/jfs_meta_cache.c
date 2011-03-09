@@ -17,6 +17,10 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
 #include "jfs_meta_cache.h"
 #include "sglib.h"
 
@@ -92,6 +96,7 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
 
   check.inode = inode;
   check.keyid = keyid;
+
   result = sglib_hashed_jfs_meta_cache_t_find_member(hashtable, &check);
 
   if(!result) {
@@ -117,6 +122,7 @@ jfs_meta_cache_add(int inode, int keyid, char *value)
   item->inode = inode;
   item->keyid = keyid;
   item->value = value;
+
   sglib_hashed_jfs_meta_cache_t_add(hashtable, item);
 
   return 0;
@@ -135,9 +141,11 @@ jfs_meta_cache_remove(int inode, int keyid)
   if(!rc) {
 	return -1;
   }
-  
-  free(elem->value);
-  free(elem);
+
+  if(elem) {
+    free(elem->value);
+    free(elem);
+  }
   
   return 0;
 }

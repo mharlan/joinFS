@@ -210,6 +210,8 @@ jfs_destroy(void *arg)
   printf("Key cache destroyed.\n");
   jfs_meta_cache_destroy();
   printf("Meta cache destroyed.\n");
+  jfs_dynamic_hierarchy_destroy();
+  printf("Dynamic hierarchy destroyed.\n");
 
   log_error("joinFS shutdown. Passed arg:%d.\n", arg);
   log_destroy();

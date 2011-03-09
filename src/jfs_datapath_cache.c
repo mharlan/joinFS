@@ -17,6 +17,10 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
 #include "error_log.h"
 #include "jfs_datapath_cache.h"
 #include "sglib.h"
@@ -114,6 +118,7 @@ jfs_datapath_cache_add(int inode, char *datapath)
 
   item->inode = inode;
   item->datapath = datapath;
+
   sglib_hashed_jfs_datapath_cache_t_add(hashtable, item);
 
   return 0;
@@ -133,8 +138,10 @@ jfs_datapath_cache_remove(int inode)
 	return -1;
   }
 
-  free(elem->datapath);
-  free(elem);
+  if(elem) {
+    free(elem->datapath);
+    free(elem);
+  }
 
   return 0;
 }

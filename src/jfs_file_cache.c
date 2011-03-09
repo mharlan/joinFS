@@ -17,6 +17,10 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
 #include "error_log.h"
 #include "jfs_datapath_cache.h"
 #include "jfs_file_cache.h"
@@ -29,6 +33,7 @@
 #include <string.h>
 #include <errno.h>
 
+#define JFS_FILE_CACHE_MAX  2000
 #define JFS_FILE_CACHE_SIZE 1000
 
 typedef struct jfs_file_cache jfs_file_cache_t;
@@ -267,14 +272,17 @@ jfs_file_cache_remove(int syminode)
 
   check.syminode = syminode;
 
+  elem = NULL;
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
   if(!rc) {
 	return -1;
   }
   
-  jfs_datapath_cache_remove(elem->datainode);
-  free(elem->sympath);
-  free(elem);
+  if(elem) {
+    jfs_datapath_cache_remove(elem->datainode);
+    free(elem->sympath);
+    free(elem); 
+  }
 
   return 0;
 }
