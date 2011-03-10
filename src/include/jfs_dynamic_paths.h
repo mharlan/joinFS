@@ -34,12 +34,12 @@ int jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dat
 
   Returns 0 on success, negative error code on failure.
  */
-int jfs_dynamic_hierarchy_add_file(const char *path, char *datapath, int datainode);
+int jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datainode);
 
 /*
  * Add a folder to the dynamic hierarchy.
  */
-int jfs_dynamic_hierarchy_add_folder(const char *path, char *datapath, int datainode);
+int jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int datainode);
 
 /*
   Rename the file or folder at path to filename.

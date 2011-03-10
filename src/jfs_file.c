@@ -464,68 +464,84 @@ jfs_file_do_unlink(const char *path)
 int
 jfs_file_rename(const char *from, const char *to)
 {
+  char *from_subpath;
+  char *to_subpath;
   char *subpath;
   char *filename;
-  char *datapath;
+  char *from_datapath;
+  char *to_datapath;
   char *real_from;
   char *real_to;
 
   size_t real_len;
 
-  int datainode;
+  int from_is_dynamic;
+  int to_is_dynamic;
+  int from_datainode;
+  int to_datainode;
   int rc;
 
+  to_is_dynamic = 0;
+  from_is_dynamic = 0;
   filename = jfs_util_get_filename(from);
   if(!filename) {
     return -ENOENT;
   }
 
+  rc = jfs_util_get_subpath(from, &from_subpath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_util_get_subpath(to, &to_subpath);
+  if(rc) {
+    return rc;
+  }
+
   //see if rename was called from a dynamic object
   if(!jfs_util_is_realpath(from)) {
-    rc = jfs_dynamic_path_resolution(from, &datapath, &datainode);
+    rc = jfs_dynamic_path_resolution(from, &from_datapath, &from_datainode);
 
     //.jfs_sub_query edge case
     if(rc) {
-      rc = jfs_util_get_subpath(from, &subpath);
+      rc = jfs_dynamic_path_resolution(from_subpath, &from_datapath, &from_datainode);
       if(rc) {
         return rc;
       }
       
-      rc = jfs_dynamic_path_resolution(subpath, &datapath, &datainode);
-      if(rc) {
-        return rc;
-      }
-      free(subpath);
-      
-      real_len = strlen(datapath) + strlen(filename) + 2; //null and '/'
+      real_len = strlen(from_datapath) + strlen(filename) + 2; //null and '/'
       real_from = malloc(sizeof(*real_from) * real_len);
       if(!real_from) {
         return -ENOMEM;
       }
-      snprintf(real_from, real_len, "%s/%s", datapath, filename);
+      snprintf(real_from, real_len, "%s/%s", from_datapath, filename);
 
       if(!jfs_util_is_realpath(real_from)) {
         return -ENOENT;
       }
     }
     else {
+      printf("From is dynamic:%s\n", from);
+
       //can't rename a dynamic folder
-      if(strcmp(jfs_util_get_filename(datapath), ".jfs_sub_query") == 0) {
+      if(strcmp(jfs_util_get_filename(from_datapath), ".jfs_sub_query") == 0) {
         return -EISDIR;
       }
 
-      rc = jfs_file_cache_get_sympath(datainode, &real_from);
-      if(rc) {
-        return rc;
-      }
+      from_is_dynamic = 1;
 
-      rc = jfs_dynamic_hierarchy_unlink(from);
+      rc = jfs_file_cache_get_sympath(from_datainode, &real_from);
       if(rc) {
         return rc;
       }
     }
   }
   else {
+    rc = jfs_util_get_datapath_and_datainode(from, &from_datapath, &from_datainode);
+    if(rc) {
+      return rc;
+    }
+    
     real_from = (char *)from;
   }
 
@@ -534,64 +550,68 @@ jfs_file_rename(const char *from, const char *to)
     return -ENOENT;
   }
 
+  //is too a dynamic path item
   if(jfs_util_is_path_dynamic(to)) {
-    rc = jfs_dynamic_path_resolution(to, &datapath, &datainode);
+    printf("To is dynamic:%s\n", to);
+
+    rc = jfs_dynamic_path_resolution(to, &to_datapath, &to_datainode);
     
     //.jfs_sub_query edge case
     if(rc) {
-      rc = jfs_util_get_subpath(to, &subpath);
+      printf(".jfs_sub_query edge case.\n");
+
+      rc = jfs_dynamic_path_resolution(to_subpath, &to_datapath, &to_datainode);
       if(rc) {
         return rc;
       }
       
-      rc = jfs_dynamic_path_resolution(subpath, &datapath, &datainode);
-      if(rc) {
-        return rc;
-      }
-      free(subpath);
-      
-      real_len = strlen(datapath) + strlen(filename) + 2; //null and '/'
+      real_len = strlen(to_datapath) + strlen(filename) + 2; //null and '/'
       real_to = malloc(sizeof(*real_to) * real_len);
       if(!real_to) {
         return -ENOMEM;
       }
-      snprintf(real_to, real_len, "%s/%s", datapath, filename);
-
+      snprintf(real_to, real_len, "%s/%s", to_datapath, filename);
+      
       if(!jfs_util_is_realpath(real_to)) {
         return -ENOENT;
       }
-
-      printf("real_to:%s\n", real_to);
     }
     else {
       //can't rename a dynamic folder
-      if(strcmp(jfs_util_get_filename(datapath), ".jfs_sub_query") == 0) {
+      if(strcmp(jfs_util_get_filename(to_datapath), ".jfs_sub_query") == 0) {
         return -EISDIR;
       }
       
-      rc = jfs_file_cache_get_sympath(datainode, &real_to);
+      rc = jfs_file_cache_get_sympath(to_datainode, &real_to);
+      if(rc) {
+        return rc;
+      }
+      
+      rc = jfs_util_get_datapath_and_datainode(from, &to_datapath, &to_datainode);
       if(rc) {
         return rc;
       }
 
-      //maintain the integrity of the dynamic hierarchy
-      rc = jfs_util_get_datapath_and_datainode(from, &datapath, &datainode);
-      if(rc) {
-        return rc;
-      }
-
-      rc = jfs_dynamic_hierarchy_unlink(to);
-      if(rc) {
-        return rc;
-      }
-
-      rc = jfs_dynamic_hierarchy_add_file(to, datapath, datainode);
-      if(rc) {
-        return rc;
-      }
-
-      printf("Real_to:%s\n", real_to);
+      to_is_dynamic = 1;
     }
+  }
+  //is to being saved to a dynamic folder?
+  else if(from_is_dynamic && (strcmp(to_subpath, from_subpath) == 0)) {
+    rc = jfs_util_get_subpath(real_from, &subpath);
+    if(rc) {
+      return rc;
+    }
+    
+    real_len = strlen(subpath) + strlen(filename) + 1;
+    real_to = malloc(sizeof(*real_to) * real_len);
+    if(!real_to) {
+      free(subpath);
+      return -ENOMEM;
+    }
+    snprintf(real_to, real_len, "%s%s", subpath, filename);
+    free(subpath);
+    
+    to_is_dynamic = 1;
   }
   else {
     real_to = (char *)to;
@@ -613,6 +633,37 @@ jfs_file_rename(const char *from, const char *to)
     return rc;
   }
 
+  printf("from_is_dynamic:%d, to_is_dynamic:%d\n", from_is_dynamic, to_is_dynamic);
+
+  if(from_is_dynamic) {
+    rc = jfs_dynamic_hierarchy_unlink(from);
+    if(rc) {
+      return rc;
+    }
+  }
+
+  if(to_is_dynamic) {
+    printf("Adjusting dynamic hierarchy.\n");
+
+    rc = jfs_dynamic_hierarchy_unlink(to);
+    if(rc && rc != -ENOENT) {
+      printf("Hierarchy Unlink Error:%d\n", rc);
+
+      return rc;
+    }
+
+    printf("Removed to from the dynamic hierarchy.\n");
+    
+    rc = jfs_dynamic_hierarchy_add_file(to, from_datapath, from_datainode);
+    if(rc) {
+      printf("Hierarchy Add Error:%d\n", rc);
+
+      return rc;
+    }
+
+    printf("Updated from:%s, to:%s in dynamic hierarchy.\n", from, to);
+  }
+
   return 0;
 }
 
@@ -621,38 +672,70 @@ jfs_file_do_rename(const char *from, const char *to)
 {
   struct jfs_db_op *db_op;
 
-  char *datapath;
+  char *from_copy;
+  char *to_copy;
+  char *to_datapath;
   char *filename;
+
+  size_t from_len;
+  size_t to_len;
 
   mode_t from_mode;
   mode_t to_mode;
 
-  int datainode;
-  int new_datainode;
+  int from_datainode;
+  int to_datainode;
   int from_inode;
   int to_inode;
   int rc;
+
+  printf("Doing rename from:%s, to:%s\n", from, to);
+
+  from_len = strlen(from) + 1;
+  from_copy = malloc(sizeof(*from_copy) * from_len);
+  if(!from_copy) {
+    return -ENOMEM;
+  }
+  strncpy(from_copy, from, from_len);
+
+  to_len = strlen(to) + 1;
+  to_copy = malloc(sizeof(*to_copy) * to_len);
+  if(!to_copy) {
+    free(from_copy);
+    return -ENOMEM;
+  }
+  strncpy(to_copy, to, to_len);
 
   rc = jfs_util_get_inode_and_mode(from, &from_inode, &from_mode);
   if(rc) {
     return rc;
   }
+  from_datainode = jfs_util_get_datainode(from);
 
   //see if to exists
-  to_inode = 0;
+  to_inode = -1;
   rc = jfs_util_get_inode_and_mode(to, &to_inode, &to_mode);
   if(!rc) {
-    //to is a directory and from is not
-    if(S_ISDIR(to_mode) && !S_ISDIR(from_mode)) {
-      return -EISDIR;
-    }
-
-    rc = jfs_util_get_datapath_and_datainode(to, &datapath, &datainode);
+    rc = jfs_util_get_datapath_and_datainode(to, &to_datapath, &to_datainode);
     if(rc) {
       return rc;
     }
-    new_datainode = jfs_util_get_datainode(from);
-    
+  }
+
+  //perform the rename
+  rc = rename(from_copy, to_copy);
+  if(rc) {
+    return -errno;
+  }
+
+  if(from_copy) {
+    free(from_copy);
+  }
+  if(to_copy) {
+    free(to_copy);
+  }
+
+  if(to_inode > -1) {
     //preserve the old metadata
     rc = jfs_db_op_create(&db_op);
     if(rc) {
@@ -662,7 +745,7 @@ jfs_file_do_rename(const char *from, const char *to)
     db_op->op = jfs_write_op;
     snprintf(db_op->query, JFS_QUERY_MAX,
              "UPDATE OR ROLLBACK metadata SET inode=%d WHERE inode=%d;",
-             new_datainode, datainode);
+             from_datainode, to_datainode);
     
     jfs_write_pool_queue(db_op);
     
@@ -674,13 +757,13 @@ jfs_file_do_rename(const char *from, const char *to)
 	jfs_db_op_destroy(db_op);
 
     //delete datapath for to
-    rc = unlink(datapath);
+    rc = unlink(to_datapath);
     if(rc) {
       return -errno;
     }
 
     //remove from the datapath cache
-    rc = jfs_datapath_cache_remove(datainode);
+    rc = jfs_datapath_cache_remove(to_datainode);
     if(rc) {
       return rc;
     }
@@ -689,6 +772,7 @@ jfs_file_do_rename(const char *from, const char *to)
   if(S_ISREG(from_mode)) {
     filename = jfs_util_get_filename(to);
   
+    //update the hardlink
     rc = jfs_db_op_create(&db_op);
     if(rc) {
       return rc;
@@ -696,8 +780,8 @@ jfs_file_do_rename(const char *from, const char *to)
     
     db_op->op = jfs_write_op;
     snprintf(db_op->query, JFS_QUERY_MAX,
-             "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-             filename, from_inode);
+			 "UPDATE OR ROLLBACK symlinks SET sympath=\"%s\", datainode=%d WHERE syminode=%d;",
+             to, from_datainode, from_inode);
     
     jfs_write_pool_queue(db_op);
     
@@ -707,7 +791,8 @@ jfs_file_do_rename(const char *from, const char *to)
       return rc;
     }
     jfs_db_op_destroy(db_op);
-    
+
+    //change the filename
     rc = jfs_db_op_create(&db_op);
     if(rc) {
       return rc;
@@ -715,8 +800,8 @@ jfs_file_do_rename(const char *from, const char *to)
     
     db_op->op = jfs_write_op;
     snprintf(db_op->query, JFS_QUERY_MAX,
-			 "UPDATE OR ROLLBACK symlinks SET sympath=\"%s\", datainode=%d WHERE syminode=%d;",
-             to, new_datainode, from_inode);
+             "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
+             filename, from_inode);
     
     jfs_write_pool_queue(db_op);
     
@@ -764,7 +849,7 @@ jfs_file_do_rename(const char *from, const char *to)
     db_op->op = jfs_write_op;
     snprintf(db_op->query, JFS_QUERY_MAX,
              "DELETE FROM files WHERE inode=%d;",
-             datainode);
+             to_datainode);
     
     jfs_write_pool_queue(db_op);
     
@@ -774,12 +859,6 @@ jfs_file_do_rename(const char *from, const char *to)
       return rc;
     }
     jfs_db_op_destroy(db_op);
-  }
-
-  //perform the rename
-  rc = rename(from, to);
-  if(rc) {
-    return -errno;
   }
   
   return 0;

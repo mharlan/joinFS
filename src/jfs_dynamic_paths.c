@@ -239,7 +239,7 @@ Add a dynamic file to the dynamic path hierarchy.
 Returns 0 on success, negative error code on failure.
 */
 int
-jfs_dynamic_hierarchy_add_file(const char *path, char *datapath, int datainode)
+jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datainode)
 {
   jfs_filelist_t *file;
 
@@ -336,7 +336,7 @@ jfs_dynamic_hierarchy_add_file(const char *path, char *datapath, int datainode)
 Add a folder to the dynamic hierarchy.
 */
 int
-jfs_dynamic_hierarchy_add_folder(const char *path, char *datapath, int datainode)
+jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int datainode)
 {
   jfs_dirlist_t *check_dir;
   jfs_dirlist_t *current_dir;
@@ -474,9 +474,11 @@ jfs_dynamic_hierarchy_unlink(const char *path)
     return rc;
   }
 
+  free(file->name);
+  jfs_datapath_cache_remove(file->datainode);
   sglib_jfs_filelist_t_delete(&file_list, file);
 
-  return 0;
+  return rc;
 }
 
 int
@@ -510,6 +512,8 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
     }
   }
   
+  free(dir->name);
+  jfs_datapath_cache_remove(dir->datainode);
   sglib_jfs_dirlist_t_delete(&dir_list, dir);
 
   return 0;
@@ -555,10 +559,8 @@ jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root)
   if(root->files) {
     for(file = sglib_jfs_filelist_t_it_init(&file_it, root->files);
         file != NULL; file = sglib_jfs_filelist_t_it_next(&file_it)) {
-      sglib_jfs_filelist_t_delete(&root->files, file);
-
       free(file->name);
-      free(file);
+      sglib_jfs_filelist_t_delete(&root->files, file);
     }
   }
 
@@ -566,11 +568,9 @@ jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root)
   if(root->folders) {
     for(dir = sglib_jfs_dirlist_t_it_init(&dir_it, root->folders);
         dir != NULL; dir = sglib_jfs_dirlist_t_it_next(&dir_it)) {
-      sglib_jfs_dirlist_t_delete(&root->folders, dir);
       jfs_dynamic_hierarchy_folder_cleanup(dir);
-
       free(dir->name);
-      free(dir);
+      sglib_jfs_dirlist_t_delete(&root->folders, dir);
     }
   }
 }

@@ -202,7 +202,6 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   is_folders = 0;
   mask = R_OK | F_OK; 
-
   rc = jfs_util_get_inode_and_mode(path, &dirinode, &mode);
   if(rc) {
     return rc;
@@ -348,7 +347,6 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 	free(item);
     free(buffer);
   }
-
   jfs_db_op_destroy(db_op);
 
   return 0;
