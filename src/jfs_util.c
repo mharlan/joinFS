@@ -95,7 +95,7 @@ jfs_util_is_path_dynamic(const char *path)
 
   rc = jfs_dynamic_path_resolution(path, &datapath, &inode);
   if(rc) {
-      return rc;
+    return 0;
   }
 
   return 1;
@@ -241,27 +241,6 @@ jfs_util_get_filename(const char *path)
 }
 
 int
-jfs_util_get_subpath(const char *path, char **sub_path)
-{
-  char *subpath;
-  char *filename;
-  size_t sub_len;
-
-  filename = strrchr(path, '/') + 1;
-  sub_len = strlen(path) - strlen(filename);
-
-  subpath = malloc(sizeof(*subpath) * sub_len);
-  if(!subpath) {
-    return -ENOMEM;
-  }
-  strncpy(subpath, path, sub_len);
-
-  *sub_path = subpath;
-
-  return 0;
-}
-
-int
 jfs_util_change_filename(const char *path, const char *filename, char **newpath)
 {
   char *subpath;
@@ -380,6 +359,31 @@ jfs_util_get_last_path_item(const char *path)
 }
 
 int
+jfs_util_get_subpath(const char *path, char **new_path)
+{
+  char *subpath;
+  char *filename;
+  size_t sub_len;
+
+  filename = jfs_util_get_filename(path);
+  if(!filename) {
+    return -ENOENT;
+  }
+
+  sub_len = strlen(path) - strlen(filename) + 1;
+  subpath = malloc(sizeof(*subpath) * sub_len);
+  if(!subpath) {
+    return -ENOMEM;
+  }
+  strncpy(subpath, path, sub_len);
+  subpath[sub_len - 1] = '\0';
+
+  *new_path = subpath;
+
+  return 0;
+}
+
+int
 jfs_util_resolve_new_path(const char *path, char **new_path)
 {
   char *sub_datapath;
@@ -388,8 +392,10 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
   char *filename;
 
   size_t realpath_len;
-
+  
   int rc;
+
+  printf("--Resolving new path:%s\n", path);
 
   sub_datapath = NULL;
   filename = jfs_util_get_filename(path);
@@ -419,7 +425,7 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
     subpath = sub_datapath;
   }
 
-  realpath_len = strlen(subpath) + strlen(filename) + 2; //null terminator and '/'
+  realpath_len = strlen(subpath) + strlen(filename) + 1; //null terminator and '/'
   realpath = malloc(sizeof(*realpath) * realpath_len);
   if(!realpath) {
     if(!sub_datapath) {
@@ -428,7 +434,7 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
 
     return -ENOMEM;
   }
-  snprintf(realpath, realpath_len, "%s/%s", subpath, filename);
+  snprintf(realpath, realpath_len, "%s%s", subpath, filename);
 
   if(!sub_datapath) {
     free(subpath);
@@ -436,7 +442,7 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
 
   *new_path = realpath;
 
-  printf("--REALPATH:%s\n", realpath);
+  printf("--REALPATH:%s, realpath_len:%d\n", realpath, (int)realpath_len);
 
   return 0;
 }

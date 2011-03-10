@@ -85,8 +85,6 @@ jfs_key_cache_destroy()
 
   for(item = sglib_hashed_jfs_key_cache_t_it_init(&it, hashtable);
       item != NULL; item = sglib_hashed_jfs_key_cache_t_it_next(&it)) {
-    sglib_hashed_jfs_key_cache_t_delete(hashtable, item);
-
     free(item->keytext);
     free(item);
   }
@@ -98,8 +96,17 @@ jfs_key_cache_get_keyid(const char *keytext)
   jfs_key_cache_t  check;
   jfs_key_cache_t *result;
 
-  check.keytext = (char *)keytext;
+  size_t key_len;
+
+  key_len = strlen(keytext) + 1;
+  check.keytext = malloc(sizeof(*check.keytext) * key_len);
+  if(!check.keytext) {
+    return -ENOMEM;
+  }
+  strncpy(check.keytext, keytext, key_len);
+
   result = sglib_hashed_jfs_key_cache_t_find_member(hashtable, &check);
+  free(check.keytext);
 
   if(!result) {
     return -1;
@@ -118,7 +125,6 @@ jfs_key_cache_add(int keyid, const char *keytext)
   if(!item) {
     return -ENOMEM;
   }
-
   item->keyid = keyid;
 
   key_len = strlen(keytext) + 1;
@@ -134,20 +140,26 @@ jfs_key_cache_add(int keyid, const char *keytext)
 }
 
 int
-jfs_key_cache_remove(char *keytext)
+jfs_key_cache_remove(const char *keytext)
 {
   jfs_key_cache_t check;
   jfs_key_cache_t *elem;
+  
+  size_t key_len;
+
   int rc;
 
-  check.keytext = keytext;
+  key_len = strlen(keytext) + 1;
+  check.keytext = malloc(sizeof(*check.keytext) * key_len);
+  if(!check.keytext) {
+    return -ENOMEM;
+  }
+  strncpy(check.keytext, keytext, key_len);
 
   rc = sglib_hashed_jfs_key_cache_t_delete_if_member(hashtable, &check, &elem);
-  if(!rc) {
-    return -1;
-  }
-  
-  if(elem) {
+  free(check.keytext);
+
+  if(rc) {
     free(elem->keytext);
     free(elem);
   }

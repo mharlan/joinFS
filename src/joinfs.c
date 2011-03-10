@@ -370,7 +370,9 @@ jfs_unlink(const char *path)
   
   jfs_path = jfs_realpath(path);
   rc = jfs_file_unlink(jfs_path);
-  free(jfs_path);
+  if(jfs_path) {
+    free(jfs_path);
+  }
 
   if(rc) {
 	log_error("Error occured, errno:%d\n", rc);
@@ -390,7 +392,9 @@ jfs_rmdir(const char *path)
 
   jfs_path = jfs_realpath(path);
   rc = jfs_dir_rmdir(jfs_path);
-  free(jfs_path);
+  if(jfs_path) {
+    free(jfs_path);
+  }
 
   if(rc) {
 	log_error("Error occured, errno:%d\n", rc);
@@ -412,8 +416,12 @@ jfs_symlink(const char *from, const char *to)
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_symlink(jfs_path_from, jfs_path_to);
-  free(jfs_path_from);
-  free(jfs_path_to);
+  if(jfs_path_from) {
+    free(jfs_path_from);
+  }
+  if(jfs_path_to) {
+    free(jfs_path_to);
+  }
 
   if(rc) {
     return rc;
@@ -432,8 +440,12 @@ jfs_rename(const char *from, const char *to)
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_rename(jfs_path_from, jfs_path_to);
-  free(jfs_path_from);
-  free(jfs_path_to);
+  if(jfs_path_from) {
+    free(jfs_path_from);
+  }
+  if(jfs_path_to) {
+    free(jfs_path_to);
+  }
 
   if(rc) {
 	log_error("Error occured, errno:%d\n", rc);
@@ -455,8 +467,12 @@ jfs_link(const char *from, const char *to)
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_link(jfs_path_from, jfs_path_to);
-  free(jfs_path_from);
-  free(jfs_path_to);
+  if(jfs_path_from) {
+    free(jfs_path_from);
+  }
+  if(jfs_path_to) {
+    free(jfs_path_to);
+  }
 
   if(rc) {
     return rc;

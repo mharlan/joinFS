@@ -83,8 +83,6 @@ jfs_meta_cache_destroy()
 
   for(item = sglib_hashed_jfs_meta_cache_t_it_init(&it, hashtable);
       item != NULL; item = sglib_hashed_jfs_meta_cache_t_it_next(&it)) {
-    sglib_hashed_jfs_meta_cache_t_delete(hashtable, item);
-
     free(item->value);
     free(item);
   }
@@ -96,23 +94,40 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
   jfs_meta_cache_t  check;
   jfs_meta_cache_t *result;
 
+  char *val;
+
+  size_t val_len;
+
   check.inode = inode;
   check.keyid = keyid;
 
   result = sglib_hashed_jfs_meta_cache_t_find_member(hashtable, &check);
 
   if(!result) {
-	return -1;
+	return -EINVAL;
   }
-  *value = result->value;
+
+  val_len = strlen(result->value) + 1;
+  val = malloc(sizeof(*val) * val_len);
+  if(!val) {
+    free(val);
+    return -ENOMEM;
+  }
+  strncpy(val, result->value, val_len);
+
+  *value = val;
 
   return 0;
 }
 
 int
-jfs_meta_cache_add(int inode, int keyid, char *value)
+jfs_meta_cache_add(int inode, int keyid, const char *value)
 {
   jfs_meta_cache_t *item;
+  
+  char *val;
+
+  size_t val_len;
 
   jfs_meta_cache_remove(inode, keyid);
 
@@ -121,9 +136,17 @@ jfs_meta_cache_add(int inode, int keyid, char *value)
 	return -ENOMEM;
   }
 
+  val_len = strlen(value) + 1;
+  val = malloc(sizeof(*val) * val_len);
+  if(!val) {
+    free(item);
+    return -ENOMEM;
+  }
+  strncpy(val, value, val_len);
+
   item->inode = inode;
   item->keyid = keyid;
-  item->value = value;
+  item->value = val;
 
   sglib_hashed_jfs_meta_cache_t_add(hashtable, item);
 
@@ -140,12 +163,9 @@ jfs_meta_cache_remove(int inode, int keyid)
   check.inode = inode;
   check.keyid = keyid;
   rc = sglib_hashed_jfs_meta_cache_t_delete_if_member(hashtable, &check, &elem);
-  if(!rc) {
-	return -1;
-  }
-
-  if(elem) {
-    free(elem->value);
+  
+  if(rc) {
+	free(elem->value);
     free(elem);
   }
   

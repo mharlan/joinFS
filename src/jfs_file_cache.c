@@ -103,8 +103,6 @@ jfs_file_cache_destroy()
 
   for(item = sglib_hashed_jfs_file_cache_t_it_init(&it, hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
-    sglib_hashed_jfs_file_cache_t_delete(hashtable, item);
-
     free(item->sympath);
 	free(item);
   }
@@ -149,7 +147,7 @@ jfs_file_cache_get_datapath(int syminode, char **datapath)
 {
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
-
+  
   check.syminode = syminode;
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
@@ -173,6 +171,10 @@ jfs_file_cache_get_sympath(int datainode, char **sympath)
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
 
+  char *path;
+
+  size_t path_len;
+
   check.datainode = datainode;
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
@@ -180,7 +182,14 @@ jfs_file_cache_get_sympath(int datainode, char **sympath)
     return jfs_file_cache_sympath_miss(datainode, sympath, NULL, NULL);
   }
 
-  *sympath = result->sympath;
+  path_len = strlen(result->sympath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    return -ENOMEM;
+  }
+  strncpy(path, result->sympath, path_len);
+
+  *sympath = path;
 
   return 0;
 }
@@ -217,18 +226,29 @@ jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char 
 {
   jfs_file_cache_t *item;
 
+  char *path;
+
+  size_t path_len;
+
   item = malloc(sizeof(*item));
   if(!item) {
 	log_error("Failed to allocate memory for a file cache symlink.");
 	return -ENOMEM;
   }
 
+  path_len = strlen(sympath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    return -ENOMEM;
+  }
+  strncpy(path, sympath, path_len);
+
   item->syminode = syminode;
   item->datainode = datainode;
-  item->sympath = (char *)sympath;
+  item->sympath = path;
 
   sglib_hashed_jfs_file_cache_t_add(hashtable, item);
-  jfs_datapath_cache_add(datainode, (char *)datapath);
+  jfs_datapath_cache_add(datainode, datapath);
 
   return 0;
 }
@@ -243,10 +263,9 @@ jfs_file_cache_update_sympath(int syminode, const char *sympath)
   size_t sympath_len;
 
   check.syminode = syminode;
-
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
   if(!result) {
-	return -1;
+	return -ENOENT;
   }
 
   sympath_len = strlen(sympath) + 1;
@@ -273,15 +292,11 @@ jfs_file_cache_remove(int syminode)
   int rc;
 
   check.syminode = syminode;
-
-  elem = NULL;
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
-  if(!rc) {
-	return -1;
-  }
-  
-  if(elem) {
-    jfs_datapath_cache_remove(elem->datainode);
+
+  if(rc) {
+	jfs_datapath_cache_remove(elem->datainode);
+
     free(elem->sympath);
     free(elem); 
   }
@@ -341,6 +356,7 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
   sympath_len = strlen(db_op->result->sympath) + 1;
   spath = malloc(sizeof(*sympath) * sympath_len);
   if(!spath) {
+    free(dpath);
 	jfs_db_op_destroy(db_op);
 	return -ENOMEM;
   }
@@ -348,17 +364,32 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
 
   jfs_db_op_destroy(db_op);
 
+  rc = jfs_file_cache_add(syminode, spath, inode, dpath);
+  if(rc) {
+    free(dpath);
+    free(spath);
+    return rc;
+  }
+
   if(sympath != NULL) {
 	*sympath = spath;
   }
+  else {
+    free(spath);
+  }
+
   if(datapath != NULL) {
     *datapath = dpath;
   }
+  else {
+    free(dpath);
+  }
+
   if(datainode != NULL) {
     *datainode = inode;
   }
 
-  return jfs_file_cache_add(syminode, spath, inode, dpath);
+  return 0;
 }
 
 /*
@@ -422,15 +453,30 @@ jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int 
 
   jfs_db_op_destroy(db_op);
 
+  rc = jfs_file_cache_add(inode, spath, datainode, dpath);
+  if(rc) {
+    free(spath);
+    free(dpath);
+    return rc;
+  }
+
   if(sympath != NULL) {
 	*sympath = spath;
   }
+  else {
+    free(spath);
+  }
+
   if(datapath != NULL) {
     *datapath = dpath;
   }
+  else {
+    free(dpath);
+  }
+
   if(syminode != NULL) {
     *syminode = inode;
   }
 
-  return jfs_file_cache_add(inode, spath, datainode, dpath);
+  return 0;
 }

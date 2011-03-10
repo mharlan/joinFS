@@ -1,6 +1,6 @@
 CC=gcc
 INCLUDE=-I include/
-CFLAGS=-D_FILE_OFFSET_BITS=64 -Wall
+CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall
 
 SQLLIB=-W -O2 -Wl,-R/usr/local/lib -lsqlite3
 UUIDLIB=/lib/libuuid.so.1.3.0

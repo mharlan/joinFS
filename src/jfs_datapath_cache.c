@@ -99,17 +99,19 @@ jfs_datapath_cache_destroy()
 
   for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
-    sglib_hashed_jfs_datapath_cache_t_delete(hashtable, item);
-
 	free(item->datapath);
 	free(item);
   }
 }
 
 int
-jfs_datapath_cache_add(int inode, char *datapath)
+jfs_datapath_cache_add(int inode, const char *datapath)
 {
   jfs_datapath_cache_t *item;
+
+  char *path;
+
+  size_t path_len;
 
   jfs_datapath_cache_remove(inode);
 
@@ -118,8 +120,16 @@ jfs_datapath_cache_add(int inode, char *datapath)
 	return -ENOMEM;
   }
 
+  path_len = strlen(datapath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    free(item);
+    return -ENOMEM;
+  }
+  strncpy(path, datapath, path_len);
+
   item->inode = inode;
-  item->datapath = datapath;
+  item->datapath = path;
 
   sglib_hashed_jfs_datapath_cache_t_add(hashtable, item);
 
@@ -131,16 +141,14 @@ jfs_datapath_cache_remove(int inode)
 {
   jfs_datapath_cache_t check;
   jfs_datapath_cache_t *elem;
+
   int rc;
 
   check.inode = inode;
 
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
-  if(!rc) {
-	return -1;
-  }
-
-  if(elem) {
+  
+  if(rc) {
     free(elem->datapath);
     free(elem);
   }
@@ -154,6 +162,10 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
   jfs_datapath_cache_t check;
   jfs_datapath_cache_t *result;
 
+  char *path;
+
+  size_t path_len;
+
   check.inode = inode;
   result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
 
@@ -161,13 +173,20 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
 	return jfs_datapath_cache_miss(inode, datapath);
   }
 
-  *datapath = result->datapath;
+  path_len = strlen(result->datapath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    return -ENOMEM;
+  }
+  strncpy(path, result->datapath, path_len);
+
+  *datapath = path;
 
   return 0;
 }
 
 int
-jfs_datapath_cache_change_inode(inode, new_inode)
+jfs_datapath_cache_change_inode(int inode, int new_inode)
 {
   jfs_datapath_cache_t check;
   jfs_datapath_cache_t *result;
@@ -227,7 +246,17 @@ jfs_datapath_cache_miss(int inode, char **datapath)
 
   jfs_db_op_destroy(db_op);
 
-  *datapath = path;
+  rc = jfs_datapath_cache_add(inode, path);
+  if(rc) {
+    return rc;
+  }
 
-  return jfs_datapath_cache_add(inode, path);
+  if(datapath) {
+    *datapath = path;
+  }
+  else {
+    free(path);
+  }
+
+  return 0;
 }

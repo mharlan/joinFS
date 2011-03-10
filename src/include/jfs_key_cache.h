@@ -49,6 +49,6 @@ int jfs_key_cache_add(int keyid, const char *keytext);
 /*
  * Remove a symlink reference from the file cache.
  */
-int jfs_key_cache_remove(char *keytext);
+int jfs_key_cache_remove(const char *keytext);
 
 #endif
