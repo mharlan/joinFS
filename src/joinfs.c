@@ -70,7 +70,6 @@ static char *
 jfs_realpath(const char *path)
 {
   char *jfs_path;
-  char *jfs_rpath;
 
   int path_len;
 
@@ -92,21 +91,12 @@ jfs_realpath(const char *path)
   else {
 	snprintf(jfs_path, path_len, "%s/%s", JFS_CONTEXT->querypath, path);
   }
-  
-  jfs_rpath = realpath(jfs_path, NULL);
-  if(!jfs_rpath) {
-	log_error("realpath failed, resolved path:%s to jfs_path:%s\n", path, jfs_path);
-	return jfs_path;
-  }
 
-  log_error("Transformed path:%s to jfs_path:%s to jfs_realpath:%s\n", path, jfs_path, jfs_rpath);
-  free(jfs_path);
-
-  return jfs_rpath;
+  return jfs_path;
 }
 
 /*
- * Perform a read database operation.
+ * Perform a database read operation.
  */
 int 
 jfs_read_pool_queue(struct jfs_db_op *db_op)
@@ -115,7 +105,7 @@ jfs_read_pool_queue(struct jfs_db_op *db_op)
 }
 
 /*
- * Perform a write database operation.
+ * Perform a database write operation.
  */
 int 
 jfs_write_pool_queue(struct jfs_db_op *db_op)
@@ -148,12 +138,16 @@ jfs_init(struct fuse_conn_info *conn)
   rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   if(rc != SQLITE_OK) {
 	log_error("Failed to configuring multithreading for SQLITE.\n");
+    log_destroy();
+
 	exit(EXIT_FAILURE);
   }
 
   rc = sqlite3_initialize();
   if(rc != SQLITE_OK) {
 	log_error("Failed to initialize SQLITE.\n");
+    log_destroy();
+
 	exit(EXIT_FAILURE);
   }
 
@@ -164,6 +158,8 @@ jfs_init(struct fuse_conn_info *conn)
 								  SQLITE_OPEN_READONLY);
   if(!jfs_read_pool) {
 	log_error("Failed to allocate READ pool.\n");
+    log_destroy();
+
 	exit(EXIT_FAILURE);
   }
 
@@ -177,6 +173,8 @@ jfs_init(struct fuse_conn_info *conn)
 								   &wattr, SQLITE_OPEN_READWRITE);
   if(!jfs_write_pool) {
 	log_error("Failed to allocate WRITE pool.\n");
+    log_destroy();
+
 	exit(EXIT_FAILURE);
   }
   
@@ -215,8 +213,6 @@ jfs_destroy(void *arg)
 
   log_error("joinFS shutdown. Passed arg:%d.\n", arg);
   log_destroy();
-
-  free(JFS_CONTEXT);
 }
 
 static int 
@@ -268,15 +264,14 @@ jfs_readlink(const char *path, char *buf, size_t size)
   log_error("Called jfs_readlink, path:%s\n", path);
 
   jfs_path = jfs_realpath(path);
-  rc = readlink(jfs_path, buf, size - 1);
+  rc = jfs_file_readlink(jfs_path, buf, size);
   free(jfs_path);
 
-  if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+  if(rc < 0) {
     return rc;
   }
-
   buf[rc] = '\0';
+  
   return 0;
 }
 
@@ -335,24 +330,10 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
   log_error("Called jfs_mknod, path:%s mode:%d\n", path, mode);
 
   jfs_path = jfs_realpath(path);
-  /* On Linux this could just be 'mknod(path, mode, rdev)' but this
-     is more portable */
-  if(S_ISREG(mode)) {
-	rc = jfs_file_mknod(jfs_path, mode);
-  } 
-  else if(S_ISFIFO(mode)) {
-    rc = mkfifo(jfs_path, mode);
-  }
-  else {
-    rc = mknod(jfs_path, mode, rdev);
-  }
+  rc = jfs_file_mknod(path, mode, rdev);
   free(jfs_path);
 
-  if(rc == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
-  }
-  else if(rc < -1) {
+  if(rc) {
 	return rc;
   }
 
@@ -430,12 +411,11 @@ jfs_symlink(const char *from, const char *to)
   
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  rc = symlink(jfs_path_from, jfs_path_to);
+  rc = jfs_file_symlink(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
     return rc;
   }
 
@@ -474,12 +454,11 @@ jfs_link(const char *from, const char *to)
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  rc = link(jfs_path_from, jfs_path_to);
+  rc = jfs_file_link(jfs_path_from, jfs_path_to);
   free(jfs_path_from);
   free(jfs_path_to);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
     return rc;
   }
 
@@ -650,10 +629,7 @@ static int
 jfs_fsync(const char *path, int isdatasync,
 		  struct fuse_file_info *fi)
 {
-  char *jfs_path;
   int rc;
-
-  jfs_path = jfs_realpath(path);
 
   if(isdatasync) {
 	rc = fdatasync(fi->fh);
@@ -676,14 +652,11 @@ jfs_setxattr(const char *path, const char *name, const char *value,
   char *jfs_path;
   int rc;
 
-  log_error("Called jfs_setxattr, path:%s\n", path);
-
   jfs_path = jfs_realpath(path);
   rc = jfs_meta_setxattr(jfs_path, name, value, size, flags);
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
     return rc;
   }
 
@@ -697,16 +670,10 @@ jfs_getxattr(const char *path, const char *name, char *value,
   char *jfs_path;
   int rc;
 
-  log_error("Called jfs_getxattr, path:%s\n", path);
-
   jfs_path = jfs_realpath(path);
   rc = jfs_meta_getxattr(jfs_path, name, value, size);
   free(jfs_path);
-
-  if(rc < 0) {
-	log_error("Error occured, errno:%d\n", rc);
-  }
-
+  
   return rc;
 }
 
@@ -721,10 +688,6 @@ jfs_listxattr(const char *path, char *list, size_t size)
   jfs_path = jfs_realpath(path);
   rc = jfs_meta_listxattr(jfs_path, list, size);
   free(jfs_path);
-
-  if(rc < 0) {
-	log_error("Error occured, errno:%d\n", rc);
-  }
 
   return rc;
 }
@@ -742,7 +705,6 @@ jfs_removexattr(const char *path, const char *name)
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
     return rc;
   }
 

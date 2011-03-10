@@ -37,7 +37,7 @@ int jfs_file_create(const char *path, mode_t mode);
  *
  * Returns 0 on success, -1 on failure.
  */
-int jfs_file_mknod(const char *path, mode_t mode);
+int jfs_file_mknod(const char *path, mode_t mode, dev_t rdev);
 
 /*
  * Delets a joinFS static file.
@@ -67,5 +67,11 @@ int jfs_file_getattr(const char *path, struct stat *stbuf);
 int jfs_file_utimes(const char *path, const struct timeval tv[2]);
 
 int jfs_file_statfs(const char *path, struct statvfs *stbuf);
+
+int jfs_file_readlink(const char *path, char *buf, size_t size);
+
+int jfs_file_symlink(const char *from, const char *to);
+
+int jfs_file_link(const char *from, const char *to);
 
 #endif

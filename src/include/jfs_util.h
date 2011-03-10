@@ -56,6 +56,9 @@ int jfs_util_get_datainode(const char *path);
  */
 char *jfs_util_get_filename(const char *path);
 
+/*
+  Allocate and copies the new subpath. The result must be freed.
+ */
 int jfs_util_get_subpath(const char *path, char **subpath);
 
 int jfs_util_change_filename(const char *path, const char *filename, char **newpath);
@@ -68,19 +71,15 @@ int jfs_util_change_filename(const char *path, const char *filename, char **newp
  */
 int jfs_util_get_keyid(const char *key);
 
-/*
- * Return the datainode associated with a path.
- *
- * Returns -1 on error.
- */
-int jfs_util_get_datainode(const char *path);
-
-int jfs_util_file_cache_failure(int syminode, char **datapath, int *datainode);
-
-int jfs_util_file_cache_sympath_failure(int datainode, char **spath);
-
 int jfs_util_strip_last_path_item(char *path);
 
 char *jfs_util_get_last_path_item(const char *path);
+
+/*
+  Resolves dynamic paths for new filesystem items.
+
+  New path must be de-allocated by the calling function.
+ */
+int jfs_util_resolve_new_path(const char *path, char **new_path);
 
 #endif

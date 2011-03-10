@@ -104,87 +104,43 @@ jfs_util_is_path_dynamic(const char *path)
 int
 jfs_util_get_datapath(const char *path, char **datapath)
 {
-  char *dpath;
-  mode_t mode;
-
-  int inode;
   int rc;
 
-  if(jfs_util_is_realpath(path)) {
-    rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-    if(rc) {
-      return rc;
-    }
-  }
-  else {
-    return jfs_dynamic_path_resolution(path, datapath, &inode);
+  rc = jfs_util_get_datapath_and_datainode(path, datapath, NULL);
+  if(rc) {
+    return rc;
   }
 
-  if(S_ISDIR(mode)) {
-	*datapath = (char *)path;
-	return 0;
-  }
-  else if(S_ISREG(mode)) {
-	rc = jfs_file_cache_get_datapath(inode, &dpath);
-	if(rc) {
-      return rc;
-	}
-	*datapath = dpath;
-
-	return 0;
-  }
-  else {
-	return -1;
-  }
+  return 0;
 }
 
 int
 jfs_util_get_datainode(const char *path)
 {
-  char *datapath;
-  mode_t mode;
-
   int datainode;
-  int inode;
   int rc;
 
-  if(jfs_util_is_realpath(path)) {
-    rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-    if(rc) {
-      return rc;
-    }
-  }
-  else {
-	rc = jfs_dynamic_path_resolution(path, &datapath, &datainode);
-	if(rc) {
-	  return rc;
-	}	
-
-	return inode;
+  rc = jfs_util_get_datapath_and_datainode(path, NULL, &datainode);
+  if(rc) {
+    return rc;
   }
 
-  if(S_ISDIR(mode)) {
-	return inode;
-  }
-  else if(S_ISREG(mode)) {
-	datainode = jfs_file_cache_get_datainode(inode);
-	if(datainode < 1) {
-      return rc;
-	}
-  
-	return datainode;
-  }
-  else {
-	return -1;
-  }
+  return datainode;
 }
 
 int
 jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *datainode)
 {
-  char *dpath;
+  char *filename;
+  char *realpath;
+  char *subpath;
+  char *d_path;
+
   mode_t mode;
 
+  size_t realpath_len;
+
+  int d_inode;
   int inode;
   int rc;
 
@@ -195,27 +151,83 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
     }
   }
   else {
-	return jfs_dynamic_path_resolution(path, datapath, datainode);
+	rc = jfs_dynamic_path_resolution(path, &d_path, &d_inode);
+
+    //check if it is stored in a .jfs_sub_query folder
+	if(rc) {
+      rc = jfs_util_get_subpath(path, &subpath);
+      if(rc) {
+        return rc;
+      }
+      
+      rc = jfs_dynamic_path_resolution(subpath, &d_path, &d_inode);
+      if(rc) {
+        return rc;
+      }
+      free(subpath);
+
+      filename = jfs_util_get_filename(path);
+      realpath_len = strlen(d_path) + strlen(filename) + 2; //null and '/'
+      realpath = malloc(sizeof(*realpath) * realpath_len);
+      if(!realpath) {
+        return -ENOMEM;
+      }
+      snprintf(realpath, realpath_len, "%s/%s", d_path, filename);
+      d_path = realpath;
+
+      //does it actually exist?
+      d_inode = jfs_util_get_inode(d_path);
+      if(d_inode < 0) {
+        return d_inode;
+      }
+
+      //cache it for next time
+      rc = jfs_dynamic_hierarchy_add_file(path, d_path, d_inode);
+      if(rc) {
+        return rc;
+      }
+    }
+    
+    if(datainode) {
+      *datainode = d_inode;
+    }
+    
+    if(datapath) {
+      *datapath = d_path;
+    }
+
+    return 0;
   }
 
   if(S_ISDIR(mode)) {
-	*datainode = inode;
-	*datapath = (char *)path;
+    if(datainode) {
+      *datainode = inode;
+    }
+
+    if(datapath) {
+      *datapath = (char *)path;
+    }
 
 	return 0;
   }
   else if(S_ISREG(mode)) {	
-	rc = jfs_file_cache_get_datapath_and_datainode(inode, &dpath, datainode);
+	rc = jfs_file_cache_get_datapath_and_datainode(inode, &d_path, &d_inode);
 	if(rc) {
       return rc;
 	}
-	*datapath = dpath;
+
+    if(datainode) {
+      *datainode = d_inode;
+    }
+
+    if(datapath) {
+      *datapath = d_path;
+    }
     
 	return 0;
   }
-  else {
-	return -1;
-  }
+  
+  return -ENOENT;
 }
 
 char *
@@ -354,7 +366,7 @@ jfs_util_strip_last_path_item(char *path)
 
   terminator = strrchr(path, '/');
   if(!terminator) {
-    return 1;
+    return -ENOENT;
   }
   *terminator = '\0';
 
@@ -365,4 +377,66 @@ char *
 jfs_util_get_last_path_item(const char *path)
 {
   return strrchr(path, '/');
+}
+
+int
+jfs_util_resolve_new_path(const char *path, char **new_path)
+{
+  char *sub_datapath;
+  char *subpath;
+  char *realpath;
+  char *filename;
+
+  size_t realpath_len;
+
+  int rc;
+
+  sub_datapath = NULL;
+  filename = jfs_util_get_filename(path);
+  if(!filename) {
+    return -ENOENT;
+  }
+
+  printf("--filename:%s\n", filename);
+
+  rc = jfs_util_get_subpath(path, &subpath); 
+  if(rc){
+    return rc;
+  }
+
+  printf("--subpath:%s\n", subpath);
+  
+  //if the subpath isn't real, get the sub_datapath
+  if(!jfs_util_is_realpath(subpath)) {
+    rc = jfs_util_get_datapath(subpath, &sub_datapath);
+    if(rc) {
+      return rc;
+    }
+    free(subpath);
+
+    printf("--sub_datapath:%s\n", sub_datapath);
+
+    subpath = sub_datapath;
+  }
+
+  realpath_len = strlen(subpath) + strlen(filename) + 2; //null terminator and '/'
+  realpath = malloc(sizeof(*realpath) * realpath_len);
+  if(!realpath) {
+    if(!sub_datapath) {
+      free(subpath);
+    }
+
+    return -ENOMEM;
+  }
+  snprintf(realpath, realpath_len, "%s/%s", subpath, filename);
+
+  if(!sub_datapath) {
+    free(subpath);
+  }
+
+  *new_path = realpath;
+
+  printf("--REALPATH:%s\n", realpath);
+
+  return 0;
 }

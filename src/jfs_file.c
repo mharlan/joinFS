@@ -35,6 +35,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+static int jfs_file_do_create(const char *path, mode_t mode);
+static int jfs_file_do_mknod(const char *path, mode_t mode);
 static int jfs_file_do_rename(const char *from, const char *to);
 static int jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, char *filename, int mode);
 static int create_datapath(char *uuid, char **datapath);
@@ -47,6 +49,28 @@ static int create_datapath(char *uuid, char **datapath);
  */
 int
 jfs_file_create(const char *path, mode_t mode)
+{
+  char *realpath;
+
+  int rc;
+
+  rc = jfs_util_resolve_new_path(path, &realpath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_file_do_create(realpath, mode);
+  free(realpath);
+
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+
+static int
+jfs_file_do_create(const char *path, mode_t mode)
 {
   char *uuid;
   char *datapath;
@@ -113,7 +137,43 @@ jfs_file_create(const char *path, mode_t mode)
  * Returns 0 or -1 if there was an error.
  */
 int
-jfs_file_mknod(const char *path, mode_t mode)
+jfs_file_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+  char *realpath;
+  
+  int rc;
+
+  rc = jfs_util_resolve_new_path(path, &realpath);
+  if(rc) {
+    return rc;
+  }
+  
+  if(S_ISREG(mode)) {
+	rc = jfs_file_do_mknod(realpath, mode);
+  } 
+  else if(S_ISFIFO(mode)) {
+    rc = mkfifo(realpath, mode);
+    if(rc) {
+      rc = -errno;
+    }
+  }
+  else {
+    rc = mknod(realpath, mode, rdev);
+    if(rc) {
+      rc = -errno;
+    }
+  }
+  free(realpath);
+
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+
+static int
+jfs_file_do_mknod(const char *path, mode_t mode)
 {
   char *uuid;
   char *datapath;
@@ -711,6 +771,82 @@ jfs_file_statfs(const char *path, struct statvfs *stbuf)
   }
 
   rc = statvfs(datapath, stbuf);
+  if(rc) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+int 
+jfs_file_readlink(const char *path, char *buf, size_t size)
+{
+  char *datapath;
+
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = readlink(datapath, buf, size - 1);
+  if(rc) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+int 
+jfs_file_symlink(const char *from, const char *to)
+{
+  char *datapath_from;
+  char *realpath_to;
+
+  int rc;
+
+  rc = jfs_util_get_datapath(from, &datapath_from);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_util_resolve_new_path(to, &realpath_to);
+  if(rc) {
+    return rc;
+  }
+
+  rc = symlink(datapath_from, realpath_to);
+  free(realpath_to);
+
+  if(rc) {
+    return -errno;
+  }
+
+  return 0;
+}
+
+int 
+jfs_file_link(const char *from, const char *to)
+{
+  char *datapath_from;
+  char *realpath_to;
+
+  int rc;
+  
+  rc = jfs_util_get_datapath(from, &datapath_from);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_util_resolve_new_path(to, &realpath_to);
+  if(rc) {
+    return rc;
+  }
+
+  rc = link(datapath_from, realpath_to);
+  free(realpath_to);
+
   if(rc) {
     return -errno;
   }
