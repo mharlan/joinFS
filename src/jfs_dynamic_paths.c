@@ -475,7 +475,6 @@ jfs_dynamic_hierarchy_unlink(const char *path)
   }
 
   free(file->name);
-  jfs_datapath_cache_remove(file->datainode);
   sglib_jfs_filelist_t_delete(&file_list, file);
 
   return rc;

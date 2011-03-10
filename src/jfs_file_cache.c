@@ -295,8 +295,6 @@ jfs_file_cache_remove(int syminode)
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
 
   if(rc) {
-	jfs_datapath_cache_remove(elem->datainode);
-
     free(elem->sympath);
     free(elem); 
   }

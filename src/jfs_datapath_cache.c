@@ -145,7 +145,6 @@ jfs_datapath_cache_remove(int inode)
   int rc;
 
   check.inode = inode;
-
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
   
   if(rc) {
@@ -189,16 +188,40 @@ int
 jfs_datapath_cache_change_inode(int inode, int new_inode)
 {
   jfs_datapath_cache_t check;
-  jfs_datapath_cache_t *result;
+  jfs_datapath_cache_t *elem;
+  jfs_datapath_cache_t *new;
+
+  char *path;
+
+  size_t path_len;
+
+  int rc;
 
   check.inode = inode;
-  result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
+  rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
 
-  if(!result) {
+  if(!rc) {
 	return -ENOENT;
   }
+
+  new = malloc(sizeof(*new));
+  if(!new) {
+    return -ENOMEM;
+  }
   
-  result->inode = new_inode;
+  path_len = strlen(elem->datapath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    free(new);
+    return -ENOMEM;
+  }
+  strncpy(path, elem->datapath, path_len);
+
+  free(elem->datapath);
+  free(elem);
+
+  new->datapath = path;
+  sglib_hashed_jfs_datapath_cache_t_add(hashtable, new);
 
   return 0;
 }
@@ -212,6 +235,7 @@ jfs_datapath_cache_miss(int inode, char **datapath)
   struct jfs_db_op *db_op;
   
   char *path;
+
   size_t path_len;
 
   int rc;

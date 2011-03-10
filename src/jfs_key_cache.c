@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <attr/xattr.h>
 
 #define JFS_KEY_CACHE_SIZE 1000
 
@@ -109,7 +110,7 @@ jfs_key_cache_get_keyid(const char *keytext)
   free(check.keytext);
 
   if(!result) {
-    return -1;
+    return -ENOATTR;
   }
 
   return result->keyid;
@@ -130,6 +131,7 @@ jfs_key_cache_add(int keyid, const char *keytext)
   key_len = strlen(keytext) + 1;
   item->keytext = malloc(sizeof(*item->keytext) * key_len);
   if(!item->keytext) {
+    free(item);
     return -ENOMEM;
   }
   strncpy(item->keytext, keytext, key_len);

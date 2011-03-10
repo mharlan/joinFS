@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include <attr/xattr.h>
 
 #define JFS_META_CACHE_SIZE 10000
 
@@ -100,11 +101,9 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
 
   check.inode = inode;
   check.keyid = keyid;
-
   result = sglib_hashed_jfs_meta_cache_t_find_member(hashtable, &check);
-
   if(!result) {
-	return -EINVAL;
+	return -ENOATTR;
   }
 
   val_len = strlen(result->value) + 1;

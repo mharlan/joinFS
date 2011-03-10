@@ -17,6 +17,10 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
+#if !defined(_REENTRANT)
+#define	_REENTRANT
+#endif
+
 #include "error_log.h"
 #include "sqlitedb.h"
 #include "jfs_file_cache.h"
@@ -161,10 +165,11 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
       }
       
       rc = jfs_dynamic_path_resolution(subpath, &d_path, &d_inode);
+      free(subpath);
+
       if(rc) {
         return rc;
       }
-      free(subpath);
 
       filename = jfs_util_get_filename(path);
       realpath_len = strlen(d_path) + strlen(filename) + 2; //null and '/'
@@ -195,6 +200,9 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
     if(datapath) {
       *datapath = d_path;
     }
+    else {
+      free(d_path);
+    }
 
     return 0;
   }
@@ -205,7 +213,14 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
     }
 
     if(datapath) {
-      *datapath = (char *)path;
+      realpath_len = strlen(path) + 1;
+      realpath = malloc(sizeof(*realpath) * realpath_len);
+      if(!realpath) {
+        return -ENOMEM;
+      }
+      strncpy(realpath, path, realpath_len);
+
+      *datapath = realpath;
     }
 
 	return 0;
@@ -222,6 +237,9 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
 
     if(datapath) {
       *datapath = d_path;
+    }
+    else {
+      free(datapath);
     }
     
 	return 0;
@@ -262,6 +280,7 @@ jfs_util_change_filename(const char *path, const char *filename, char **newpath)
 
   snprintf(npath, npath_len, "%s%s", subpath, filename);
   free(subpath);
+
   *newpath = npath;
 
   return 0;
@@ -277,6 +296,7 @@ int
 jfs_util_get_keyid(const char *key)
 {
   struct jfs_db_op *db_op;
+  
   int keyid;
   int rc;
 
@@ -366,7 +386,7 @@ jfs_util_get_subpath(const char *path, char **new_path)
   size_t sub_len;
 
   filename = jfs_util_get_filename(path);
-  if(!filename) {
+  if(!filename || *filename == '\0') {
     return -ENOENT;
   }
 
@@ -399,7 +419,7 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
 
   sub_datapath = NULL;
   filename = jfs_util_get_filename(path);
-  if(!filename) {
+  if(!filename || *filename == '\0') {
     return -ENOENT;
   }
 
@@ -425,7 +445,7 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
     subpath = sub_datapath;
   }
 
-  realpath_len = strlen(subpath) + strlen(filename) + 1; //null terminator and '/'
+  realpath_len = strlen(subpath) + strlen(filename) + 1;
   realpath = malloc(sizeof(*realpath) * realpath_len);
   if(!realpath) {
     if(!sub_datapath) {
@@ -435,10 +455,7 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
     return -ENOMEM;
   }
   snprintf(realpath, realpath_len, "%s%s", subpath, filename);
-
-  if(!sub_datapath) {
-    free(subpath);
-  }
+  free(subpath);
 
   *new_path = realpath;
 
