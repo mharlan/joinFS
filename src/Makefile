@@ -24,7 +24,8 @@ SRC=error_log.c \
 	jfs_dynamic_paths.c \
 	jfs_datapath_cache.c \
     jfs_key_cache.c \
-    jfs_meta_cache.c
+    jfs_meta_cache.c \
+	jfs_query_builder.c
 
 OBJS=$(SRC:%.c=obj/%.o)
 

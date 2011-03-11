@@ -35,10 +35,10 @@ void log_init(void)
 {
   log = fopen(log_path, "w+");
   if(log) {
-	printf("Opened log file at path:%s\n", log_path);
+	log_msg("Opened log file at path:%s\n", log_path);
   }
   else {
-	printf("ERROR: Open log file failed, path:%s\n", log_path);
+	printf("---ERROR---Open log file failed, path:%s\n", log_path);
   }
 }
 
