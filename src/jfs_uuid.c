@@ -23,34 +23,12 @@
 
 #include "error_log.h"
 #include "jfs_uuid.h"
+#include "joinfs.h"
 
+#include <fuse.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <uuid/uuid.h>
-
-/*
- * Allocate the memory to store a uuid.
- */
-char *
-jfs_create_uuid()
-{
-  char *uuid;
-
-  uuid = malloc(sizeof(*uuid) * JFS_UUID_LEN);
-  if(!uuid) {
-	log_error("Failed to allocate memory for new uuid.\n");
-  }
-
-  return uuid;
-}
-
-/*
- * Deallocate the memory for a uuid.
- */
-void
-jfs_destroy_uuid(char *uuid)
-{
-  free(uuid);
-}
 
 /*
  * Generates a new unique joinFS id.
@@ -58,11 +36,50 @@ jfs_destroy_uuid(char *uuid)
  * Memory for the uuid must already be allocated with
  * jfs_create_uuid().
  */
-void
-jfs_generate_uuid(char *uuid)
+int
+jfs_uuid_generate(char **uuid)
 {
+  char *the_uuid;
   uuid_t id;
 
+  the_uuid = malloc(sizeof(*the_uuid) * JFS_UUID_LEN);
+  if(!the_uuid) {
+    return -ENOMEM;
+  }
+
   uuid_generate(id);
-  uuid_unparse_lower(id, uuid);
+  uuid_unparse_lower(id, the_uuid);
+
+  *uuid = the_uuid;
+
+  return 0;
+}
+
+int
+jfs_uuid_new_datapath(char **datapath)
+{
+  char *uuid;
+  char *d_path;
+
+  size_t path_len;
+
+  int rc;
+
+  rc = jfs_uuid_generate(&uuid);
+  if(rc) {
+    return rc;
+  }
+
+  path_len = JFS_CONTEXT->datapath_len + JFS_UUID_LEN + 1;
+  d_path = malloc(sizeof(*d_path) * path_len);
+  if(!d_path) {
+	free(uuid);
+	return -ENOMEM;
+  }
+  snprintf(d_path, path_len, "%s/%s", JFS_CONTEXT->datapath, uuid);
+  free(uuid);
+  
+  *datapath = d_path;
+
+  return 0;
 }
