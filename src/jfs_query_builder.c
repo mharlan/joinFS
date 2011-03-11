@@ -21,6 +21,7 @@
 #define	_REENTRANT
 #endif
 
+#include "sqlitedb.h"
 #include "jfs_query_builder.h"
 
 #include <stdlib.h>
@@ -40,28 +41,33 @@ jfs_query_builder(char **query, const char *format, ...)
   
   size_t query_size;
 
-  int num_args;
+  int rc;
 
-  num_args = 0;
-  query_size = strlen(format) + 1;
-
-  va_start(args, format);
-  //figure out how big the query is
-  va_end(args);
-
-  //don't count format strings
-  query_size -= num_args * JFS_FORMAT_ADJ;
+  query_size = JFS_QUERY_MAX;
   new_query = malloc(sizeof(*new_query) * query_size);
   if(!new_query) {
     return -ENOMEM;
   }
-
-  //start over
+  
   va_start(args, format);
-  vsprintf(new_query, format, args);
+  rc = vsnprintf(new_query, query_size, format, args);
   va_end(args);
+  
+  if(rc) {
+    query_size += rc;
+    free(new_query);
+    
+    new_query = malloc(sizeof(*new_query) * query_size);
+    if(!new_query) {
+      return -ENOMEM;
+    }
+    
+    va_start(args, format);
+    vsnprintf(new_query, query_size, format, args);
+    va_end(args);
+  }
 
   *query = new_query;
-
+  
   return 0;
 }
