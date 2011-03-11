@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define JFS_DATAPATH_CACHE_SIZE 1000
 
@@ -75,14 +76,15 @@ SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_datapath_cache_t, JFS_DATAPATH_CACHE
 
 static int jfs_datapath_cache_miss(int inode, char **datapath);
 
+static pthread_rwlock_t cache_lock;
+
 /*
  * Initialize the jfs_datapath_cache.
  */
 void 
 jfs_datapath_cache_init()
 {
-  log_error("JFS_DATPATH_CACHE_INIT\n");
-
+  pthread_rwlock_init(&cache_lock, NULL);
   sglib_hashed_jfs_datapath_cache_t_init(hashtable);
 }
 
@@ -95,13 +97,16 @@ jfs_datapath_cache_destroy()
   struct sglib_hashed_jfs_datapath_cache_t_iterator it;
   jfs_datapath_cache_t *item;
   
-  log_error("JFS_DATAPATH_CACHE_CLEANUP\n");
-
+  pthread_rwlock_wrlock(&cache_lock);
+  
   for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
 	free(item->datapath);
 	free(item);
   }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
 }
 
 int
@@ -131,7 +136,9 @@ jfs_datapath_cache_add(int inode, const char *datapath)
   item->inode = inode;
   item->datapath = path;
 
+  pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_datapath_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
@@ -145,13 +152,16 @@ jfs_datapath_cache_remove(int inode)
   int rc;
 
   check.inode = inode;
+
+  pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
   
   if(rc) {
     free(elem->datapath);
     free(elem);
   }
-
+  
   return 0;
 }
 
@@ -166,9 +176,12 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
   size_t path_len;
 
   check.inode = inode;
+
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
 
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
 	return jfs_datapath_cache_miss(inode, datapath);
   }
 
@@ -178,6 +191,7 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
     return -ENOMEM;
   }
   strncpy(path, result->datapath, path_len);
+  pthread_rwlock_unlock(&cache_lock);
 
   *datapath = path;
 
@@ -198,7 +212,10 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
   int rc;
 
   check.inode = inode;
+
+  pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
 
   if(!rc) {
 	return -ENOENT;
@@ -206,6 +223,9 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
 
   new = malloc(sizeof(*new));
   if(!new) {
+    free(elem->datapath);
+    free(elem);
+
     return -ENOMEM;
   }
   
@@ -213,6 +233,9 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
   path = malloc(sizeof(*path) * path_len);
   if(!path) {
     free(new);
+    free(elem->datapath);
+    free(elem);
+    
     return -ENOMEM;
   }
   strncpy(path, elem->datapath, path_len);
@@ -221,7 +244,10 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
   free(elem);
 
   new->datapath = path;
+
+  pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_datapath_cache_t_add(hashtable, new);
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
