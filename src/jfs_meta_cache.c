@@ -30,6 +30,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <attr/xattr.h>
+#include <pthread.h>
 
 #define JFS_META_CACHE_SIZE 10000
 
@@ -70,9 +71,12 @@ SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_meta_cache_t, JFS_META_CACHE_SIZE,
 SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_meta_cache_t, JFS_META_CACHE_SIZE,
                                         jfs_meta_cache_t_hash)
 
+static pthread_rwlock_t cache_lock;
+
 void
 jfs_meta_cache_init()
 {
+  pthread_rwlock_init(&cache_lock, NULL);
   sglib_hashed_jfs_meta_cache_t_init(hashtable);
 }
 
@@ -82,11 +86,15 @@ jfs_meta_cache_destroy()
   struct sglib_hashed_jfs_meta_cache_t_iterator it;
   jfs_meta_cache_t *item;
 
+  pthread_rwlock_wrlock(&cache_lock);
   for(item = sglib_hashed_jfs_meta_cache_t_it_init(&it, hashtable);
       item != NULL; item = sglib_hashed_jfs_meta_cache_t_it_next(&it)) {
     free(item->value);
     free(item);
   }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
 }
 
 int
@@ -101,8 +109,12 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
 
   check.inode = inode;
   check.keyid = keyid;
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_meta_cache_t_find_member(hashtable, &check);
+  
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+    
 	return -ENOATTR;
   }
 
@@ -110,9 +122,12 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
   val = malloc(sizeof(*val) * val_len);
   if(!val) {
     free(val);
+    pthread_rwlock_unlock(&cache_lock);
+
     return -ENOMEM;
   }
   strncpy(val, result->value, val_len);
+  pthread_rwlock_unlock(&cache_lock);
 
   *value = val;
 
@@ -147,7 +162,9 @@ jfs_meta_cache_add(int inode, int keyid, const char *value)
   item->keyid = keyid;
   item->value = val;
 
+  pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_meta_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
@@ -161,12 +178,15 @@ jfs_meta_cache_remove(int inode, int keyid)
 
   check.inode = inode;
   check.keyid = keyid;
+
+  pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_meta_cache_t_delete_if_member(hashtable, &check, &elem);
   
   if(rc) {
 	free(elem->value);
     free(elem);
   }
+  pthread_rwlock_unlock(&cache_lock);
   
   return 0;
 }
