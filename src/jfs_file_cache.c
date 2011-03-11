@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define JFS_FILE_CACHE_MAX  2000
 #define JFS_FILE_CACHE_SIZE 1000
@@ -79,14 +80,15 @@ SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_file_cache_t, JFS_FILE_CACHE_SIZE,
 static int jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainode);
 static int jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int *syminode);
 
+static pthread_rwlock_t cache_lock;
+
 /*
  * Initialize the jfs_file_cache.
  */
 void 
 jfs_file_cache_init()
 {
-  log_msg("JFS_FILE_CACHE_INIT\n");
-
+  pthread_rwlock_init(&cache_lock, NULL);
   sglib_hashed_jfs_file_cache_t_init(hashtable);
 }
 
@@ -99,13 +101,14 @@ jfs_file_cache_destroy()
   struct sglib_hashed_jfs_file_cache_t_iterator it;
   jfs_file_cache_t *item;
   
-  log_msg("JFS_FILE_CACHE_CLEANUP\n");
-
+  pthread_rwlock_wrlock(&cache_lock);
   for(item = sglib_hashed_jfs_file_cache_t_it_init(&it, hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_file_cache_t_it_next(&it)) {
     free(item->sympath);
 	free(item);
   }
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
 }
 
 /*
@@ -123,18 +126,23 @@ jfs_file_cache_get_datainode(int syminode)
   int rc;
 
   check.syminode = syminode;
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+
     rc = jfs_file_cache_miss(syminode, NULL, NULL, &datainode);
     if(rc) {
       return rc;
     }
-
-	return datainode;
+  }
+  else {
+    datainode = result->datainode;
+    pthread_rwlock_unlock(&cache_lock);
   }
 
-  return result->datainode;
+  return datainode;
 }
 
 /*
@@ -147,15 +155,22 @@ jfs_file_cache_get_datapath(int syminode, char **datapath)
 {
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
+
+  int datainode;
   
   check.syminode = syminode;
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+
 	return -1;
   }
-
-  jfs_datapath_cache_get_datapath(result->datainode, datapath);
+  datainode = result->datainode;
+  pthread_rwlock_unlock(&cache_lock);
+  
+  jfs_datapath_cache_get_datapath(datainode, datapath);
 
   return 0;
 }
@@ -176,18 +191,24 @@ jfs_file_cache_get_sympath(int datainode, char **sympath)
   size_t path_len;
 
   check.datainode = datainode;
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+    
     return jfs_file_cache_sympath_miss(datainode, sympath, NULL, NULL);
   }
 
   path_len = strlen(result->sympath) + 1;
   path = malloc(sizeof(*path) * path_len);
   if(!path) {
+    pthread_rwlock_unlock(&cache_lock);
+
     return -ENOMEM;
   }
   strncpy(path, result->sympath, path_len);
+  pthread_rwlock_unlock(&cache_lock);
 
   *sympath = path;
 
@@ -206,14 +227,18 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
   jfs_file_cache_t *result;
 
   check.syminode = syminode;
-
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
+  
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+
 	return jfs_file_cache_miss(syminode, NULL, datapath, datainode);
   }
-
   *datainode = result->datainode;
-  jfs_datapath_cache_get_datapath(result->datainode, datapath);
+  pthread_rwlock_unlock(&cache_lock);
+
+  jfs_datapath_cache_get_datapath(*datainode, datapath);
 
   return 0;
 }
@@ -246,8 +271,11 @@ jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char 
   item->syminode = syminode;
   item->datainode = datainode;
   item->sympath = path;
-
+  
+  pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_file_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
+
   jfs_datapath_cache_add(datainode, datapath);
 
   return 0;
@@ -263,20 +291,27 @@ jfs_file_cache_update_sympath(int syminode, const char *sympath)
   size_t sympath_len;
 
   check.syminode = syminode;
+  pthread_rwlock_wrlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
+  
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+
 	return -ENOENT;
   }
 
   sympath_len = strlen(sympath) + 1;
   new_sympath = malloc(sizeof(*result->sympath) * sympath_len);
   if(!new_sympath) {
+    pthread_rwlock_unlock(&cache_lock);
+
     return -ENOMEM;
   }
 
   free(result->sympath);
   strncpy(new_sympath, sympath, sympath_len);
   result->sympath = new_sympath;
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
@@ -292,12 +327,14 @@ jfs_file_cache_remove(int syminode)
   int rc;
 
   check.syminode = syminode;
+  pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
 
   if(rc) {
     free(elem->sympath);
     free(elem); 
   }
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
@@ -403,9 +440,7 @@ jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int 
 
   int inode;
   int rc;
-
-  printf("----Handling jfs_file_cache miss for datainode:%d\n", datainode);
-
+  
   rc = jfs_db_op_create(&db_op, jfs_file_cache_op,
                         "SELECT s.sympath, f.datapath, s.syminode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.datainode=%d;",
                         datainode);

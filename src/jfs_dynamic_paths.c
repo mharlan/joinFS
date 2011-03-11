@@ -488,6 +488,7 @@ jfs_dynamic_hierarchy_destroy(void)
   pthread_rwlock_wrlock(&path_lock);
   jfs_dynamic_hierarchy_folder_cleanup(&jfs_root);
   pthread_rwlock_unlock(&path_lock);
+  pthread_rwlock_destroy(&path_lock);
 
   return 0;
 }
