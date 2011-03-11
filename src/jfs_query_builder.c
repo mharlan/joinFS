@@ -38,33 +38,49 @@ jfs_query_builder(char **query, const char *format, ...)
   va_list args;
 
   char *new_query;
+  char *np;
   
-  size_t query_size;
-
+  int query_size;
   int rc;
 
-  query_size = JFS_QUERY_MAX;
+  query_size = JFS_QUERY_INC;
   new_query = malloc(sizeof(*new_query) * query_size);
   if(!new_query) {
     return -ENOMEM;
   }
   
-  va_start(args, format);
-  rc = vsnprintf(new_query, query_size, format, args);
-  va_end(args);
-  
-  if(rc) {
-    query_size += rc;
-    free(new_query);
+  while(1) {
+    va_start(args, format);
+    rc = vsnprintf(new_query, query_size, format, args);
+    va_end(args);
+
+    printf("RC is:%d\n", rc);
+
+    if(rc > -1 && rc < query_size) {
+      break;
+    }
+    else if(rc > -1) {
+      query_size = rc + 1;
+    }
+    else {
+      if(errno == EILSEQ) {
+        return -errno;
+      }
+      
+      query_size += JFS_QUERY_INC;
+    }
+
+    printf("New query_size:%d\n", query_size);
     
-    new_query = malloc(sizeof(*new_query) * query_size);
-    if(!new_query) {
+    np = realloc(new_query, sizeof(*new_query) * query_size);
+    if(!np) {
+      free(new_query);
+      
       return -ENOMEM;
     }
-    
-    va_start(args, format);
-    vsnprintf(new_query, query_size, format, args);
-    va_end(args);
+    else {
+      new_query = np;
+    }
   }
 
   *query = new_query;

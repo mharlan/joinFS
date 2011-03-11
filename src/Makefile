@@ -32,14 +32,16 @@ OBJS=$(SRC:%.c=obj/%.o)
 TESTSRC=tests/jfs_pool_test.c \
 		tests/jfs_uuid_test.c \
 		tests/jfs_realpath_test.c \
-		tests/jfs_meta_test.c
+		tests/jfs_meta_test.c \
+		tests/jfs_query_builder_test.c
 
 TESTOBJS=obj/error_log.o \
 	 	 obj/sqlitedb.o \
 	 	 obj/thr_pool.o \
 	 	 obj/result.o \
 	 	 obj/jfs_list.o \
-	 	 obj/jfs_uuid.o
+	 	 obj/jfs_uuid.o \
+		 obj/jfs_query_builder.o
 
 TESTS=$(TESTSRC:%.c=%)
 

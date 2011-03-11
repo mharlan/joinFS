@@ -154,7 +154,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     return -ENOMEM;
   }
 
-  query_len = JFS_QUERY_MAX;
+  query_len = JFS_QUERY_INC;
   query = malloc(sizeof(*query) * query_len);
   if(!query) {
     return -ENOMEM;
@@ -329,13 +329,12 @@ jfs_dir_expand_query(size_t *query_len, char **query)
 
   printf("Expanding query.\n");
 
-  new_len = *query_len + JFS_QUERY_MAX;
+  new_len = *query_len + JFS_QUERY_INC;
   new_query = malloc(sizeof(*new_query) * new_len);
   if(!new_query) {
     return -ENOMEM;
   }
   strncpy(new_query, *query, *query_len);
-
   free(*query);
 
   *query_len = new_len;
