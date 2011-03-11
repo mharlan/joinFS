@@ -52,7 +52,7 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
 
   char *query;
 
-  size_t query_size;
+  int query_size;
   int rc;
 
   db_op = malloc(sizeof(*db_op));

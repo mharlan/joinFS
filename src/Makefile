@@ -24,8 +24,7 @@ SRC=error_log.c \
 	jfs_dynamic_paths.c \
 	jfs_datapath_cache.c \
     jfs_key_cache.c \
-    jfs_meta_cache.c \
-	jfs_query_builder.c
+    jfs_meta_cache.c
 
 OBJS=$(SRC:%.c=obj/%.o)
 
@@ -40,8 +39,7 @@ TESTOBJS=obj/error_log.o \
 	 	 obj/thr_pool.o \
 	 	 obj/result.o \
 	 	 obj/jfs_list.o \
-	 	 obj/jfs_uuid.o \
-		 obj/jfs_query_builder.o
+	 	 obj/jfs_uuid.o
 
 TESTS=$(TESTSRC:%.c=%)
 
