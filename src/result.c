@@ -33,6 +33,8 @@
 #include <sqlite3.h>
 #include <sys/types.h>
 
+#define JFS_SQL_RC_SCALE 100
+
 static int jfs_do_write_op(sqlite3_stmt *stmt);
 static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
@@ -49,9 +51,7 @@ int
 jfs_db_result(struct jfs_db_op *db_op)
 {
   int rc;
-
-  log_error("--PACKING JFS QUERY RESULTS--\n");
-
+  
   switch(db_op->op) {
   case(jfs_write_op):
 	rc = jfs_do_write_op(db_op->stmt);
@@ -79,10 +79,14 @@ jfs_db_result(struct jfs_db_op *db_op)
 	break;
   default:
 	rc = -EOPNOTSUPP;
-	log_error("jfs_db_op #:%d not yet implemented.\n", db_op->op);
   }
 
-  return rc;
+  if(rc < 0) {
+    return rc;
+  }
+  else {
+    return rc * -JFS_SQL_RC_SCALE;
+  }
 }
 
 /*
@@ -190,7 +194,6 @@ jfs_do_datapath_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
   }
   else {
 	free(row);
-	log_error("--sqlite row failed, rc:%d\n", rc);
   }
 
   return sqlite3_finalize(stmt);
@@ -247,12 +250,9 @@ jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
 
 	row->inode = inode;	  
 	*result = row;
-
-	log_error("--jfs_file_cache_op--DATAPATH(%s) INODE(%d)\n", row->datapath, row->inode);
   }
   else {
 	free(row);
-	log_error("--sqlite row failed, rc:%d\n", rc);
   }
 
   return sqlite3_finalize(stmt);

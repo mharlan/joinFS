@@ -107,6 +107,7 @@ jfs_file_cache_destroy()
     free(item->sympath);
 	free(item);
   }
+  
   pthread_rwlock_unlock(&cache_lock);
   pthread_rwlock_destroy(&cache_lock);
 }
@@ -257,7 +258,6 @@ jfs_file_cache_add(int syminode, const char *sympath, int datainode, const char 
 
   item = malloc(sizeof(*item));
   if(!item) {
-	log_error("Failed to allocate memory for a file cache symlink.");
 	return -ENOMEM;
   }
 
@@ -329,12 +329,12 @@ jfs_file_cache_remove(int syminode)
   check.syminode = syminode;
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
 
   if(rc) {
     free(elem->sympath);
     free(elem); 
   }
-  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }

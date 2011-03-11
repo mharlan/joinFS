@@ -181,12 +181,12 @@ jfs_meta_cache_remove(int inode, int keyid)
 
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_meta_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
   
   if(rc) {
 	free(elem->value);
     free(elem);
   }
-  pthread_rwlock_unlock(&cache_lock);
   
   return 0;
 }

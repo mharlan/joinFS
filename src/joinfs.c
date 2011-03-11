@@ -72,13 +72,10 @@ jfs_realpath(const char *path)
   char *jfs_path;
 
   int path_len;
-
-  log_error("Called jfs_realpath, path:%s\n", path);
-
+  
   path_len = strlen(path) + JFS_CONTEXT->querypath_len + 2;
   jfs_path = malloc(sizeof(*jfs_path) * path_len);
   if(!jfs_path) {
-	log_error("Failed to allocate memory for jfs_realpath.\n");
 	return 0;
   }
 
@@ -124,8 +121,8 @@ jfs_init(struct fuse_conn_info *conn)
   int rc;
 
   log_init();
-  log_error("Starting joinFS. FUSE Major=%d Minor=%d\n",
-			conn->proto_major, conn->proto_minor);
+  log_msg("Starting joinFS. FUSE Major=%d Minor=%d\n",
+          conn->proto_major, conn->proto_minor);
 
   /* initialize caches */
   jfs_file_cache_init();
@@ -137,7 +134,7 @@ jfs_init(struct fuse_conn_info *conn)
   /* start sqlite in multithreaded mode */
   rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   if(rc != SQLITE_OK) {
-	log_error("Failed to configuring multithreading for SQLITE.\n");
+	log_error("Failed to configure multithreading for SQLITE.\n");
     log_destroy();
 
 	exit(EXIT_FAILURE);
@@ -145,13 +142,13 @@ jfs_init(struct fuse_conn_info *conn)
 
   rc = sqlite3_initialize();
   if(rc != SQLITE_OK) {
-	log_error("Failed to initialize SQLITE.\n");
+	log_error("Failed to initialize SQLite.\n");
     log_destroy();
 
 	exit(EXIT_FAILURE);
   }
 
-  log_error("SQLITE started.\n");
+  log_msg("SQLite started.\n");
 
   jfs_read_pool = jfs_pool_create(JFS_THREAD_MIN, JFS_THREAD_MAX, 
 								  JFS_THREAD_LINGER, NULL, 
@@ -178,7 +175,7 @@ jfs_init(struct fuse_conn_info *conn)
 	exit(EXIT_FAILURE);
   }
   
-  log_error("Thread pools started.\n");
+  log_msg("joinFS Thread pools started.\n");
   
   return JFS_CONTEXT;
 }
@@ -201,17 +198,12 @@ jfs_destroy(void *arg)
   }
 
   jfs_file_cache_destroy();
-  printf("File cache destroyed.\n");
   jfs_datapath_cache_destroy();
-  printf("Datapath cache destroyed.\n");
   jfs_key_cache_destroy();
-  printf("Key cache destroyed.\n");
   jfs_meta_cache_destroy();
-  printf("Meta cache destroyed.\n");
   jfs_dynamic_hierarchy_destroy();
-  printf("Dynamic hierarchy destroyed.\n");
 
-  log_error("joinFS shutdown. Passed arg:%d.\n", arg);
+  log_msg("joinFS shutdown completed successfully.\n", arg);
   log_destroy();
 }
 
@@ -220,15 +212,13 @@ jfs_getattr(const char *path, struct stat *stbuf)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_getattr, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_file_getattr(jfs_path, stbuf);
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_getattr---path:%s, error:%d\n", path, rc);
     return rc;
   }
   
@@ -241,14 +231,12 @@ jfs_access(const char *path, int mask)
   char *jfs_path;
   int rc;
   
-  log_error("Called jfs_access, path:%s, mask:%d\n", path, mask);
-
   jfs_path = jfs_realpath(path);
   rc = jfs_security_access(jfs_path, mask);
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_access---path:%s, mask:%d, error:%d\n", path, mask, rc);
     return rc;
   }
   
@@ -260,14 +248,13 @@ jfs_readlink(const char *path, char *buf, size_t size)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_readlink, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_file_readlink(jfs_path, buf, size);
   free(jfs_path);
 
   if(rc < 0) {
+    log_error("jfs_readlink---path:%s, error:%d\n", path, rc);
     return rc;
   }
   buf[rc] = '\0';
@@ -284,14 +271,13 @@ jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   int rc;
 
   (void) offset;
-
-  log_error("Called jfs_readdir, path:%s\n", path);
   
   jfs_path = jfs_realpath(path);
   rc = jfs_dir_readdir(jfs_path, buf, filler);
   free(jfs_path);
 
   if(rc) {
+    log_error("jfs_readdir---path:%s, error:%d\n", path, rc);
 	return rc;
   }
 
@@ -303,15 +289,13 @@ jfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
   char *jfs_path;
   int fd;
-
-  log_error("Called jfs_create, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   fd = jfs_file_create(jfs_path, mode);
   free(jfs_path);
 
   if(fd < 0) {
-	log_error("Error occured, errno:%d\n", fd);
+	log_error("jfs_create---path:%s, mode:%d, error:%d\n", path, mode, fd);
 	return fd;
   }
 
@@ -326,14 +310,13 @@ jfs_mknod(const char *path, mode_t mode, dev_t rdev)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_mknod, path:%s mode:%d\n", path, mode);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_file_mknod(path, mode, rdev);
   free(jfs_path);
 
   if(rc) {
+    log_error("jfs_mknod---path:%s, mode:%d, rdev:%d, error:%d\n", path, mode, rdev, rc);
 	return rc;
   }
 
@@ -346,14 +329,12 @@ jfs_mkdir(const char *path, mode_t mode)
   char *jfs_path;
   int rc;
   
-  log_error("Called jfs_mkdir, path:%s\n", path);
-
   jfs_path = jfs_realpath(path);
   rc = jfs_dir_mkdir(jfs_path, mode);
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_mkdir path:%d, mode:%d, error:%d\n", path, mode, rc);
     return rc;
   }
 
@@ -366,16 +347,12 @@ jfs_unlink(const char *path)
   char *jfs_path;
   int rc;
   
-  log_error("Called jfs_unlink, path:%s\n", path);
-  
   jfs_path = jfs_realpath(path);
   rc = jfs_file_unlink(jfs_path);
-  if(jfs_path) {
-    free(jfs_path);
-  }
+  free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_unlink---path:%s, error:%d\n", path, rc);
     return rc;
   }
 
@@ -387,9 +364,7 @@ jfs_rmdir(const char *path)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_rmdir, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_dir_rmdir(jfs_path);
   if(jfs_path) {
@@ -397,7 +372,7 @@ jfs_rmdir(const char *path)
   }
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_rmdir---path:%s, error:%d\n", path, rc);
     return rc;
   }
 
@@ -410,20 +385,15 @@ jfs_symlink(const char *from, const char *to)
   char *jfs_path_from;
   char *jfs_path_to;
   int rc;
-
-  log_error("Called jfs_symlink, from:%s to:%s\n", from, to);
   
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_symlink(jfs_path_from, jfs_path_to);
-  if(jfs_path_from) {
-    free(jfs_path_from);
-  }
-  if(jfs_path_to) {
-    free(jfs_path_to);
-  }
+  free(jfs_path_from);
+  free(jfs_path_to);
 
   if(rc) {
+    log_error("jfs_symlink---from:%s, to:%s, error:%d\n", from, to, rc);
     return rc;
   }
 
@@ -435,20 +405,17 @@ jfs_rename(const char *from, const char *to)
 {
   char *jfs_path_from;
   char *jfs_path_to;
+
   int rc;
 
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_rename(jfs_path_from, jfs_path_to);
-  if(jfs_path_from) {
-    free(jfs_path_from);
-  }
-  if(jfs_path_to) {
-    free(jfs_path_to);
-  }
+  free(jfs_path_from);
+  free(jfs_path_to);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_rename---from:%s, to:%s, error:%d\n", from, to, rc);
     return rc;
   }
 
@@ -460,21 +427,17 @@ jfs_link(const char *from, const char *to)
 {
   char *jfs_path_from;
   char *jfs_path_to;
+
   int rc;
-
-  log_error("Called jfs_link, from:%s to:%s\n", from, to);
-
+  
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_link(jfs_path_from, jfs_path_to);
-  if(jfs_path_from) {
-    free(jfs_path_from);
-  }
-  if(jfs_path_to) {
-    free(jfs_path_to);
-  }
+  free(jfs_path_from);
+  free(jfs_path_to);
 
   if(rc) {
+    log_error("jfs_link---from:%s, to:%s, error:%d\n", from, to, rc);
     return rc;
   }
 
@@ -486,15 +449,13 @@ jfs_chmod(const char *path, mode_t mode)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_chmod, path:%s mode:%d\n", path, mode);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_security_chmod(jfs_path, mode);
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_chmod---path:%s, mode:%d, error:%d\n", path, mode, rc);
     return rc;
   }
 
@@ -505,11 +466,10 @@ static int
 jfs_chown(const char *path, uid_t uid, gid_t gid)
 {
   int rc;
-
-  log_error("Called jfs_chmod, path:%s uid:%d gid:%d\n", path, uid, gid);
+  
   rc = jfs_security_chown(path, uid, gid);
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_chown---path:%s, uid:%d, gid:%d, error:%d\n", path, uid, gid, rc);
     return rc;
   }
 
@@ -521,15 +481,13 @@ jfs_truncate(const char *path, off_t size)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_truncate, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_file_truncate(jfs_path, size);
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_truncate---path:%s, size:%d, error:%d\n", path, size, rc);
     return rc;
   }
 
@@ -542,8 +500,7 @@ jfs_utimens(const char *path, const struct timespec ts[2])
   struct timeval tv[2];
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_utimens, path:%s\n", path);
+  
   tv[0].tv_sec = ts[0].tv_sec;
   tv[0].tv_usec = ts[0].tv_nsec / 1000;
   tv[1].tv_sec = ts[1].tv_sec;
@@ -554,7 +511,7 @@ jfs_utimens(const char *path, const struct timespec ts[2])
   free(jfs_path);
 
   if(rc) {
-	log_error("Error occured, errno:%d\n", rc);
+	log_error("jfs_utimens---path:%s, error:%d\n", path, rc);
     return rc;
   }
 
@@ -566,15 +523,13 @@ jfs_open(const char *path, struct fuse_file_info *fi)
 {
   char *jfs_path;
   int fd;
-
-  log_error("Called jfs_file_open, path:%s, flags:%d\n", path, fi->flags);
-
+  
   jfs_path = jfs_realpath(path);
   fd = jfs_file_open(jfs_path, fi->flags);
   free(jfs_path);
 
   if(fd < 0) {
-	log_error("Error occured, errno:%d\n", fd);
+	log_error("jfs_open---path:%s, error:%d\n", path, fd);
     return fd;
   }
 
@@ -590,16 +545,11 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
 {
   int rc;
 
-  log_error("Called jfs_read, path:%s, fi->fh:%llu\n", path, fi->fh);
-
   rc = pread(fi->fh, buf, size, offset);
-
-  if (rc == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
+  if(rc == -1) {
+	log_error("jfs_read---path:%s, error:%d\n", path, -errno);
     return -errno;
   }
-
-  log_error("Pread return %d bytes in buf:%s, expected:%d\n", rc, buf, size);
 
   return rc;
 }
@@ -609,12 +559,10 @@ jfs_write(const char *path, const char *buf, size_t size,
 		  off_t offset, struct fuse_file_info *fi)
 {
   int rc;
-
-  log_error("Called jfs_write, path:%s fi->fh:%llu\n", path, fi->fh);
-
+  
   rc = pwrite(fi->fh, buf, size, offset);
   if (rc == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
+	log_error("jfs_write---path:%s, error:%d\n", path, -errno);
     return -errno;
   }
 
@@ -626,16 +574,14 @@ jfs_statfs(const char *path, struct statvfs *stbuf)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_statvfs, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_file_statfs(jfs_path, stbuf);
   free(jfs_path);
 
-  if(rc == -1) {
-	log_error("Error occured, errno:%d\n", -errno);
-    return -errno;
+  if(rc < 0) {
+	log_error("jfs_statfs---path:%s, error:%d\n", path, rc);
+    return rc;
   }
 
   return 0;
@@ -655,6 +601,7 @@ jfs_fsync(const char *path, int isdatasync,
   }
 
   if(rc < 0) {
+    log_error("jfs_fsync---path:%s, isdatasync:%d, error:%d\n", path, isdatasync, -errno);
 	return -errno;
   }
 
@@ -673,6 +620,8 @@ jfs_setxattr(const char *path, const char *name, const char *value,
   free(jfs_path);
 
   if(rc) {
+    log_error("jfs_setxattr---path:%s, name:%s, value:%s, flags:%d, error:%d\n", 
+              path, name, value, flags, rc);
     return rc;
   }
 
@@ -689,6 +638,10 @@ jfs_getxattr(const char *path, const char *name, char *value,
   jfs_path = jfs_realpath(path);
   rc = jfs_meta_getxattr(jfs_path, name, value, size);
   free(jfs_path);
+
+  if(rc < 0) {
+    log_error("jfs_getxattr---path:%s, name:%s, error:%d\n", path, name, rc);
+  }
   
   return rc;
 }
@@ -698,12 +651,14 @@ jfs_listxattr(const char *path, char *list, size_t size)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_listxattr, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_meta_listxattr(jfs_path, list, size);
   free(jfs_path);
+
+  if(rc < 0) {
+    log_error("jfs_listxattr---path:%s, error:%d\n", path, rc);
+  }
 
   return rc;
 }
@@ -713,14 +668,13 @@ jfs_removexattr(const char *path, const char *name)
 {
   char *jfs_path;
   int rc;
-
-  log_error("Called jfs_removexattr, path:%s\n", path);
-
+  
   jfs_path = jfs_realpath(path);
   rc = jfs_meta_removexattr(jfs_path, name);
   free(jfs_path);
 
   if(rc) {
+    log_error("jfs_removexattr---path:%s, name:%s, error:%d\n", path, name, rc);
     return rc;
   }
 
@@ -769,9 +723,7 @@ main(int argc, char *argv[])
 	printf("Failed to allocate space for jfs_context.\n");
 	exit(EXIT_FAILURE);
   }
-
-  printf("Passed %d args\n", argc);
-
+  
   for(i = 1; (i < argc) && (argv[i][0] == '-'); i++);
 
   if((argc - i) < 3) {
@@ -791,15 +743,15 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
+  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
- 
-  /*
+  */
+  
   argc = 2;
   argv[1] = jfs_context->mountpath;
-  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

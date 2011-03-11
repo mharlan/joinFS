@@ -106,9 +106,6 @@ jfs_dir_do_mkdir(const char *path, mode_t mode)
   }
 
   rc = jfs_meta_setxattr(path, JFS_DIR_IS_DYNAMIC, JFS_DIR_XATTR_FALSE, 1, XATTR_CREATE);
-  if(rc) {
-    log_error("Unable to set default directory metadata for:%s\n", path);
-  }
 
   return rc;
 }
@@ -251,7 +248,6 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   rc = jfs_dynamic_hierarchy_invalidate_folder(path);
   if(rc) {
-    log_error("Dynamic hierarchy cleanup failed.\n");
     return rc;
   }
 
@@ -276,8 +272,6 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
 	  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
-	printf("---Adding filename item->filename:%s\n", item->filename);
-
 	memset(&st, 0, sizeof(st));
 
 	buffer_len = strlen(orig_path) + strlen(item->filename) + 2;
@@ -324,8 +318,6 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
         free(datapath);
 		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
-
-        log_error("Failed to get inode and mode or:%s\n", datapath);
 
 		return rc;
 	  }
@@ -377,9 +369,6 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
         
         return rc;
       }
-    }
-    else {
-      log_msg("Not allowed to access:%s\n", buffer);
     }
 
     free(item->datapath);

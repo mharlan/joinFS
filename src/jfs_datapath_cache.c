@@ -98,7 +98,6 @@ jfs_datapath_cache_destroy()
   jfs_datapath_cache_t *item;
   
   pthread_rwlock_wrlock(&cache_lock);
-  
   for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
 	  item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
 	free(item->datapath);

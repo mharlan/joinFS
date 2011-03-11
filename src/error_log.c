@@ -25,6 +25,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 static FILE *log;
@@ -39,6 +40,7 @@ void log_init(void)
   }
   else {
 	printf("---ERROR---Open log file failed, path:%s\n", log_path);
+    exit(EXIT_FAILURE);
   }
 }
 

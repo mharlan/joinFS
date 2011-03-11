@@ -121,7 +121,6 @@ jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query)
 
   db_op = malloc(sizeof(*db_op));
   if(!db_op) {
-	log_error("Failed to allocate memory for db_op.\n");
 	free(query);
 	return -ENOMEM;
   }
@@ -148,8 +147,6 @@ jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query)
 void
 jfs_db_op_destroy(struct jfs_db_op *db_op)
 {
-  log_error("--PERFORMING DB_OP CLEANUP\n");
-
   free(db_op->query);
 
   if(!db_op->rc) {
@@ -200,8 +197,6 @@ jfs_db_op_wait(struct jfs_db_op *db_op)
   }
   pthread_mutex_unlock(&db_op->mut);
 
-  log_error("--QUERY FINISHED, RC:%d\n", db_op->rc);
-
   return db_op->rc;
 }
 
@@ -216,16 +211,12 @@ jfs_open_db(int sqlite_attr)
   sqlite3 *db;
   int rc;
 
-  log_msg("Opening db at:%s\n", dbfile);
-
   rc = sqlite3_open_v2(dbfile, &db, sqlite_attr, NULL);
-  log_error("RC:%d\n", rc);
   if(rc) {
     log_error("Failed to open database file at: %s\n", dbfile);
     sqlite3_close(db);
     exit(1);
   }
-
   sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, &err_msg);
 
   return db;
@@ -251,8 +242,6 @@ setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 
   rc = sqlite3_prepare_v2(db, query, strlen(query), stmt, &zTail);
   if(rc != SQLITE_OK) {
-    log_error("Sqlite prepare failed, query:%s, rc:%d\n",
-			  query, rc);
     return rc;
   }
 
@@ -270,18 +259,12 @@ jfs_query(struct jfs_db_op *db_op)
 
   rc = setup_stmt(db_op->db, &stmt, db_op->query);
   if(rc) {
-	log_error("Setup statement failed for query=%s\n",
-			  db_op->query);
-
     return rc;
   }
-
-  log_error("--QUERY STATEMENT IS READY--\n");
 
   db_op->stmt = stmt;
   rc = jfs_db_result(db_op);
   if(rc) {
-	log_error("Query:%s failed for db_op=%d\n", db_op->query, db_op->op);
 	return rc;
   }
 

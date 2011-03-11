@@ -102,10 +102,6 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   rc = jfs_meta_cache_add(datainode, keyid, safe_value);
   free(safe_value);
 
-  if(rc) {
-    log_error("Failed to add to metadata cache.\n");
-  }
-
   return rc;
 }
 
@@ -194,7 +190,6 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
 
   rc = jfs_meta_cache_add(datainode, keyid, cache_value);
   if(rc) {
-    log_error("Failed to add retrieved metadata to the cache.\n");
     free(cache_value);
 
     return rc;
@@ -303,7 +298,6 @@ jfs_meta_removexattr(const char *path, const char *key)
 
   rc = jfs_meta_cache_remove(datainode, keyid);
   if(rc) {
-    log_error("Failed to remove the metadata from the cache.\n");
     return rc;
   }
 

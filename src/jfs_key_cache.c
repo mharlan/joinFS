@@ -177,13 +177,14 @@ jfs_key_cache_remove(const char *keytext)
 
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_key_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
+
   free(check.keytext);
 
   if(rc) {
     free(elem->keytext);
     free(elem);
   }
-  pthread_rwlock_unlock(&cache_lock);
-
+  
   return 0;
 }

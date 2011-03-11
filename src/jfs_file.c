@@ -137,10 +137,10 @@ jfs_file_do_create(const char *path, mode_t mode)
 
   rc = jfs_file_db_add(path, syminode, datainode, datapath, filename, mode);
   if(rc) {
-	log_error("New file database inserts failed.\n");
+	return rc;
   }
   free(datapath);
-
+  
   return fd;
 }
 
@@ -251,9 +251,6 @@ jfs_file_do_mknod(const char *path, mode_t mode)
   }
   
   rc = jfs_file_db_add(path, syminode, datainode, datapath, filename, mode);
-  if(rc < 0) {
-	log_error("New file database inserts failed.\n");
-  }
   free(datapath);
 
   return rc;
@@ -308,12 +305,8 @@ jfs_file_db_add(const char *path, int syminode, int datainode, const char *datap
   jfs_db_op_destroy(db_op);
 
   rc = jfs_file_cache_add(syminode, path, datainode, datapath);
-  if(rc) {
-    log_error("Failed to insert new file into file cache.\n");
-    return rc;
-  }
 
-  return 0;
+  return rc;
 }
 
 /*
@@ -353,12 +346,9 @@ jfs_file_unlink(const char *path)
     }
 
     rc = jfs_file_do_unlink(sympath);
-    if(rc) {
-      log_error("Hardlink unlink failed.\n");
-    }
     free(sympath);
 
-    return 0;
+    return rc;
   }
 
   return jfs_file_do_unlink(path);
@@ -642,12 +632,9 @@ jfs_file_rename(const char *from, const char *to)
   rc = jfs_file_do_rename(real_from, real_to);
 
   if(rc) {
-    log_error("Rename failed, rc:%d\n", rc);
     goto cleanup;
   }
-
-  printf("from_is_dynamic:%d, to_is_dynamic:%d\n", from_is_dynamic, to_is_dynamic);
-
+  
   if(from_is_dynamic) {
     rc = jfs_dynamic_hierarchy_unlink(from);
     if(rc) {
@@ -658,15 +645,10 @@ jfs_file_rename(const char *from, const char *to)
   if(to_is_dynamic) {
     rc = jfs_dynamic_hierarchy_unlink(to);
     if(rc && rc != -ENOENT) {
-      log_error("Hierarchy Unlink Error:%d\n", rc);
-
       goto cleanup;
     }
 
     rc = jfs_dynamic_hierarchy_add_file(to, from_datapath, from_datainode);
-    if(rc) {
-      log_error("Hierarchy Add Error:%d\n", rc);
-    }
   }
   
 cleanup:
@@ -927,9 +909,6 @@ jfs_file_open(const char *path, int flags)
   }
 
   rc = jfs_file_do_open(realpath, flags);
-  if(rc) {
-    log_error("Failed to open file at:%s, flags:%d\n", realpath, flags);
-  }
   free(realpath);
 
   return rc;
