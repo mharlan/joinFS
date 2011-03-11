@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 /*
   List of files.
@@ -69,6 +70,7 @@ SGLIB_DEFINE_LIST_PROTOTYPES(jfs_dirlist_t, JFS_DIRLIST_T_CMP, next)
 SGLIB_DEFINE_LIST_FUNCTIONS(jfs_dirlist_t, JFS_DIRLIST_T_CMP, next)
 
 static jfs_dirlist_t jfs_root;
+static pthread_rwlock_t path_lock;
 
 static void jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root);
 static int jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file, 
@@ -83,6 +85,8 @@ jfs_dynamic_path_init(void)
   jfs_root.folders = NULL;
   jfs_root.next = NULL;
   jfs_root.datainode = 0;
+
+  pthread_rwlock_init(&path_lock, NULL);
 
   return 0;
 }
@@ -102,7 +106,9 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
 
   dir = NULL;
   file = NULL;
+  pthread_rwlock_rdlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, NULL, NULL, NULL);
+
   if(rc) {
     return rc;
   }
@@ -113,6 +119,7 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
   else {
     *datainode = dir->datainode;
   }
+  pthread_rwlock_unlock(&path_lock);
 
   rc = jfs_datapath_cache_get_datapath(*datainode, resolved_path);
   if(rc) {
@@ -122,6 +129,10 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
   return 0;
 }
 
+/*
+  LOCK THE MUTEX BEFORE CALLING THIS METHOD AND UNLOCK WHEN FINISHED
+  WITH THE RESULT NODE
+ */
 static int 
 jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file, 
                                jfs_dirlist_t **dir, jfs_filelist_t **file_list, 
@@ -172,7 +183,7 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
   last_token = strrchr(path_copy, '/') + 1;
   current_dir = &jfs_root;
   token = strtok(&path_copy[1], "/");
-
+  
   while(token != NULL) {
     //last token, check folders and files
     if(token == last_token) {
@@ -180,7 +191,7 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
       result_dir = sglib_jfs_dirlist_t_find_member(current_dir->folders, &check_dir);
 
       if(result_dir) {
-        if(!dir) {
+        if(!dir) {        
           return -ENOENT;
         }
         *dir = result_dir;
@@ -196,7 +207,7 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
         result_file = sglib_jfs_filelist_t_find_member(current_dir->files, &check_file);
         
         if(result_file) {
-          if(!file) {
+          if(!file) {   
             return -ENOENT;
           }
           *file = result_file;
@@ -204,16 +215,15 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
           if(file_list) {
             *file_list = current_dir->files;
           }
-
+          
           return 0;
         }
         else {
           if(parent) {
             *parent = current_dir;
-
             return 0;
           }
-
+          
           return -ENOENT;
         }
       }
@@ -271,6 +281,7 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
   token = strtok(&copy_path[1], "/");
   current_dir = &jfs_root;
 
+  pthread_rwlock_wrlock(&path_lock);
   while(token != NULL) {
     token_len = strlen(token) + 1;
 
@@ -278,12 +289,16 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
     if(token == last_token) {
       file = malloc(sizeof(*file));
       if(!file) {
+        pthread_rwlock_unlock(&path_lock);
+
         return -ENOMEM;
       }
 
       file->name = malloc(sizeof(*file->name) * token_len);
       if(!file->name) {
         free(file);
+        pthread_rwlock_unlock(&path_lock);
+
         return -ENOMEM;
       }
       strncpy(file->name, token, token_len);
@@ -291,6 +306,7 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
       file->next = NULL;
       
       sglib_jfs_filelist_t_add(&current_dir->files, file);
+      pthread_rwlock_unlock(&path_lock);
       
       return jfs_datapath_cache_add(datainode, datapath);
     }
@@ -298,12 +314,16 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
     else {
       check_dir = malloc(sizeof(*check_dir));
       if(!check_dir) {
+        pthread_rwlock_unlock(&path_lock);
+
         return -ENOMEM;
       }
       
       check_dir->name = malloc(sizeof(*check_dir->name) * token_len);
       if(!check_dir->name) {
         free(check_dir);
+        pthread_rwlock_unlock(&path_lock);
+
         return -ENOMEM;
       }
       strncpy(check_dir->name, token, token_len);
@@ -327,8 +347,8 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
 
     token = strtok(NULL, "/");
   }
-
-  //shouldn't get here
+  pthread_rwlock_unlock(&path_lock);
+  
   return -ENOENT;
 }
 
@@ -365,18 +385,23 @@ jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int dat
   last_token = strrchr(copy_path, '/') + 1;
   token = strtok(&copy_path[1], "/");
   current_dir = &jfs_root;
-
+  
+  pthread_rwlock_wrlock(&path_lock);
   while(token != NULL) {
     token_len = strlen(token) + 1;
 
     check_dir = malloc(sizeof(*check_dir));
     if(!check_dir) {
+      pthread_rwlock_unlock(&path_lock);
+      
       return -ENOMEM;
     }
 
     check_dir->name = malloc(sizeof(*check_dir->name) * token_len);
     if(!check_dir->name) {
       free(check_dir);
+      pthread_rwlock_unlock(&path_lock);
+
       return -ENOMEM;
     }
     strncpy(check_dir->name, token, token_len);
@@ -388,6 +413,7 @@ jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int dat
     if(token == last_token) {
       check_dir->datainode = datainode;
       sglib_jfs_dirlist_t_add(&current_dir->folders, check_dir);
+      pthread_rwlock_unlock(&path_lock);
 
       return jfs_datapath_cache_add(datainode, datapath);
     }
@@ -408,8 +434,8 @@ jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int dat
 
     token = strtok(NULL, "/");
   }
-  
-  //shouldn't get here
+  pthread_rwlock_unlock(&path_lock);
+
   return -ENOENT;
 }
 
@@ -427,7 +453,9 @@ jfs_dynamic_hierarchy_rename(const char *path, const char *filename)
 
   dir = NULL;
   file = NULL;
+  pthread_rwlock_wrlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, NULL, NULL, NULL);
+  
   if(rc) {
     return rc;
   }
@@ -435,6 +463,8 @@ jfs_dynamic_hierarchy_rename(const char *path, const char *filename)
   filename_len = strlen(filename) + 1;
   new_filename = malloc(sizeof(*new_filename) * filename_len);
   if(!new_filename) {
+    pthread_rwlock_unlock(&path_lock);
+
     return -ENOMEM;
   }
   strncpy(new_filename, filename, filename_len);
@@ -447,6 +477,7 @@ jfs_dynamic_hierarchy_rename(const char *path, const char *filename)
     free(dir->name);
     dir->name = new_filename;
   }
+  pthread_rwlock_unlock(&path_lock);
 
   return 0;
 }
@@ -454,7 +485,9 @@ jfs_dynamic_hierarchy_rename(const char *path, const char *filename)
 int
 jfs_dynamic_hierarchy_destroy(void)
 {
+  pthread_rwlock_wrlock(&path_lock);
   jfs_dynamic_hierarchy_folder_cleanup(&jfs_root);
+  pthread_rwlock_unlock(&path_lock);
 
   return 0;
 }
@@ -469,13 +502,18 @@ jfs_dynamic_hierarchy_unlink(const char *path)
 
   file = NULL;
   file_list = NULL;
+  pthread_rwlock_wrlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, &file, NULL, &file_list, NULL, NULL);
+  
   if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+    
     return rc;
   }
 
   free(file->name);
   sglib_jfs_filelist_t_delete(&file_list, file);
+  pthread_rwlock_unlock(&path_lock);
 
   return rc;
 }
@@ -486,13 +524,18 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   jfs_dirlist_t *dir_list;
   jfs_dirlist_t *dir;
 
+  int datainode;
   int not_empty;
   int rc;
 
   dir = NULL;
   dir_list = NULL;
+  pthread_rwlock_wrlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, NULL, &dir_list, NULL);
+  
   if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+
     return rc;
   }
 
@@ -500,6 +543,8 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   if(dir->folders) {
     not_empty += sglib_jfs_dirlist_t_len(dir->folders);
     if(not_empty) {
+      pthread_rwlock_unlock(&path_lock);
+
       return -ENOTEMPTY;
     }
   }
@@ -507,13 +552,18 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   if(dir->files) {
     not_empty += sglib_jfs_filelist_t_len(dir->files);
     if(not_empty) {
+      pthread_rwlock_unlock(&path_lock);
+
       return -ENOTEMPTY;
     }
   }
   
   free(dir->name);
-  jfs_datapath_cache_remove(dir->datainode);
+  datainode = dir->datainode;
   sglib_jfs_dirlist_t_delete(&dir_list, dir);
+  pthread_rwlock_unlock(&path_lock);
+
+  jfs_datapath_cache_remove(datainode);
 
   return 0;
 }
@@ -524,11 +574,11 @@ jfs_dynamic_hierarchy_invalidate_folder(const char *path)
   jfs_dirlist_t  *root;
 
   int rc;
-
-  printf("Invalidating folder:%s\n", path);
-
+  
   root = NULL;
+  pthread_rwlock_wrlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &root, NULL, NULL, NULL);
+  
   if(rc == -ENOENT) {
     return 0;
   }
@@ -537,13 +587,14 @@ jfs_dynamic_hierarchy_invalidate_folder(const char *path)
   }
 
   jfs_dynamic_hierarchy_folder_cleanup(root);
-
-  printf("--Invalidated folder:%s\n", path);
+  pthread_rwlock_unlock(&path_lock);
 
   return 0;
 }
 
 /*
+  TAKE A WRITE LOCK BEFORE THIS METHOD AND UNLOCK AFTER
+
   Recursively delete. Root is not deleted.
  */
 static void
