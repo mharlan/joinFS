@@ -45,8 +45,7 @@ static int jfs_file_do_unlink(const char *path);
 static int jfs_file_do_create(const char *path, mode_t mode);
 static int jfs_file_do_mknod(const char *path, mode_t mode);
 static int jfs_file_do_rename(const char *from, const char *to);
-static int jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, char *filename, int mode);
-static int create_datapath(char *uuid, char **datapath);
+static int jfs_file_db_add(const char *path, int syminode, int datainode, const char *datapath, const char *filename, int mode);
 
 /*
  * Create a joinFS static file. The file is added
@@ -93,7 +92,6 @@ jfs_file_create(const char *path, mode_t mode)
 static int
 jfs_file_do_create(const char *path, mode_t mode)
 {
-  char *uuid;
   char *datapath;
   char *filename;
 
@@ -118,10 +116,7 @@ jfs_file_do_create(const char *path, mode_t mode)
 	return syminode;
   }
 
-  uuid = jfs_create_uuid();
-  jfs_generate_uuid(uuid);
-
-  rc = create_datapath(uuid, &datapath);
+  rc = jfs_uuid_new_datapath(&datapath);
   if(rc) {
 	return rc;
   }
@@ -147,6 +142,7 @@ jfs_file_do_create(const char *path, mode_t mode)
   if(rc) {
 	log_error("New file database inserts failed.\n");
   }
+  free(datapath);
 
   return fd;
 }
@@ -210,7 +206,6 @@ jfs_file_mknod(const char *path, mode_t mode, dev_t rdev)
 static int
 jfs_file_do_mknod(const char *path, mode_t mode)
 {
-  char *uuid;
   char *datapath;
   char *filename;
 
@@ -233,10 +228,7 @@ jfs_file_do_mknod(const char *path, mode_t mode)
 	return syminode;
   }
 
-  uuid = jfs_create_uuid();
-  jfs_generate_uuid(uuid);
-
-  rc = create_datapath(uuid, &datapath);
+  rc = jfs_uuid_new_datapath(&datapath);
   if(rc) {
 	return rc;
   }
@@ -253,6 +245,7 @@ jfs_file_do_mknod(const char *path, mode_t mode)
 
   rc = close(rc);
   if(rc) {
+    free(datapath);
 	return -errno;
   }
 
@@ -266,6 +259,7 @@ jfs_file_do_mknod(const char *path, mode_t mode)
   if(rc < 0) {
 	log_error("New file database inserts failed.\n");
   }
+  free(datapath);
 
   return rc;
 }
@@ -278,9 +272,10 @@ jfs_file_do_mknod(const char *path, mode_t mode)
  * into a single sqlite3_stmt
  */
 static int
-jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, char *filename, int mode)
+jfs_file_db_add(const char *path, int syminode, int datainode, const char *datapath, const char *filename, int mode)
 {
   struct jfs_db_op *db_op;
+
   int rc;
 
   /* first add to the files table */
@@ -299,7 +294,6 @@ jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, c
   rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
-	free(datapath);
 	return rc;
   }
   jfs_db_op_destroy(db_op);
@@ -320,7 +314,6 @@ jfs_file_db_add(const char *path, int syminode, int datainode, char *datapath, c
   rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
-	free(datapath);
 	return rc;
   }
   jfs_db_op_destroy(db_op);
@@ -1013,32 +1006,6 @@ jfs_file_utimes(const char *path, const struct timeval tv[2])
   if(rc) {
 	return -errno;
   }
-
-  return 0;
-}
-
-/*
- * Get the location where the data will be saved.
- * 
- * joinFS_root_dir/.data/uuid-string
- *
- * The datapath must be freed if not added to the cache.
- */
-static int
-create_datapath(char *uuid, char **datapath)
-{
-  char *dpath;
-  int path_len;
-
-  path_len = JFS_CONTEXT->datapath_len + JFS_UUID_LEN + 1;
-  dpath = malloc(sizeof(*datapath) * path_len);
-  if(!dpath) {
-	jfs_destroy_uuid(uuid);
-	return -ENOMEM;
-  }
-  snprintf(dpath, path_len, "%s/%s", JFS_CONTEXT->datapath, uuid);
-  jfs_destroy_uuid(uuid);
-  *datapath = dpath;
 
   return 0;
 }

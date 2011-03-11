@@ -23,21 +23,16 @@
 #define JFS_UUID_LEN 37 /* 36 byte uuid + \0 */
 
 /*
- * Allocate the memory to store a uuid.
- */
-char *jfs_create_uuid();
-
-/*
- * Deallocate the memory for a uuid.
- */
-void jfs_destroy_uuid(char *uuid);
-
-/*
  * Generates a new unique joinFS id.
  *
  * Memory for the uuid must already be allocated with
  * jfs_create_uuid().
  */
-void jfs_generate_uuid(char *uuid);
+int jfs_uuid_generate(char **uuid);
+
+/*
+  Generates a new unique datapath.
+ */
+int jfs_uuid_new_datapath(char **datapath);
 
 #endif
