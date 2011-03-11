@@ -47,9 +47,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   int datainode;
   int keyid;
   int rc;
-
-  log_error("--jfs_meta_setxattr called, passed xattr of size:%d\n", (int)size);
-
+  
   safe_value = malloc(sizeof(*safe_value) * (size + 1));
   if(!safe_value) {
 	return -ENOMEM;
@@ -118,9 +116,7 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   char *cache_value;
   size_t size;
   int rc;
-
-  log_error("--jfs_meta_getxattr called\n");
-
+  
   rc = jfs_meta_do_getxattr(path, key, &cache_value);
   if(rc) {
     return rc;
@@ -193,7 +189,6 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   if(!cache_value) {
     return -ENOMEM;
   }
-
   strncpy(cache_value, db_op->result->value, size);
   jfs_db_op_destroy(db_op);
 

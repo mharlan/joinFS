@@ -31,9 +31,7 @@ enum jfs_db_ops {
   jfs_datapath_cache_op,
   jfs_listattr_op,
   jfs_readdir_op,
-  jfs_dynamic_file_op,
-  jfs_dynamic_folder_op,
-  jfs_search_op
+  jfs_dynamic_file_op
 };
 
 #endif
