@@ -30,6 +30,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <attr/xattr.h>
+#include <pthread.h>
 
 #define JFS_KEY_CACHE_SIZE 1000
 
@@ -72,9 +73,12 @@ SGLIB_DEFINE_HASHED_CONTAINER_PROTOTYPES(jfs_key_cache_t, JFS_KEY_CACHE_SIZE,
 SGLIB_DEFINE_HASHED_CONTAINER_FUNCTIONS(jfs_key_cache_t, JFS_KEY_CACHE_SIZE,
                                         jfs_key_cache_t_hash)
 
+static pthread_rwlock_t cache_lock;
+
 void
 jfs_key_cache_init()
 {
+  pthread_rwlock_init(&cache_lock, NULL);
   sglib_hashed_jfs_key_cache_t_init(hashtable);
 }
 
@@ -84,11 +88,15 @@ jfs_key_cache_destroy()
   struct sglib_hashed_jfs_key_cache_t_iterator it;
   jfs_key_cache_t *item;
 
+  pthread_rwlock_wrlock(&cache_lock);
   for(item = sglib_hashed_jfs_key_cache_t_it_init(&it, hashtable);
       item != NULL; item = sglib_hashed_jfs_key_cache_t_it_next(&it)) {
     free(item->keytext);
     free(item);
   }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
 }
 
 int
@@ -99,6 +107,8 @@ jfs_key_cache_get_keyid(const char *keytext)
 
   size_t key_len;
 
+  int keyid;
+
   key_len = strlen(keytext) + 1;
   check.keytext = malloc(sizeof(*check.keytext) * key_len);
   if(!check.keytext) {
@@ -106,14 +116,19 @@ jfs_key_cache_get_keyid(const char *keytext)
   }
   strncpy(check.keytext, keytext, key_len);
 
+  pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_key_cache_t_find_member(hashtable, &check);
   free(check.keytext);
 
   if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+
     return -ENOATTR;
   }
+  keyid = result->keyid;
+  pthread_rwlock_unlock(&cache_lock);
 
-  return result->keyid;
+  return keyid;
 }
 
 int
@@ -136,7 +151,9 @@ jfs_key_cache_add(int keyid, const char *keytext)
   }
   strncpy(item->keytext, keytext, key_len);
 
+  pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_key_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
@@ -158,6 +175,7 @@ jfs_key_cache_remove(const char *keytext)
   }
   strncpy(check.keytext, keytext, key_len);
 
+  pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_key_cache_t_delete_if_member(hashtable, &check, &elem);
   free(check.keytext);
 
@@ -165,6 +183,7 @@ jfs_key_cache_remove(const char *keytext)
     free(elem->keytext);
     free(elem);
   }
+  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }
