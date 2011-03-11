@@ -26,6 +26,7 @@
 #include "jfs_util.h"
 #include "jfs_meta.h"
 #include "jfs_meta_cache.h"
+#include "jfs_key_cache.h"
 #include "sqlitedb.h"
 #include "joinfs.h"
 
@@ -67,28 +68,26 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
     free(safe_value);
 	return datainode;
   }
-
-  rc = jfs_db_op_create(&db_op);
-  if(rc) {
-    free(safe_value);
-	return rc;
-  }
-  db_op->op = jfs_write_op;
-
+  
   if(flags == XATTR_CREATE) {
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "INSERT OR ROLLBACK INTO metadata VALUES(%d,%d,\"%s\");",
-			 datainode, keyid, safe_value);
+	rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "INSERT OR ROLLBACK INTO metadata VALUES(%d,%d,\"%s\");",
+                          datainode, keyid, safe_value);
   }
   else if(flags == XATTR_REPLACE) {
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
-			 datainode, keyid, safe_value);
+	rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
+                          datainode, keyid, safe_value);
   }
   else {
-	snprintf(db_op->query, JFS_QUERY_MAX,
-			 "INSERT OR REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
-			 datainode, keyid, safe_value);
+	rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "INSERT OR REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
+                          datainode, keyid, safe_value);
+  }
+  
+  if(rc) {
+    free(safe_value);
+    return rc;
   }
   
   jfs_write_pool_queue(db_op);
@@ -103,6 +102,8 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   jfs_db_op_destroy(db_op);
 
   rc = jfs_meta_cache_add(datainode, keyid, safe_value);
+  free(safe_value);
+
   if(rc) {
     log_error("Failed to add to metadata cache.\n");
   }
@@ -168,15 +169,12 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   }
   
   //cache miss, go out to the db
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_meta_cache_op,
+                        "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=%d;",
+                        datainode, keyid);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_meta_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=%d;",
-		   datainode, keyid);
   
   jfs_read_pool_queue(db_op);
 
@@ -231,15 +229,12 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 	return datainode;
   }
   
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_listattr_op,
+                        "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
+                        datainode);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_listattr_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
-		   datainode);
   
   jfs_read_pool_queue(db_op);
 
@@ -266,6 +261,8 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 	strncpy(list_pos, item->key, attr_size);
 
 	list_pos += attr_size;
+
+    jfs_key_cache_add(item->keyid, item->key);
 	
 	free(item->key);
 	free(item);
@@ -293,15 +290,12 @@ jfs_meta_removexattr(const char *path, const char *key)
 	return datainode;
   }
   
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "DELETE FROM metadata WHERE inode=%d and keyid=%d;",
+                        datainode, keyid);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "DELETE FROM metadata WHERE inode=%d and keyid=%d;",
-		   datainode, keyid);
   
   jfs_write_pool_queue(db_op);
 

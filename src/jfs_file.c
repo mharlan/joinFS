@@ -274,15 +274,12 @@ jfs_file_db_add(const char *path, int syminode, int datainode, const char *datap
   int rc;
 
   /* first add to the files table */
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op, 
+                        "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
+                        datainode, datapath, filename);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
-		   datainode, datapath, filename);
   
   jfs_write_pool_queue(db_op);
 
@@ -294,15 +291,12 @@ jfs_file_db_add(const char *path, int syminode, int datainode, const char *datap
   jfs_db_op_destroy(db_op);
 
   /* now add to symlinks */
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op, 
+                        "INSERT OR ROLLBACK INTO symlinks VALUES(%d,\"%s\",%d);",
+                        syminode, path, datainode);
   if(rc) {
 	return rc;
   }
- 
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO symlinks VALUES(%d,\"%s\",%d);",
-		   syminode, path, datainode);
   
   jfs_write_pool_queue(db_op);
 
@@ -399,16 +393,13 @@ jfs_file_do_unlink(const char *path)
   }
   
   if(datainode > 0) {
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op, 
+                          "DELETE FROM files WHERE inode=%d;",
+                          datainode);
     if(rc) {
       free(datapath);
       return rc;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "DELETE FROM files WHERE inode=%d;",
-             datainode);
     
     jfs_write_pool_queue(db_op);
     
@@ -420,16 +411,13 @@ jfs_file_do_unlink(const char *path)
     }
     jfs_db_op_destroy(db_op);
     
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "DELETE FROM symlinks WHERE datainode=%d;",
+                          datainode);
     if(rc) {
       free(datapath);
       return rc;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "DELETE FROM symlinks WHERE datainode=%d;",
-             datainode);
     
     jfs_write_pool_queue(db_op);
     
@@ -441,16 +429,13 @@ jfs_file_do_unlink(const char *path)
     }
     jfs_db_op_destroy(db_op);
     
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "DELETE FROM metadata WHERE inode=%d;",
+                          datainode);
     if(rc) {
       free(datapath);
       return rc;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "DELETE FROM metadata WHERE inode=%d;",
-             datainode);
     
     jfs_write_pool_queue(db_op);
     
@@ -771,15 +756,12 @@ jfs_file_do_rename(const char *from, const char *to)
 
   if(to_inode > -1) {
     //preserve the old metadata
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "UPDATE OR ROLLBACK metadata SET inode=%d WHERE inode=%d;",
+                          from_datainode, to_datainode);
     if(rc) {
       goto cleanup;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "UPDATE OR ROLLBACK metadata SET inode=%d WHERE inode=%d;",
-             from_datainode, to_datainode);
     
     jfs_write_pool_queue(db_op);
     
@@ -809,15 +791,12 @@ jfs_file_do_rename(const char *from, const char *to)
     filename = jfs_util_get_filename(to);
   
     //update the hardlink
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "UPDATE OR ROLLBACK symlinks SET sympath=\"%s\", datainode=%d WHERE syminode=%d;",
+                          to, from_datainode, from_inode);
     if(rc) {
       goto cleanup;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-			 "UPDATE OR ROLLBACK symlinks SET sympath=\"%s\", datainode=%d WHERE syminode=%d;",
-             to, from_datainode, from_inode);
     
     jfs_write_pool_queue(db_op);
     
@@ -829,15 +808,12 @@ jfs_file_do_rename(const char *from, const char *to)
     }
 
     //change the filename
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
+                          filename, from_inode);
     if(rc) {
       goto cleanup;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-             filename, from_inode);
     
     jfs_write_pool_queue(db_op);
     
@@ -854,15 +830,12 @@ jfs_file_do_rename(const char *from, const char *to)
     }
   }
   else if(S_ISDIR(from_mode) && from_inode != to_inode) {
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "UPDATE OR ROLLBACK files SET inode=%d WHERE inode=%d;",
+                          from_inode, to_inode);
     if(rc) {
       goto cleanup;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "UPDATE OR ROLLBACK files SET inode=%d WHERE inode=%d;",
-             from_inode, to_inode);
     
     jfs_write_pool_queue(db_op);
     
@@ -876,15 +849,12 @@ jfs_file_do_rename(const char *from, const char *to)
 
   if(to_inode) {
     //cleanup the old datapath in the db
-    rc = jfs_db_op_create(&db_op);
+    rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "DELETE FROM files WHERE inode=%d;",
+                          to_datainode);
     if(rc) {
       goto cleanup;
     }
-    
-    db_op->op = jfs_write_op;
-    snprintf(db_op->query, JFS_QUERY_MAX,
-             "DELETE FROM files WHERE inode=%d;",
-             to_datainode);
     
     jfs_write_pool_queue(db_op);
     

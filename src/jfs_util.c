@@ -307,15 +307,12 @@ jfs_util_get_keyid(const char *key)
   }
 
   //cache miss, insert, but ignore if it exists
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "INSERT OR IGNORE INTO keys VALUES(NULL, \"%s\");",
+                        key);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR IGNORE INTO keys VALUES(NULL, \"%s\");",
-		   key);
   
   jfs_write_pool_queue(db_op);
 
@@ -327,15 +324,12 @@ jfs_util_get_keyid(const char *key)
   jfs_db_op_destroy(db_op);
 
   //go out to the database for the keyid
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_key_cache_op,
+                        "SELECT keyid FROM keys WHERE keytext=\"%s\";",
+                        key);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_key_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT keyid FROM keys WHERE keytext=\"%s\";",
-		   key);
   
   jfs_read_pool_queue(db_op);
 

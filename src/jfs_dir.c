@@ -89,16 +89,13 @@ jfs_dir_do_mkdir(const char *path, mode_t mode)
     return inode;
   }
 
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op, 
+                        "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
+                        inode, path, filename);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
-		   inode, path, filename);
-
+  
   jfs_write_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
@@ -139,15 +136,12 @@ jfs_dir_rmdir(const char *path)
 	return -errno;
   }
 
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op, 
+                        "DELETE FROM files WHERE inode=%d;",
+                        inode);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "DELETE FROM files WHERE inode=%d;",
-		   inode);
 
   jfs_write_pool_queue(db_op);
 
@@ -261,12 +255,11 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
     return rc;
   }
 
-  rc = jfs_do_db_op_create(&db_op, query);
+  rc = jfs_do_db_op_create(&db_op, jfs_readdir_op, query);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_readdir_op;
+  
   jfs_read_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);

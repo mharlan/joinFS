@@ -30,17 +30,14 @@
 #include <string.h>
 #include <errno.h>
 
-#define JFS_FORMAT_ADJ 2
-
 int
 jfs_query_builder(char **query, const char *format, ...)
 {
   va_list args;
 
   char *new_query;
-  char *np;
   
-  int query_size;
+  size_t query_size;
   int rc;
 
   query_size = JFS_QUERY_INC;
@@ -53,9 +50,7 @@ jfs_query_builder(char **query, const char *format, ...)
     va_start(args, format);
     rc = vsnprintf(new_query, query_size, format, args);
     va_end(args);
-
-    printf("RC is:%d\n", rc);
-
+    
     if(rc > -1 && rc < query_size) {
       break;
     }
@@ -69,17 +64,11 @@ jfs_query_builder(char **query, const char *format, ...)
       
       query_size += JFS_QUERY_INC;
     }
-
-    printf("New query_size:%d\n", query_size);
     
-    np = realloc(new_query, sizeof(*new_query) * query_size);
-    if(!np) {
-      free(new_query);
-      
+    free(new_query);
+    new_query = malloc(sizeof(*new_query) * query_size);
+    if(!new_query) {
       return -ENOMEM;
-    }
-    else {
-      new_query = np;
     }
   }
 

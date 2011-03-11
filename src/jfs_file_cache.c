@@ -319,15 +319,12 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
   int inode;
   int rc;
 
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_file_cache_op,
+                        "SELECT s.sympath, f.datapath, f.inode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.syminode=%d;",
+                        syminode);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_file_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-           "SELECT s.sympath, f.datapath, f.inode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.syminode=%d;",
-		   syminode);
 
   jfs_read_pool_queue(db_op);
 
@@ -409,15 +406,12 @@ jfs_file_cache_sympath_miss(int datainode, char **sympath, char **datapath, int 
 
   printf("----Handling jfs_file_cache miss for datainode:%d\n", datainode);
 
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_file_cache_op,
+                        "SELECT s.sympath, f.datapath, s.syminode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.datainode=%d;",
+                        datainode);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_file_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-           "SELECT s.sympath, f.datapath, s.syminode FROM files AS f, symlinks AS s WHERE f.inode=s.datainode and s.datainode=%d;",
-		   datainode);
 
   jfs_read_pool_queue(db_op);
 

@@ -111,15 +111,12 @@ void *read_thrd_func(void *arg)
   int rc;
   int q_val = (int)arg;
   
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_key_cache_op,
+                        "SELECT id FROM test_table WHERE name=\"%d\";",
+                        (q_val % 30) + 1);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_key_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "SELECT id FROM test_table WHERE name=\"%d\";",
-		   (q_val % 30) + 1);
   
   printf("--READ--Query set:%s\n", db_op->query);
   printf("--READ--Performing job #%d and sleeping.\n", q_val);
@@ -145,15 +142,12 @@ void *write_thrd_func(void *arg)
   int rc;
   int q_val = (int)arg;
   
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "INSERT OR ROLLBACK INTO test_table VALUES(%d,\"%d\");",
+                        q_val, q_val);
   if(rc) {
 	return rc;
   }
-
-  db_op->op = jfs_write_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-		   "INSERT OR ROLLBACK INTO test_table VALUES(%d,\"%d\");",
-		   q_val, q_val);
   
   printf("--WRITE--Query set:%s\n", db_op->query);
   printf("--WRITE--Performing job #-%d and sleeping.\n", q_val);

@@ -240,15 +240,13 @@ jfs_datapath_cache_miss(int inode, char **datapath)
 
   int rc;
 
-  rc = jfs_db_op_create(&db_op);
+  rc = jfs_db_op_create(&db_op, jfs_datapath_cache_op, 
+                        "SELECT datapath FROM files WHERE inode=%d;", 
+                        inode);
   if(rc) {
     return rc;
   }
-
-  db_op->op = jfs_datapath_cache_op;
-  snprintf(db_op->query, JFS_QUERY_MAX,
-           "SELECT datapath FROM files WHERE inode=%d;", inode);
-
+  
   jfs_read_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);

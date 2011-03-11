@@ -53,15 +53,15 @@ struct jfs_db_op {
 
 /*
  * Creates a database operation.
- *
- * Returns a query buffer of size JFS_QUERY_MAX
  */
-int jfs_db_op_create(struct jfs_db_op **op);
+int jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *format, ...);
 
 /*
- * Create a database op with a specified query.
+ * Create a database op with pre-created query.
+
+ * OLD: Update with passing in enum type as well.
  */
-int jfs_do_db_op_create(struct jfs_db_op **op, char *query);
+int jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query);
 
 /*
  * Destroy a database operation.

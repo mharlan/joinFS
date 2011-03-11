@@ -44,20 +44,78 @@ static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
  * Creates a database operation.
  */
 int
-jfs_db_op_create(struct jfs_db_op **op)
+jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *format, ...)
 {
+  struct jfs_db_op *db_op;
+  
+  va_list args;
+
   char *query;
 
-  query = malloc(sizeof(*query) * JFS_QUERY_MAX);
+  size_t query_size;
+  int rc;
 
-  return jfs_do_db_op_create(op, query);
+  db_op = malloc(sizeof(*db_op));
+  if(!db_op) {
+    return -ENOMEM;
+  }
+
+  query_size = JFS_QUERY_INC;
+  query = malloc(sizeof(*query) * query_size);
+  if(!query) {
+    free(db_op);
+    return -ENOMEM;
+  }
+  
+  while(1) {
+    va_start(args, format);
+    rc = vsnprintf(query, query_size, format, args);
+    va_end(args);
+    
+    if(rc > -1 && rc < query_size) {
+      break;
+    }
+    else if(rc > -1) {
+      query_size = rc + 1;
+    }
+    else {
+      if(errno == EILSEQ) {
+        free(db_op);
+        return -errno;
+      }
+      
+      query_size += JFS_QUERY_INC;
+    }
+    
+    free(query);
+    query = malloc(sizeof(*query) * query_size);
+    if(!query) {
+      free(db_op);
+      return -ENOMEM;
+    }
+  }
+  
+  db_op->op = jfs_op;
+  db_op->query = query;
+  db_op->db = NULL;
+  db_op->stmt = NULL;
+  db_op->result = NULL;
+  db_op->done = 0;
+  db_op->rc = 0;
+
+  pthread_cond_init(&db_op->cond, NULL);
+  pthread_mutex_init(&db_op->mut, NULL);
+
+  *op = db_op;
+
+  return 0;
 }
 
 /*
  * Creates a database operation.
  */
 int
-jfs_do_db_op_create(struct jfs_db_op **op, char *query)
+jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query)
 {
   struct jfs_db_op *db_op;
 
@@ -68,6 +126,7 @@ jfs_do_db_op_create(struct jfs_db_op **op, char *query)
 	return -ENOMEM;
   }
 
+  db_op->op = jfs_op;
   db_op->query = query;
   db_op->db = NULL;
   db_op->stmt = NULL;
