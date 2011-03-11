@@ -24,6 +24,7 @@
 #include "jfs_security.h"
 #include "jfs_util.h"
 
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -41,6 +42,8 @@ jfs_security_chmod(const char *path, mode_t mode)
   }
 
   rc = chmod(datapath, mode);
+  free(datapath);
+
   if(rc) {
 	return -errno;
   }
@@ -60,6 +63,8 @@ jfs_security_chown(const char *path, uid_t uid, gid_t gid)
   }
 
   rc = lchown(datapath, uid, gid);
+  free(datapath);
+
   if(rc) {
 	return -errno;
   }
@@ -79,6 +84,8 @@ jfs_security_access(const char *path, int mask)
   }
 
   rc = access(datapath, mask);
+  free(datapath);
+
   if(rc) {
 	return -errno;
   }
