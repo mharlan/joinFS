@@ -43,13 +43,37 @@
 #include <attr/xattr.h>
 
 static int jfs_dir_is_dynamic(const char *path);
+static int jfs_dir_do_mkdir(const char *path, mode_t mode);
 static int jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_dir_t filler);
 static void safe_jfs_list_destroy(struct sglib_jfs_list_t_iterator *it, jfs_list_t *item);
 
-int 
+int
 jfs_dir_mkdir(const char *path, mode_t mode)
 {
+  char *realpath;
+
+  int rc;
+
+  rc = jfs_util_resolve_new_path(path, &realpath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_dir_do_mkdir(realpath, mode);
+  free(realpath);
+
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+
+static int 
+jfs_dir_do_mkdir(const char *path, mode_t mode)
+{
   struct jfs_db_op *db_op;
+  
   char *filename;
   int inode;
   int rc;
@@ -61,7 +85,7 @@ jfs_dir_mkdir(const char *path, mode_t mode)
 
   filename = jfs_util_get_filename(path);
   inode = jfs_util_get_inode(path);
-  if(inode < 1) {
+  if(inode < 0) {
     return inode;
   }
 
@@ -78,21 +102,25 @@ jfs_dir_mkdir(const char *path, mode_t mode)
   jfs_write_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
-  if(rc) {
-	jfs_db_op_destroy(db_op);
-	return rc;
-  }
   jfs_db_op_destroy(db_op);
 
-  jfs_meta_setxattr(path, JFS_DIR_IS_DYNAMIC, JFS_DIR_XATTR_FALSE, 1, XATTR_CREATE);
+  if(rc) {
+    return rc;
+  }
 
-  return 0;
+  rc = jfs_meta_setxattr(path, JFS_DIR_IS_DYNAMIC, JFS_DIR_XATTR_FALSE, 1, XATTR_CREATE);
+  if(rc) {
+    log_error("Unable to set default directory metadata for:%s\n", path);
+  }
+
+  return rc;
 }
 
 int 
 jfs_dir_rmdir(const char *path)
 {
   struct jfs_db_op *db_op;
+  
   int inode;
   int rc;
 
@@ -124,27 +152,22 @@ jfs_dir_rmdir(const char *path)
   jfs_write_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
-  if(rc) {
-	jfs_db_op_destroy(db_op);
-	return rc;
-  }
   jfs_db_op_destroy(db_op);
 
-  return 0;
+  return rc;
 }
 
 int 
 jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 {
   char *datapath;
+  
   struct stat st;
   struct dirent *de;
 
   DIR *dp;
   int rc;
-
-  log_error("--jfs_dir_readdir called\n");
-
+  
   rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
     return rc;
@@ -152,8 +175,6 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 
   dp = opendir(datapath);
   if(dp != NULL) {
-	log_error("--SYSTEM READDIR EXECUTING\n");
-
 	while((de = readdir(dp)) != NULL) {
 	  memset(&st, 0, sizeof(st));
 	  st.st_ino = de->d_ino;
@@ -161,12 +182,16 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
 	  
 	  if(filler(buf, de->d_name, &st, 0) != 0) {
 		closedir(dp);
+        free(datapath);
+
 		return -ENOMEM;
 	  }
 	}
 
 	rc = closedir(dp);
 	if(rc) {
+      free(datapath);
+
 	  return -errno;
 	}
   }
@@ -174,19 +199,27 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
   if(jfs_dir_is_dynamic(datapath)) {
     rc = jfs_dir_db_filler(path, datapath, buf, filler);
     if(rc) {
+      free(datapath);
+
       return rc;
     }
   }
+  free(datapath);
 
   return 0;
 }
 
+/*
+  orig_path = path passed in by user
+  path = resolved path
+ */
 static int
 jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_dir_t filler)
 {
   struct sglib_jfs_list_t_iterator it;
   struct jfs_db_op *db_op;
   struct stat st;
+  
   jfs_list_t *item;
 
   char *query;
@@ -206,6 +239,7 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   is_folders = 0;
   mask = R_OK | F_OK; 
+  
   rc = jfs_util_get_inode_and_mode(path, &dirinode, &mode);
   if(rc) {
     return rc;
@@ -223,8 +257,7 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   rc = jfs_dynamic_hierarchy_invalidate_folder(path);
   if(rc) {
-    printf("Dynamic hierarchy cleanup failed.\n");
-
+    log_error("Dynamic hierarchy cleanup failed.\n");
     return rc;
   }
 
@@ -244,6 +277,7 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
   if(db_op->result == NULL) {
 	jfs_db_op_destroy(db_op);
+
 	return 0;
   }
 
@@ -269,6 +303,7 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
         free(buffer);
 		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
+        
 		return -ENOMEM;
 	  }
 	  snprintf(datapath, datapath_len, "%s/%s", path, ".jfs_sub_query");
@@ -285,6 +320,7 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
         free(buffer);
 		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
+        
 		return -ENOMEM;
 	  }
 	  strncpy(datapath, item->datapath, datapath_len);
@@ -292,10 +328,11 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
       rc = jfs_util_get_inode_and_mode(datapath, &inode, &mode);
 	  if(rc) {
         free(buffer);
+        free(datapath);
 		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
 
-        printf("Failed to get inode and mode or:%s\n", datapath);
+        log_error("Failed to get inode and mode or:%s\n", datapath);
 
 		return rc;
 	  }
@@ -305,21 +342,25 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
 
       rc = jfs_file_cache_get_sympath(inode, &hardlink);
       if(rc) {
+        free(buffer);
+        free(datapath);
+
         return rc;
       }
 	}
 
     //check access to the hardlink
-    printf("Verifying access to hardlink:%s\n", hardlink);
     if(access(hardlink, mask) == 0) {
-      printf("---Associated path:%s with datapath:%s in path cache.\n", buffer, datapath);
-
       //add for display
       if(filler(buf, item->filename, &st, 0) != 0) {
         safe_jfs_list_destroy(&it, item);
+        if(hardlink != datapath) {
+          free(hardlink);
+        }
         free(buffer);
         free(datapath);
         jfs_db_op_destroy(db_op);
+        
         return -ENOMEM;
       }
 
@@ -333,23 +374,29 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_
       }
 
       if(rc) {
+        if(hardlink != datapath) {
+          free(hardlink);
+        }
         free(buffer);
         free(datapath);
         safe_jfs_list_destroy(&it, item);
         jfs_db_op_destroy(db_op);
+        
         return rc;
       }
     }
     else {
-      printf("Not allowed to access:%s\n", buffer);
+      log_msg("Not allowed to access:%s\n", buffer);
     }
 
-	if(item->datapath != NULL) {
-	  free(item->datapath);
-	}
+    free(item->datapath);
 	free(item->filename);
 	free(item);
+    if(hardlink != datapath) {
+      free(hardlink);
+    }
     free(buffer);
+    free(datapath);
   }
   jfs_db_op_destroy(db_op);
 
@@ -368,8 +415,10 @@ jfs_dir_is_dynamic(const char *path)
   }
 
   if(strcmp(is_dynamic, JFS_DIR_XATTR_TRUE) == 0) {
+    free(is_dynamic);
     return 1;
   }
+  free(is_dynamic);
 
   return 0;
 }
@@ -385,9 +434,7 @@ safe_jfs_list_destroy(struct sglib_jfs_list_t_iterator *it, jfs_list_t *item)
 
   item = sglib_jfs_list_t_it_next(it);
   for(;item != NULL; item = sglib_jfs_list_t_it_next(it)) {
-	if(item->datapath != NULL) {
-	  free(item->datapath);
-	}
+    free(item->datapath);
 	free(item->filename);
 	free(item);
   }
