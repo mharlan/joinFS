@@ -55,9 +55,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   }
   memcpy(safe_value, value, size);
   safe_value[size] = '\0';
-
-  log_error("--Copied safe_value:%s\n", safe_value);
-
+  
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
     free(safe_value);
@@ -72,9 +70,9 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 
   rc = jfs_db_op_create(&db_op);
   if(rc) {
+    free(safe_value);
 	return rc;
   }
-
   db_op->op = jfs_write_op;
 
   if(flags == XATTR_CREATE) {
@@ -92,22 +90,24 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 			 "INSERT OR REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
 			 datainode, keyid, safe_value);
   }
-
-  log_error("--Executing query:%s\n", db_op->query);
-
+  
   jfs_write_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
   if(rc) {
     free(safe_value);
 	jfs_db_op_destroy(db_op);
+    
 	return rc;
   }
   jfs_db_op_destroy(db_op);
 
-  jfs_meta_cache_add(datainode, keyid, safe_value);
+  rc = jfs_meta_cache_add(datainode, keyid, safe_value);
+  if(rc) {
+    log_error("Failed to add to metadata cache.\n");
+  }
 
-  return 0;
+  return rc;
 }
 
 int
@@ -129,16 +129,23 @@ jfs_meta_getxattr(const char *path, const char *key, void *value,
   if(buffer_size >= size) {
     strncpy(value, cache_value, size);
   }
+  free(cache_value);
 
   return size;
 }
 
+/*
+  Consolidate cache miss into metadata cache.
+ */
 int
 jfs_meta_do_getxattr(const char *path, const char *key, char **value)
 {
   struct jfs_db_op *db_op;
+  
   char *cache_value;
+  
   size_t size;
+  
   int datainode;
   int keyid;
   int rc;
@@ -170,9 +177,7 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=%d;",
 		   datainode, keyid);
-
-  log_error("--Executing query:%s\n", db_op->query);
-
+  
   jfs_read_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
@@ -184,9 +189,7 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   if(db_op->result == NULL) {
 	return -ENOATTR;
   }
-
-  log_error("--Returned value:%s\n", db_op->result->value);
-
+  
   size = strlen(db_op->result->value) + 1;
   cache_value = malloc(sizeof(*cache_value) * size);
   if(!cache_value) {
@@ -196,7 +199,13 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   strncpy(cache_value, db_op->result->value, size);
   jfs_db_op_destroy(db_op);
 
-  jfs_meta_cache_add(datainode, keyid, cache_value);
+  rc = jfs_meta_cache_add(datainode, keyid, cache_value);
+  if(rc) {
+    log_error("Failed to add retrieved metadata to the cache.\n");
+    free(cache_value);
+
+    return rc;
+  }
   *value = cache_value;
 
   return 0;
@@ -207,6 +216,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 {
   struct sglib_jfs_list_t_iterator it;
   struct jfs_db_op *db_op;
+  
   jfs_list_t *item;
 
   size_t list_size;
@@ -215,9 +225,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   char *list_pos;
   int datainode;
   int rc;
-
-  log_error("--jfs_meta_listxattr called\n");
-
+  
   datainode = jfs_util_get_datainode(path);
   if(datainode < 1) {
 	return datainode;
@@ -232,9 +240,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
 		   datainode);
-
-  log_error("--Executing query:%s\n", db_op->query);
-
+  
   jfs_read_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
@@ -264,9 +270,7 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
 	free(item->key);
 	free(item);
   }
-
-  log_error("--Returning list:%s\n", list);
-
+  
   return list_size;
 }
 
@@ -278,9 +282,7 @@ jfs_meta_removexattr(const char *path, const char *key)
   int keyid;
   int datainode;
   int rc;
-
-  log_error("--jfs_meta_removexattr called\n");
-
+  
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
     return keyid;
@@ -300,9 +302,7 @@ jfs_meta_removexattr(const char *path, const char *key)
   snprintf(db_op->query, JFS_QUERY_MAX,
 		   "DELETE FROM metadata WHERE inode=%d and keyid=%d;",
 		   datainode, keyid);
-
-  log_error("--Executing query:%s\n", db_op->query);
-
+  
   jfs_write_pool_queue(db_op);
 
   rc = jfs_db_op_wait(db_op);
@@ -312,7 +312,11 @@ jfs_meta_removexattr(const char *path, const char *key)
   }
   jfs_db_op_destroy(db_op);
 
-  jfs_meta_cache_remove(datainode, keyid);
+  rc = jfs_meta_cache_remove(datainode, keyid);
+  if(rc) {
+    log_error("Failed to remove the metadata from the cache.\n");
+    return rc;
+  }
 
   return 0;
 }
