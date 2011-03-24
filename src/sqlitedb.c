@@ -55,12 +55,15 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
   int query_size;
   int rc;
 
+  rc = 0;
+  query = NULL;
+  query_size = JFS_QUERY_INC;
+
   db_op = malloc(sizeof(*db_op));
   if(!db_op) {
     return -ENOMEM;
   }
-
-  query_size = JFS_QUERY_INC;
+  
   query = malloc(sizeof(*query) * query_size);
   if(!query) {
     free(db_op);

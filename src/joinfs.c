@@ -349,7 +349,9 @@ jfs_unlink(const char *path)
   
   jfs_path = jfs_realpath(path);
   rc = jfs_file_unlink(jfs_path);
-  free(jfs_path);
+  if(jfs_path) {
+    free(jfs_path);
+  }
 
   if(rc) {
 	log_error("jfs_unlink---path:%s, error:%d\n", path, rc);
@@ -389,8 +391,13 @@ jfs_symlink(const char *from, const char *to)
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_symlink(jfs_path_from, jfs_path_to);
-  free(jfs_path_from);
-  free(jfs_path_to);
+  
+  if(jfs_path_from) {
+    free(jfs_path_from);
+  }
+  if(jfs_path_to) {
+    free(jfs_path_to);
+  }
 
   if(rc) {
     log_error("jfs_symlink---from:%s, to:%s, error:%d\n", from, to, rc);
@@ -411,8 +418,13 @@ jfs_rename(const char *from, const char *to)
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_rename(jfs_path_from, jfs_path_to);
-  free(jfs_path_from);
-  free(jfs_path_to);
+  
+  if(jfs_path_from) {
+    free(jfs_path_from);
+  }
+  if(jfs_path_to) {
+    free(jfs_path_to);
+  }
 
   if(rc) {
 	log_error("jfs_rename---from:%s, to:%s, error:%d\n", from, to, rc);
@@ -433,8 +445,13 @@ jfs_link(const char *from, const char *to)
   jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_link(jfs_path_from, jfs_path_to);
-  free(jfs_path_from);
-  free(jfs_path_to);
+  
+  if(jfs_path_from) {
+    free(jfs_path_from);
+  }
+  if(jfs_path_to) {
+    free(jfs_path_to);
+  }
 
   if(rc) {
     log_error("jfs_link---from:%s, to:%s, error:%d\n", from, to, rc);
@@ -743,16 +760,16 @@ main(int argc, char *argv[])
   printf("querydir:%s\n", jfs_context->querypath);
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
-  
+
+  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
+  */
   
-  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
-  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

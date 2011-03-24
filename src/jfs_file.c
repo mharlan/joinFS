@@ -136,10 +136,11 @@ jfs_file_do_create(const char *path, mode_t mode)
   }
 
   rc = jfs_file_db_add(path, syminode, datainode, datapath, filename, mode);
+  free(datapath);
+
   if(rc) {
 	return rc;
   }
-  free(datapath);
   
   return fd;
 }
@@ -621,7 +622,6 @@ jfs_file_rename(const char *from, const char *to)
       goto cleanup;
     }
     snprintf(real_to, real_len, "%s%s", subpath, filename);
-    free(subpath);
     
     to_is_dynamic = 1;
   }
@@ -652,16 +652,26 @@ jfs_file_rename(const char *from, const char *to)
   }
   
 cleanup:
-  free(subpath);
-  free(from_subpath);
-  free(to_subpath);
-  free(from_datapath);
-  free(to_datapath);
+  if(subpath) {
+    free(subpath);
+  }
+  if(from_subpath) {
+    free(from_subpath);
+  }
+  if(to_subpath) {
+    free(to_subpath);
+  }
+  if(from_datapath) {
+    free(from_datapath);
+  }
+  if(to_datapath) {
+    free(to_datapath);
+  }
 
-  if(real_from != from) {
+  if(real_from != from && real_from) {
     free(real_from);
   }
-  if(real_to != to) {
+  if(real_to != to && real_to) {
     free(real_to);
   }
 
@@ -693,6 +703,13 @@ jfs_file_do_rename(const char *from, const char *to)
   from_copy = NULL;
   to_copy = NULL;
   to_datapath = NULL;
+  filename = NULL;
+
+  to_datapath = NULL;
+  from_datainode = 0;
+  to_datainode = 0;
+  from_inode = 0;
+  to_inode = 0;
 
   from_len = strlen(from) + 1;
   from_copy = malloc(sizeof(*from_copy) * from_len);

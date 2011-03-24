@@ -24,4 +24,4 @@ setfattr -n _jfs_dir_is_folder  -v "n" mount/dirtest2/.jfs_sub_query
 setfattr -n _jfs_dir_path_items -v "1" mount/dirtest2/.jfs_sub_query
 setfattr -n _jfs_dir_key_pairs  -v ";" mount/dirtest2/.jfs_sub_query
 
-sqlite3 joinfs.db 'SELECT f.filename, k.keytext, m.keyvalue FROM files AS f, keys AS k, metadata AS m WHERE k.keyid=m.keyid and f.inode=m.inode;'
+# sqlite3 joinfs.db 'SELECT f.filename, k.keytext, m.keyvalue FROM files AS f, keys AS k, metadata AS m WHERE k.keyid=m.keyid and f.inode=m.inode;'

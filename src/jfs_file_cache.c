@@ -126,7 +126,10 @@ jfs_file_cache_get_datainode(int syminode)
   int datainode;
   int rc;
 
+  check.sympath = NULL;
+  check.datainode = 0;
   check.syminode = syminode;
+  
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
@@ -159,7 +162,10 @@ jfs_file_cache_get_datapath(int syminode, char **datapath)
 
   int datainode;
   
+  check.sympath = NULL;
+  check.datainode = 0;
   check.syminode = syminode;
+  
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
@@ -191,7 +197,10 @@ jfs_file_cache_get_sympath(int datainode, char **sympath)
 
   size_t path_len;
 
+  check.sympath = NULL;
+  check.syminode = 0;
   check.datainode = datainode;
+
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
 
@@ -227,7 +236,10 @@ jfs_file_cache_get_datapath_and_datainode(int syminode, char **datapath, int *da
   jfs_file_cache_t check;
   jfs_file_cache_t *result;
 
+  check.sympath = NULL;
+  check.datainode = 0;
   check.syminode = syminode;
+
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
   
@@ -290,7 +302,10 @@ jfs_file_cache_update_sympath(int syminode, const char *sympath)
   char *new_sympath;
   size_t sympath_len;
 
+  check.sympath = NULL;
+  check.datainode = 0;
   check.syminode = syminode;
+
   pthread_rwlock_wrlock(&cache_lock);
   result = sglib_hashed_jfs_file_cache_t_find_member(hashtable, &check);
   
@@ -326,7 +341,10 @@ jfs_file_cache_remove(int syminode)
   jfs_file_cache_t *elem;
   int rc;
 
+  check.sympath = NULL;
+  check.datainode = 0;
   check.syminode = syminode;
+
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_file_cache_t_delete_if_member(hashtable, &check, &elem);
   pthread_rwlock_unlock(&cache_lock);
