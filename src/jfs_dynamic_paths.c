@@ -110,6 +110,7 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
   rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, NULL, NULL, NULL);
 
   if(rc) {
+    pthread_rwlock_unlock(&path_lock);
     return rc;
   }
 
@@ -457,6 +458,8 @@ jfs_dynamic_hierarchy_rename(const char *path, const char *filename)
   rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, NULL, NULL, NULL);
   
   if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+    
     return rc;
   }
 
@@ -581,9 +584,13 @@ jfs_dynamic_hierarchy_invalidate_folder(const char *path)
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &root, NULL, NULL, NULL);
   
   if(rc == -ENOENT) {
+    pthread_rwlock_unlock(&path_lock);
+    
     return 0;
   }
   else if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+
     return rc;
   }
 
