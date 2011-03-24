@@ -196,7 +196,9 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
       }
 
       if(result_dir) {
-        if(!dir) {        
+        free(path_copy);
+
+        if(!dir) {
           return -ENOENT;
         }
         *dir = result_dir;
@@ -214,6 +216,8 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
         }
         
         if(result_file) {
+          free(path_copy);
+
           if(!file) {   
             return -ENOENT;
           }
@@ -221,7 +225,9 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
           
           return 0;
         }
-        else {          
+        else {
+          free(path_copy);
+          
           return -ENOENT;
         }
       }
@@ -231,12 +237,15 @@ jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file,
       check_dir.name = token;
       current_dir = sglib_jfs_dirlist_t_find_member(current_dir->folders, &check_dir);
       if(!current_dir) {
+        free(path_copy);
+
         return -ENOENT;
       }
     }
 
     token = strtok(NULL, "/");
   }
+  free(path_copy);
 
   return -ENOENT;
 }

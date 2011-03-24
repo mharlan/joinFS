@@ -203,6 +203,11 @@ jfs_destroy(void *arg)
   jfs_meta_cache_destroy();
   jfs_dynamic_hierarchy_destroy();
 
+  free(JFS_CONTEXT->querypath);
+  free(JFS_CONTEXT->datapath);
+  free(JFS_CONTEXT->mountpath);
+  free(JFS_CONTEXT);
+
   log_msg("joinFS shutdown completed successfully.\n", arg);
   log_destroy();
 }
@@ -761,19 +766,22 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
-  /*
-  argc = 4;
+  argc = 3;
   argv[1] = "-d";
-  argv[2] = "-s";
-  argv[3] = jfs_context->mountpath;
-  */
+  //argv[2] = "-s";
+  argv[2] = jfs_context->mountpath;
   
+  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
+  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;
-  printf("joinFS stopped. Return code=%d.\n", rc);
+
+  if(rc) {
+    printf("joinFS start up failed. Return code=%d.\n", rc);
+  }
 
   return rc;
 }

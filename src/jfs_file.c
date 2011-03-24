@@ -939,7 +939,7 @@ jfs_file_do_open(const char *path, int flags)
   int rc;
 
   if(flags & O_CREAT) {
-	rc = open(path, O_CREAT | O_EXCL | O_WRONLY);
+	rc = open(path, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR);
     
 	if(rc > 0) {
 	  close(rc);

@@ -60,6 +60,8 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
   int items;
   int rc;
   
+  dir_query = NULL;
+
   rc = jfs_meta_do_getxattr(path, JFS_DIR_KEY_PAIRS, &dir_key_pairs);
   if(rc) {
     return rc;
@@ -98,7 +100,9 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
   free(copy_path);
 
   if(rc) {
-    free(dir_query);
+    if(dir_query) {
+      free(dir_query);
+    }
     return rc;
   }
 

@@ -67,6 +67,7 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
   query = malloc(sizeof(*query) * query_size);
   if(!query) {
     free(db_op);
+    
     return -ENOMEM;
   }
   
@@ -84,6 +85,7 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
     else {
       if(errno == EILSEQ) {
         free(db_op);
+        
         return -errno;
       }
       
@@ -94,6 +96,7 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
     query = malloc(sizeof(*query) * query_size);
     if(!query) {
       free(db_op);
+      
       return -ENOMEM;
     }
   }

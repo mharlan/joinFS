@@ -173,16 +173,22 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
+    
 	return rc;
   }
 
   if(db_op->result == NULL) {
+    db_op->rc = 1;
+    jfs_db_op_destroy(db_op);
+
 	return -ENOATTR;
   }
   
   size = strlen(db_op->result->value) + 1;
   cache_value = malloc(sizeof(*cache_value) * size);
   if(!cache_value) {
+    jfs_db_op_destroy(db_op);
+
     return -ENOMEM;
   }
   strncpy(cache_value, db_op->result->value, size);

@@ -1,11 +1,10 @@
 CC=gcc
 INCLUDE=-I include/
-CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall
+CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall -O2
 
-SQLLIB=-W -O2 -Wl,-R/usr/local/lib -lsqlite3
 UUIDLIB=/lib/libuuid.so.1.3.0
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
-LIBS=-lpthread -lrt $(SQLLIB) $(UUIDLIB) $(FUSELIB)
+LIBS=-lpthread -lrt -lsqlite3 $(UUIDLIB) $(FUSELIB)
 
 SRC=error_log.c \
     sqlitedb.c \
@@ -43,8 +42,10 @@ TESTOBJS=obj/error_log.o \
 
 TESTS=$(TESTSRC:%.c=%)
 
-all: $(OBJS) $(TESTS)
+all: $(OBJS)
 	$(CC) -ggdb -O0 $(CFLAGS) $(LIBS) $(OBJS) -o ../demo/joinfs
+
+tests: $(OBJS) $(TESTS)
 
 tests/%: tests/%.c
 	$(CC) -ggdb -O0 $(CFLAGS) $(INCLUDE) $(LIBS) $(TESTOBJS) tests/$*.c -o tests/$*
