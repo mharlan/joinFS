@@ -533,7 +533,7 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
 
   dir = NULL;
 
-  pthread_rwlock_rdlock(&path_lock);
+  pthread_rwlock_wrlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, 0, 0);
   
   if(rc) {
@@ -561,11 +561,9 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
     }
   }
   
-  datainode = dir->datainode;
-  pthread_rwlock_unlock(&path_lock);
-
-  pthread_rwlock_wrlock(&path_lock);
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, 1, 0);
+
+  datainode = dir->datainode;
   pthread_rwlock_unlock(&path_lock);
   
   if(rc) {
