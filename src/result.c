@@ -33,8 +33,6 @@
 #include <sqlite3.h>
 #include <sys/types.h>
 
-#define JFS_SQL_RC_SCALE 100
-
 static int jfs_do_write_op(sqlite3_stmt *stmt);
 static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);

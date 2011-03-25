@@ -40,6 +40,31 @@
 //does not need to be public, prepares queries
 static int setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query);
 
+void
+jfs_init_db(void)
+{
+  int rc;
+
+  /* start sqlite in multithreaded mode */
+  rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+  if(rc != SQLITE_OK) {
+	log_error("Failed to configure multithreading for SQLITE.\n");
+    log_destroy();
+
+	exit(EXIT_FAILURE);
+  }
+
+  rc = sqlite3_initialize();
+  if(rc != SQLITE_OK) {
+	log_error("Failed to initialize SQLite.\n");
+    log_destroy();
+
+	exit(EXIT_FAILURE);
+  }
+
+  log_msg("SQLite started.\n");
+}
+
 /*
  * Creates a database operation.
  */
@@ -209,23 +234,43 @@ jfs_db_op_wait(struct jfs_db_op *db_op)
 /*
  * Open a connection to joinfs.db
  */
-sqlite3 *
-jfs_open_db(int sqlite_attr)
+int
+jfs_open_db(sqlite3 **db, int sqlite_attr)
 {
   const char *dbfile = JFSDB;
+
   char *err_msg;
-  sqlite3 *db;
+
+  sqlite3 *new_db;
+
   int rc;
 
-  rc = sqlite3_open_v2(dbfile, &db, sqlite_attr, NULL);
+  rc = sqlite3_open_v2(dbfile, &new_db, sqlite_attr, NULL);
   if(rc) {
     log_error("Failed to open database file at: %s\n", dbfile);
-    sqlite3_close(db);
-    exit(1);
+    if(new_db) {
+      sqlite3_close(new_db);
+    }
+    
+    return 0;
   }
-  sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, &err_msg);
+  
+  rc = sqlite3_exec(new_db, "PRAGMA foreign_keys=ON;", NULL, NULL, &err_msg);
+  if(rc) {
+    sqlite3_close(new_db);
 
-  return db;
+    return rc;
+  }
+  rc = sqlite3_exec(new_db, "PRAGMA journal_mode=truncate;", NULL, NULL, &err_msg);
+  if(rc) {
+    sqlite3_close(new_db);
+
+    return rc;
+  }
+
+  *db = new_db;
+  
+  return 0;
 }
 
 /*

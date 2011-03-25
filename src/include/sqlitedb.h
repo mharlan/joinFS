@@ -30,6 +30,7 @@
 #define JFS_QUERY_FAILED  -2
 #define JFS_QUERY_INC     512
 #define JFS_QUERY_MAX     1000000  /* SQLITE_SQL_MAX_LENGTH */
+#define JFS_SQL_RC_SCALE  100
 
 /*
  * Structure for thread pool database operations.
@@ -50,6 +51,11 @@ struct jfs_db_op {
   jfs_list_t      *result;
   size_t           buffer_size;
 };
+
+/*
+ * Initialize the SQL database.
+ */
+void jfs_init_db(void);
 
 /*
  * Creates a database operation.
@@ -81,7 +87,7 @@ int jfs_db_op_wait(struct jfs_db_op *db_op);
  * Create a jfsdb handle. The handle can not
  * be shared accross threads.
  */
-sqlite3 *jfs_open_db();
+int jfs_open_db(sqlite3 **db, int sqlite_attr);
 
 /*
  * Close a jfsdb connection.

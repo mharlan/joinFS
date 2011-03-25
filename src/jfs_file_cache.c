@@ -386,10 +386,14 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
   rc = jfs_db_op_wait(db_op);
   if(rc) {
 	jfs_db_op_destroy(db_op);
+    
 	return rc;
   }
 
   if(db_op->result == NULL) {
+    db_op->rc = 1;
+    jfs_db_op_destroy(db_op);
+
 	return -ENOENT;
   }
 
@@ -399,7 +403,8 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
   dpath = malloc(sizeof(*dpath) * dpath_len);
   if(!dpath) {
 	jfs_db_op_destroy(db_op);
-	return -ENOMEM;
+	
+    return -ENOMEM;
   }
   strncpy(dpath, db_op->result->datapath, dpath_len);
 
@@ -408,7 +413,8 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
   if(!spath) {
     free(dpath);
 	jfs_db_op_destroy(db_op);
-	return -ENOMEM;
+	
+    return -ENOMEM;
   }
   strncpy(spath, db_op->result->sympath, sympath_len);
 
@@ -418,6 +424,7 @@ jfs_file_cache_miss(int syminode, char **sympath, char **datapath, int *datainod
   if(rc) {
     free(dpath);
     free(spath);
+    
     return rc;
   }
 

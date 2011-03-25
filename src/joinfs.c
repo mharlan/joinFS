@@ -17,9 +17,10 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#define JFS_THREAD_MIN    10
-#define JFS_THREAD_MAX    200
-#define JFS_THREAD_LINGER 100
+#define JFS_THREAD_MIN    12
+#define JFS_THREAD_MAX    64
+#define JFS_THREAD_LINGER 500
+
 #define FUSE_USE_VERSION  27
 
 #ifdef HAVE_CONFIG_H
@@ -45,7 +46,6 @@
 #include "sqlitedb.h"
 #include "joinfs.h"
 
-#include <sqlite3.h>
 #include <fuse.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -118,7 +118,6 @@ jfs_init(struct fuse_conn_info *conn)
 {
   struct sched_param param;
   pthread_attr_t wattr;
-  int rc;
 
   log_init();
   log_msg("Starting joinFS. FUSE Major=%d Minor=%d\n",
@@ -130,25 +129,7 @@ jfs_init(struct fuse_conn_info *conn)
   jfs_datapath_cache_init();
   jfs_key_cache_init();
   jfs_meta_cache_init();
-  
-  /* start sqlite in multithreaded mode */
-  rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  if(rc != SQLITE_OK) {
-	log_error("Failed to configure multithreading for SQLITE.\n");
-    log_destroy();
-
-	exit(EXIT_FAILURE);
-  }
-
-  rc = sqlite3_initialize();
-  if(rc != SQLITE_OK) {
-	log_error("Failed to initialize SQLite.\n");
-    log_destroy();
-
-	exit(EXIT_FAILURE);
-  }
-
-  log_msg("SQLite started.\n");
+  jfs_init_db();
 
   jfs_read_pool = jfs_pool_create(JFS_THREAD_MIN, JFS_THREAD_MAX, 
 								  JFS_THREAD_LINGER, NULL, 
@@ -703,6 +684,20 @@ jfs_removexattr(const char *path, const char *name)
   return 0;
 }
 
+static int
+jfs_release(const char *path, struct fuse_file_info *fi)
+{
+  int rc;
+
+  rc = close(fi->fh);
+  if(rc) {
+    log_error("jfs_release---path:%s, fi->fh:%d, error:%d\n", path, fi->fh, -errno);
+    return -errno;
+  }
+
+  return 0;
+}
+
 static struct fuse_operations jfs_oper = {
   .getattr	    = jfs_getattr,
   .access	    = jfs_access,
@@ -730,7 +725,8 @@ static struct fuse_operations jfs_oper = {
   .setxattr	    = jfs_setxattr,
   .getxattr	    = jfs_getxattr,
   .listxattr	= jfs_listxattr,
-  .removexattr	= jfs_removexattr
+  .removexattr	= jfs_removexattr,
+  .release      = jfs_release
 };
 
 int 
@@ -768,7 +764,6 @@ main(int argc, char *argv[])
 
   argc = 3;
   argv[1] = "-d";
-  //argv[2] = "-s";
   argv[2] = jfs_context->mountpath;
   
   /*

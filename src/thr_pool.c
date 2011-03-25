@@ -76,8 +76,8 @@ struct thr_pool {
 };
 
 /* pool_flags */
-#define	POOL_WAIT	0x01		/* waiting in thr_pool_wait() */
-#define	POOL_DESTROY	0x02		/* pool is being destroyed */
+#define	POOL_WAIT	 0x01		/* waiting in thr_pool_wait() */
+#define	POOL_DESTROY 0x02		/* pool is being destroyed */
 
 /* the list of all created and not yet destroyed thread pools */
 static thr_pool_t *thr_pools = NULL;
@@ -177,7 +177,11 @@ worker_thread(void *arg)
 	/*
 	 * Get a db connection object before performing jobs.
 	 */
-	db = jfs_open_db(pool->sqlite_attr);
+	rc = jfs_open_db(&db, pool->sqlite_attr);
+    if(rc) {
+      return rc * -JFS_SQL_RC_SCALE;
+    }
+
 	sqlite3_busy_timeout(db, QUERY_TIMEOUT);
 
 	/*
@@ -188,6 +192,7 @@ worker_thread(void *arg)
 	pthread_cleanup_push((void (*)(void *))worker_cleanup,
 						 (void *)pool);
 	active.active_tid = pthread_self();
+    
 	for(;;) {
 		/*
 		 * We don't know what this thread was doing during

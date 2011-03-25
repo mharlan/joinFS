@@ -100,12 +100,12 @@ jfs_file_do_create(const char *path, mode_t mode)
   int rc;
   int fd;
 
-  rc = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
-  if(rc < 0) {
+  fd = open(path, O_CREAT | O_EXCL | O_WRONLY, mode);
+  if(fd < 0) {
 	return -errno;
   }
 
-  rc = close(rc);
+  rc = close(fd);
   if(rc) {
 	return -errno;
   }
@@ -123,23 +123,38 @@ jfs_file_do_create(const char *path, mode_t mode)
   fd = creat(datapath, mode);
   if(fd < 0) {
 	free(datapath);
+    
 	return -errno;
+  }
+ 
+  rc = close(fd);
+  if(rc) {
+    free(datapath);
+
+    return -errno;
   }
 
   filename = jfs_util_get_filename(path);
 
   datainode = jfs_util_get_inode(datapath);
   if(datainode < 0) {
-	close(fd);
 	free(datapath);
+    
 	return datainode;
   }
 
   rc = jfs_file_db_add(path, syminode, datainode, datapath, filename, mode);
+  if(rc) {
+    free(datapath);
+    
+    return rc;
+  }
+
+  fd = open(datapath, O_RDWR);
   free(datapath);
 
-  if(rc) {
-	return rc;
+  if(fd < 0) {
+    return -errno;
   }
   
   return fd;

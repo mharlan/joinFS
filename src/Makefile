@@ -1,6 +1,6 @@
 CC=gcc
 INCLUDE=-I include/
-CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall -O2
+CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall
 
 UUIDLIB=/lib/libuuid.so.1.3.0
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse

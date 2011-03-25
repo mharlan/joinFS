@@ -49,6 +49,7 @@ jfs_uuid_generate(char **uuid)
 
   uuid_generate(id);
   uuid_unparse_lower(id, the_uuid);
+  uuid_clear(id);
 
   *uuid = the_uuid;
 
