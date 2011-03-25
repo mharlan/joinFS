@@ -255,12 +255,15 @@ jfs_open_db(sqlite3 **db, int sqlite_attr)
     return 0;
   }
   
+  /*
+   * Disabled for performance testing.
   rc = sqlite3_exec(new_db, "PRAGMA foreign_keys=ON;", NULL, NULL, &err_msg);
   if(rc) {
     sqlite3_close(new_db);
 
     return rc;
   }
+   */
   rc = sqlite3_exec(new_db, "PRAGMA journal_mode=truncate;", NULL, NULL, &err_msg);
   if(rc) {
     sqlite3_close(new_db);

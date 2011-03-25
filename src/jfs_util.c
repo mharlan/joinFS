@@ -46,7 +46,7 @@ jfs_util_get_inode(const char *path)
   struct stat buf;
   int rc;
 
-  rc = stat(path, &buf);
+  rc = lstat(path, &buf);
   if(rc < 0) {
 	return -errno;
   }
@@ -61,7 +61,7 @@ jfs_util_get_inode_and_mode(const char *path, int *inode, mode_t *mode)
   
   int rc;
 
-  rc = stat(path, &buf);
+  rc = lstat(path, &buf);
   if(rc < 0) {
     return -errno;
   }
@@ -139,7 +139,7 @@ int
 jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *datainode)
 {
   char *filename;
-  char *realpath;
+  char *r_path;
   char *subpath;
   char *d_path;
 
@@ -151,6 +151,9 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
   int inode;
   int rc;
 
+  inode = 0;
+  mode = 0;
+  
   if(jfs_util_is_realpath(path)) {
     rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
     if(rc) {
@@ -176,22 +179,31 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
 
       filename = jfs_util_get_filename(path);
       realpath_len = strlen(d_path) + strlen(filename) + 2; //null and '/'
-      realpath = malloc(sizeof(*realpath) * realpath_len);
-      if(!realpath) {
+
+      r_path = malloc(sizeof(*r_path) * realpath_len);
+      if(!r_path) {
+        free(d_path);
+        
         return -ENOMEM;
       }
-      snprintf(realpath, realpath_len, "%s/%s", d_path, filename);
-      d_path = realpath;
+      snprintf(r_path, realpath_len, "%s/%s", d_path, filename);
+      free(d_path);
+
+      d_path = r_path;
 
       //does it actually exist?
       d_inode = jfs_util_get_inode(d_path);
       if(d_inode < 0) {
+        free(d_path);
+
         return d_inode;
       }
 
       //cache it for next time
       rc = jfs_dynamic_hierarchy_add_file(path, d_path, d_inode);
       if(rc) {
+        free(d_path);
+
         return rc;
       }
     }
@@ -209,26 +221,8 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
 
     return 0;
   }
-
-  if(S_ISDIR(mode)) {
-    if(datainode) {
-      *datainode = inode;
-    }
-
-    if(datapath) {
-      realpath_len = strlen(path) + 1;
-      realpath = malloc(sizeof(*realpath) * realpath_len);
-      if(!realpath) {
-        return -ENOMEM;
-      }
-      strncpy(realpath, path, realpath_len);
-
-      *datapath = realpath;
-    }
-
-	return 0;
-  }
-  else if(S_ISREG(mode)) {	
+  
+  if(S_ISREG(mode)) {
 	rc = jfs_file_cache_get_datapath_and_datainode(inode, &d_path, &d_inode);
     
 	if(rc) {
@@ -244,6 +238,24 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
     }
     else {
       free(d_path);
+    }
+    
+	return 0;
+  }
+  else {
+    if(datainode) {
+      *datainode = inode;
+    }
+    
+    if(datapath) {
+      realpath_len = strlen(path) + 1;
+      r_path = malloc(sizeof(*r_path) * realpath_len);
+      if(!r_path) {
+        return -ENOMEM;
+      }
+      strncpy(r_path, path, realpath_len);
+      
+      *datapath = r_path;
     }
     
 	return 0;

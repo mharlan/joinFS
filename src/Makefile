@@ -1,6 +1,6 @@
 CC=gcc
 INCLUDE=-I include/
-CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall
+CFLAGS=-D_FILE_OFFSET_BITS=64 -Wall -O3
 
 UUIDLIB=/lib/libuuid.so.1.3.0
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
@@ -43,15 +43,20 @@ TESTOBJS=obj/error_log.o \
 TESTS=$(TESTSRC:%.c=%)
 
 all: $(OBJS)
-	$(CC) -ggdb -O0 $(CFLAGS) $(LIBS) $(OBJS) -o ../demo/joinfs
+	$(CC) $(CFLAGS) $(LIBS) $(OBJS) -o ../demo/joinfs
+
+nullFS: ../demo/nullFS
+
+../demo/nullFS:
+	$(CC) $(CFLAGS) $(FUSELIB) -lulockmgr nullFS/nullFS.c -o ../demo/nullFS
 
 tests: $(OBJS) $(TESTS)
 
 tests/%: tests/%.c
-	$(CC) -ggdb -O0 $(CFLAGS) $(INCLUDE) $(LIBS) $(TESTOBJS) tests/$*.c -o tests/$*
+	$(CC) $(CFLAGS) $(INCLUDE) $(LIBS) $(TESTOBJS) tests/$*.c -o tests/$*
 
 obj/%.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $*.c -o obj/$*.o
 
 clean:
-	rm -rf obj/*.o $(TESTS) ../demo/joinfs
+	rm -rf obj/*.o $(TESTS) ../demo/joinfs ../demo/nullFS

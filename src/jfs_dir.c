@@ -148,43 +148,54 @@ jfs_dir_rmdir(const char *path)
   return rc;
 }
 
-int 
-jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
+int
+jfs_dir_opendir(const char *path, DIR **d)
 {
   char *datapath;
-  
-  struct stat st;
-  struct dirent *de;
-
   DIR *dp;
+
   int rc;
-  
+
   rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
     return rc;
   }
 
   dp = opendir(datapath);
-  if(dp != NULL) {
-	while((de = readdir(dp)) != NULL) {
-	  memset(&st, 0, sizeof(st));
-	  st.st_ino = de->d_ino;
-	  st.st_mode = de->d_type << 12;
-	  
-	  if(filler(buf, de->d_name, &st, 0) != 0) {
-		closedir(dp);
-        free(datapath);
+  free(datapath);
 
-		return -ENOMEM;
-	  }
-	}
+  if(!dp) {
+    return -errno;
+  }
+  *d = dp;
 
-	rc = closedir(dp);
-	if(rc) {
-      free(datapath);
+  return 0;
+}
 
-	  return -errno;
-	}
+int 
+jfs_dir_readdir(const char *path, DIR *dp, void *buf, 
+                fuse_fill_dir_t filler)
+{
+  struct stat st;
+  struct dirent *de;
+ 
+  char *datapath;
+  
+  int rc;
+  
+  while((de = readdir(dp)) != NULL) {
+    memset(&st, 0, sizeof(st));
+    st.st_ino = de->d_ino;
+    st.st_mode = de->d_type << 12;
+    
+    if(filler(buf, de->d_name, &st, 0) != 0) {
+      return -errno;
+    }
+  }
+  
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
   }
 
   if(jfs_dir_is_dynamic(datapath)) {
@@ -205,7 +216,8 @@ jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler)
   path = resolved path
  */
 static int
-jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_dir_t filler)
+jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, 
+                  fuse_fill_dir_t filler)
 {
   struct sglib_jfs_list_t_iterator it;
   struct jfs_db_op *db_op;

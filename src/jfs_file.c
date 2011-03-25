@@ -1000,13 +1000,15 @@ jfs_file_getattr(const char *path, struct stat *stbuf)
   char *datapath;
 
   int rc;
-
+  
   rc = jfs_util_get_datapath(path, &datapath);
   if(rc) {
-	return rc;
+    return rc;
   }
   
-  rc = stat(datapath, stbuf);
+  printf("jfs_file_getattr path:%s datapath:%s\n", path, datapath);
+
+  rc = lstat(datapath, stbuf);
   free(datapath);
 
   if(rc) {
@@ -1059,83 +1061,96 @@ jfs_file_statfs(const char *path, struct statvfs *stbuf)
   return 0;
 }
 
-/*
-  This code does not look right.
- */
 int 
 jfs_file_readlink(const char *path, char *buf, size_t size)
 {
-  char *datapath;
+  char *realpath;
 
   int rc;
 
-  rc = jfs_util_get_datapath(path, &datapath);
+  rc = jfs_util_resolve_new_path(path, &realpath);
   if(rc) {
     return rc;
   }
+  
+  printf("Reading link at:%s\n", realpath);
 
-  rc = readlink(datapath, buf, size - 1);
-  free(datapath);
-
-  if(rc) {
+  rc = readlink(path, buf, size - 1);
+  if(rc < 0) {
     return -errno;
   }
   
-  return 0;
+  return rc;
 }
 
 int 
 jfs_file_symlink(const char *from, const char *to)
 {
-  char *datapath_from;
+  struct jfs_db_op *db_op;
+
   char *realpath_to;
+  char *filename;
 
+  int inode;
   int rc;
-
-  rc = jfs_util_get_datapath(from, &datapath_from);
-  if(rc) {
-    return rc;
-  }
 
   rc = jfs_util_resolve_new_path(to, &realpath_to);
   if(rc) {
-    free(datapath_from);
+    return rc;
+  }
+  
+  printf("Building symlink from:%s, to:%s\n", from, realpath_to);
+  rc = symlink(from, realpath_to);
+  
+  if(rc) { 
+    free(realpath_to);
+    
+    return -errno;
+  }
+  
+  filename = jfs_util_get_filename(realpath_to);
+  inode = jfs_util_get_inode(realpath_to);
+  if(inode < 0) {
+    free(realpath_to);
+    
+    return -errno;
+  }
+  
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "INSERT INTO files VALUES(%d,\"%s\",\"%s\");",
+                        inode, realpath_to, filename);
+  free(realpath_to);
+
+  if(rc) {
     return rc;
   }
 
-  rc = symlink(datapath_from, realpath_to);
-  free(realpath_to);
-  free(datapath_from);
+  jfs_write_pool_queue(db_op);
+  
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
 
   if(rc) {
-    return -errno;
+    return rc;
   }
-
+  
   return 0;
 }
 
 int 
 jfs_file_link(const char *from, const char *to)
 {
-  char *datapath_from;
   char *realpath_to;
 
   int rc;
-  
-  rc = jfs_util_get_datapath(from, &datapath_from);
-  if(rc) {
-    return rc;
-  }
 
   rc = jfs_util_resolve_new_path(to, &realpath_to);
   if(rc) {
-    free(datapath_from);
     return rc;
   }
 
-  rc = link(datapath_from, realpath_to);
+  rc = link(from, realpath_to);
   free(realpath_to);
-  free(datapath_from);
 
   if(rc) {
     return -errno;

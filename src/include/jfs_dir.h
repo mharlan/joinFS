@@ -18,20 +18,13 @@
  ********************************************************************/
 
 #include <fuse.h>
+#include <dirent.h>
 #include <sys/types.h>
-
-typedef struct jfs_dir jfs_dir_t;
-struct jfs_dir {
-  int is_subquery;
-  int has_subquery;
-  int path_items;
-
-  const char *sub_key;
-  const char *query;
-};
 
 int jfs_dir_mkdir(const char *path, mode_t mode);
 
 int jfs_dir_rmdir(const char *path);
 
-int jfs_dir_readdir(const char *path, void *buf, fuse_fill_dir_t filler);
+int jfs_dir_opendir(const char *path, DIR **d);
+
+int jfs_dir_readdir(const char *path, DIR *dp, void *buf, fuse_fill_dir_t filler);

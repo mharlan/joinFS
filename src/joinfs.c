@@ -204,7 +204,9 @@ jfs_getattr(const char *path, struct stat *stbuf)
   free(jfs_path);
 
   if(rc) {
-	log_error("jfs_getattr---path:%s, error:%d\n", path, rc);
+    if(rc != -ENOENT) {
+      log_error("jfs_getattr---path:%s, error:%d\n", path, rc);
+    }
     return rc;
   }
   
@@ -248,23 +250,65 @@ jfs_readlink(const char *path, char *buf, size_t size)
   return 0;
 }
 
+static int
+jfs_opendir(const char *path, struct fuse_file_info *fi)
+{
+  DIR *dp;
+
+  char *jfs_path;
+  int rc;
+  
+  jfs_path = jfs_realpath(path);
+  rc = jfs_dir_opendir(jfs_path, &dp);
+  free(jfs_path);
+
+  if(rc) {
+    log_error("jfs_opendir---path%s, error:%d\n", path, rc);
+    
+    return rc;
+  }
+  fi->fh = (uintptr_t)dp;
+
+  return 0;
+}
 
 static int 
 jfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			off_t offset, struct fuse_file_info *fi)
 {
+  DIR *dp;
+  
   char *jfs_path;
   int rc;
 
   (void) offset;
-  
+
   jfs_path = jfs_realpath(path);
-  rc = jfs_dir_readdir(jfs_path, buf, filler);
+  dp = (DIR *)(uintptr_t)fi->fh;
+  rc = jfs_dir_readdir(jfs_path, dp, buf, filler);
   free(jfs_path);
 
   if(rc) {
     log_error("jfs_readdir---path:%s, error:%d\n", path, rc);
 	return rc;
+  }
+
+  return 0;
+}
+
+static int
+jfs_releasedir(const char *path, struct fuse_file_info *fi)
+{
+  DIR *dp;
+
+  int rc;
+  
+  dp = (DIR *)(uintptr_t)fi->fh;
+  rc = closedir(dp);
+  if(rc) {
+    log_error("jfs_releasedir---error:%d\n", -errno);
+
+    return -errno;
   }
 
   return 0;
@@ -370,27 +414,21 @@ jfs_rmdir(const char *path)
 static int 
 jfs_symlink(const char *from, const char *to)
 {
-  char *jfs_path_from;
   char *jfs_path_to;
   int rc;
   
-  jfs_path_from = jfs_realpath(from);
   jfs_path_to = jfs_realpath(to);
-  rc = jfs_file_symlink(jfs_path_from, jfs_path_to);
+  rc = jfs_file_symlink(from, jfs_path_to);
   
-  if(jfs_path_from) {
-    free(jfs_path_from);
-  }
   if(jfs_path_to) {
     free(jfs_path_to);
   }
 
-  if(rc) {
+  if(rc < 0) {
     log_error("jfs_symlink---from:%s, to:%s, error:%d\n", from, to, rc);
-    return rc;
   }
 
-  return 0;
+  return rc;
 }
 
 static int 
@@ -548,9 +586,11 @@ jfs_read(const char *path, char *buf, size_t size, off_t offset,
 {
   int rc;
 
+  (void) path;
+  
   rc = pread(fi->fh, buf, size, offset);
   if(rc == -1) {
-	log_error("jfs_read---path:%s, error:%d\n", path, -errno);
+	log_error("jfs_read---error:%d\n", -errno);
     return -errno;
   }
 
@@ -563,9 +603,11 @@ jfs_write(const char *path, const char *buf, size_t size,
 {
   int rc;
   
+  (void) path;
+  
   rc = pwrite(fi->fh, buf, size, offset);
   if (rc == -1) {
-	log_error("jfs_write---path:%s, error:%d\n", path, -errno);
+	log_error("jfs_write---error:%d\n", -errno);
     return -errno;
   }
 
@@ -689,9 +731,11 @@ jfs_release(const char *path, struct fuse_file_info *fi)
 {
   int rc;
 
+  (void) path;
+
   rc = close(fi->fh);
   if(rc) {
-    log_error("jfs_release---path:%s, fi->fh:%d, error:%d\n", path, fi->fh, -errno);
+    log_error("jfs_release---error:%d\n", -errno);
     return -errno;
   }
 
@@ -702,6 +746,8 @@ static struct fuse_operations jfs_oper = {
   .getattr	    = jfs_getattr,
   .access	    = jfs_access,
   .readlink	    = jfs_readlink,
+  .opendir      = jfs_opendir,
+  .releasedir   = jfs_releasedir,
   .readdir	    = jfs_readdir,
   .create       = jfs_create,
   .mknod	    = jfs_mknod,
@@ -732,9 +778,10 @@ static struct fuse_operations jfs_oper = {
 int 
 main(int argc, char *argv[])
 {
+  struct jfs_context *jfs_context;
+
   int i;
   int rc;
-  struct jfs_context *jfs_context;
 
   jfs_context = malloc(sizeof(*jfs_context));
   if(!jfs_context) {
@@ -762,14 +809,14 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
+  /*
   argc = 3;
   argv[1] = "-d";
   argv[2] = jfs_context->mountpath;
+  */
   
-  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
-  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

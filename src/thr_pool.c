@@ -179,7 +179,7 @@ worker_thread(void *arg)
 	 */
 	rc = jfs_open_db(&db, pool->sqlite_attr);
     if(rc) {
-      return rc * -JFS_SQL_RC_SCALE;
+      return NULL;
     }
 
 	sqlite3_busy_timeout(db, QUERY_TIMEOUT);
