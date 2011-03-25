@@ -61,6 +61,9 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
   int rc;
   
   dir_query = NULL;
+  dir_is_folders = NULL;
+  dir_key_pairs = NULL;
+  path_items = NULL;
 
   rc = jfs_meta_do_getxattr(path, JFS_DIR_KEY_PAIRS, &dir_key_pairs);
   if(rc) {
@@ -80,6 +83,10 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
     }
   }
 
+  if(dir_is_folders) {
+    free(dir_is_folders);
+  }
+
   rc = jfs_meta_do_getxattr(path, JFS_DIR_PATH_ITEMS, &path_items);
   if(rc) {
     items = 0;
@@ -88,21 +95,29 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
     items = atoi(path_items);
   }
 
+  if(path_items) {
+    free(path_items);
+  }
+
   //copy the path so we can modify it
   path_len = strlen(orig_path) + 1;
   copy_path = malloc(sizeof(*copy_path) * path_len);
   if(!copy_path) {
+    free(dir_key_pairs);
+
     return -ENOMEM;
   }
   strncpy(copy_path, orig_path, path_len);
 
   rc = jfs_dir_create_query(items, *is_folders, copy_path, dir_key_pairs, &dir_query);
+  free(dir_key_pairs);
   free(copy_path);
 
   if(rc) {
     if(dir_query) {
       free(dir_query);
     }
+
     return rc;
   }
 
@@ -132,6 +147,8 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   int rc;
   int i;
 
+  rc = 0;
+
   //allocate memory
   values = malloc(sizeof(*values) * (items + 1));
   if(!values) {
@@ -141,6 +158,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   parent_key_pairs = malloc(sizeof(*parent_key_pairs) * (items + 1));
   if(!parent_key_pairs) {
     free(values);
+    
     return -ENOMEM;
   }
 
@@ -149,6 +167,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   if(!query) {
     free(values);
     free(parent_key_pairs);
+    
     return -ENOMEM;
   }
   query[0] = '\0';
@@ -158,10 +177,12 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   for(i = 0; i < items; ++i) {
     value = jfs_util_get_last_path_item(path);
     if(!value) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
-      return -EBADMSG;
+      rc = -EBADMSG;
+      if(i > 0) {
+        items = i - 1;
+      }
+
+      goto cleanup;
     }
 
     *value = '\0';
@@ -171,20 +192,24 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
 
     rc = jfs_util_get_datapath(path, &datapath);
     if(rc) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
+      free(values[i]);
+      if(i > 0) {
+        items = i - 1;
+      }
 
-      return rc;
+      goto cleanup;
     }
 
     rc = jfs_meta_do_getxattr(datapath, JFS_DIR_KEY_PAIRS, &key_pairs);
-    if(rc) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
+    free(datapath);
 
-      return rc;
+    if(rc) {
+      free(values[i]);
+      if(i > 0) {
+        items = i - 1;
+      }
+
+      goto cleanup;
     }
 
     parent_key_pairs[i] = key_pairs;
@@ -195,28 +220,20 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   for(i = 0; i < items; ++i) {
     rc = jfs_dir_parse_key_pairs(1, parent_key_pairs[i], &current_pos, &current_len, &query_len, &query);
     if(rc) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
-      
-      return rc;
+      goto cleanup;
     }
 
     key = strrchr(parent_key_pairs[i], '=');
     if(!key) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
+      rc = -EBADMSG;
 
-      return -EBADMSG;
+      goto cleanup;
     }
 
     if(*(key - 1) != 'k') {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
+      rc = -EBADMSG;
 
-      return -EBADMSG;
+      goto cleanup;
     }
     ++key;
     
@@ -231,11 +248,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     if(current_len >= query_len) {
       rc = jfs_dir_expand_query(&query_len, &query);
       if(rc) {
-        free(parent_key_pairs);
-        free(values);
-        free(query);
-
-        return rc;
+        goto cleanup;
       }
     }
     sprintf(&query[current_pos], JFS_KEY_PAIR_ITEM, key, value);
@@ -245,28 +258,20 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   if(is_folders) {
     rc = jfs_dir_parse_key_pairs(1, dir_key_pairs, &current_pos, &current_len, &query_len, &query);
     if(rc) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
-      
-      return rc;
+      goto cleanup;
     }
 
     key = strrchr(dir_key_pairs, '=');
     if(!key) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
+      rc = -EBADMSG;
       
-      return -EBADMSG;
+      goto cleanup;
     }
 
     if(*(key - 1) != 'k') {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
+      rc = -EBADMSG;
 
-      return -EBADMSG;
+      goto cleanup;
     }
     ++key;
     
@@ -279,11 +284,9 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       query_len = strlen(JFS_FOLDER_SIMPLE_QUERY) + strlen(key) + 1;
       outer_query = malloc(sizeof(*outer_query) * query_len);
       if(!outer_query) {
-        free(parent_key_pairs);
-        free(values);
-        free(query);
+        rc = -ENOMEM;
 
-        return -ENOMEM;
+        goto cleanup;
       }
       snprintf(outer_query, query_len, JFS_FOLDER_SIMPLE_QUERY, key);
     }
@@ -295,11 +298,9 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       query_len = strlen(JFS_FOLDER_QUERY) + strlen(key) + current_len + 1;
       outer_query = malloc(sizeof(*outer_query) * query_len);
       if(!outer_query) {
-        free(parent_key_pairs);
-        free(values);
-        free(query);
-        
-        return -ENOMEM;
+        rc = -ENOMEM;
+
+        goto cleanup;
       }
       snprintf(outer_query, query_len, JFS_FOLDER_QUERY, key, query);
     }
@@ -307,19 +308,13 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   else {
     rc = jfs_dir_parse_key_pairs(0, dir_key_pairs, &current_pos, &current_len, &query_len, &query);
     if(rc) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
-      
-      return rc;
+      goto cleanup;
     }
 
     if(!current_len) {
-      free(parent_key_pairs);
-      free(values);
-      free(query);
-      
-      return -EBADMSG;
+      rc = -EBADMSG;
+
+      goto cleanup;
     }
     else {
       //remove the last OR
@@ -329,22 +324,25 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       query_len = strlen(JFS_FILE_QUERY) + current_len + 1;
       outer_query = malloc(sizeof(*outer_query) * query_len);
       if(!outer_query) {
-        free(parent_key_pairs);
-        free(values);
-        free(query);
-        
-        return -ENOMEM;
+        rc = -ENOMEM;
+
+        goto cleanup;
       }
       snprintf(outer_query, query_len, JFS_FILE_QUERY, query);
     }
   }
 
+  *dir_query = outer_query;
+
+ cleanup:
+  for(i = 0; i < items; ++i) {
+    free(parent_key_pairs[i]);
+  }
   free(parent_key_pairs);
   free(values);
   free(query);
-  *dir_query = outer_query;
   
-  return 0;
+  return rc;
 }
 
 static int
@@ -416,10 +414,14 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
     if(token[0] == 'k') {
       key = strchr(token, '=');
       if(!key) {
+        free(key_pairs);
+
         return -EBADMSG;
       }
 
       if(key != &token[1]) {
+        free(key_pairs);
+
         return -EBADMSG;
       }
       ++key;
@@ -432,6 +434,8 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
     }
     //must be a key before there is a value
     else {
+      free(key_pairs);
+
       return -EBADMSG;
     }
     
@@ -439,10 +443,14 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
     if(token != NULL && token[0] == 'v') {
       value = strchr(token, '=');
       if(!value) {
+        free(key_pairs);
+
         return -EBADMSG;
       }
 
       if(value != &token[1]) {
+        free(key_pairs);
+
         return -EBADMSG;
       }
       ++value;
@@ -451,6 +459,8 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       if(current_len >= query_len) {
         rc = jfs_dir_expand_query(&query_len, &query);
         if(rc) {
+          free(key_pairs);
+
           return rc;
         }
       }
@@ -464,6 +474,8 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       if(current_len >= query_len) {
         rc = jfs_dir_expand_query(&query_len, &query);
         if(rc) {
+          free(key_pairs);
+
           return rc;
         }
       }
@@ -473,6 +485,7 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       //already got next token, which is not a value 
     }
   }
+  free(key_pairs);
 
   *dir_current_pos = current_pos;
   *dir_current_len = current_len;

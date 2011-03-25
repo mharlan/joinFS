@@ -593,6 +593,7 @@ jfs_file_rename(const char *from, const char *to)
 
         goto cleanup;
       }
+      free(to_datapath);
       
       rc = jfs_file_cache_get_sympath(to_datainode, &real_to);
       if(rc) {
@@ -667,7 +668,6 @@ cleanup:
   if(to_datapath) {
     free(to_datapath);
   }
-
   if(real_from != from && real_from) {
     free(real_from);
   }

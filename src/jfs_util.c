@@ -93,14 +93,17 @@ jfs_util_is_path_dynamic(const char *path)
   int inode;
   int rc;
 
+  datapath = NULL;
   if(jfs_util_is_realpath(path)) {
     return 0;
   }
 
   rc = jfs_dynamic_path_resolution(path, &datapath, &inode);
+  
   if(rc) {
     return 0;
   }
+  free(datapath);
 
   return 1;
 }
@@ -227,6 +230,7 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
   }
   else if(S_ISREG(mode)) {	
 	rc = jfs_file_cache_get_datapath_and_datainode(inode, &d_path, &d_inode);
+    
 	if(rc) {
       return rc;
 	}
@@ -239,7 +243,7 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
       *datapath = d_path;
     }
     else {
-      free(datapath);
+      free(d_path);
     }
     
 	return 0;
@@ -426,11 +430,11 @@ jfs_util_resolve_new_path(const char *path, char **new_path)
   //if the subpath isn't real, get the sub_datapath
   if(!jfs_util_is_realpath(subpath)) {
     rc = jfs_util_get_datapath(subpath, &sub_datapath);
+    free(subpath);
+
     if(rc) {
       return rc;
     }
-    free(subpath);
-    
     subpath = sub_datapath;
   }
 
