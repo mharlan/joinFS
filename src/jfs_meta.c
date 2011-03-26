@@ -89,16 +89,14 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
   }
   
   jfs_write_pool_queue(db_op);
-
   rc = jfs_db_op_wait(db_op);
-  if(rc) {
-    free(safe_value);
-	jfs_db_op_destroy(db_op);
-    
-	return rc;
-  }
   jfs_db_op_destroy(db_op);
 
+  if(rc) {
+    free(safe_value);
+	return rc;
+  }
+  
   rc = jfs_meta_cache_add(datainode, keyid, safe_value);
   free(safe_value);
 
@@ -294,13 +292,12 @@ jfs_meta_removexattr(const char *path, const char *key)
   }
   
   jfs_write_pool_queue(db_op);
-
   rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+
   if(rc) {
-	jfs_db_op_destroy(db_op);
 	return rc;
   }
-  jfs_db_op_destroy(db_op);
 
   rc = jfs_meta_cache_remove(datainode, keyid);
   if(rc) {

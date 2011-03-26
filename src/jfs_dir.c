@@ -104,17 +104,18 @@ jfs_dir_do_mkdir(const char *path, mode_t mode)
   if(rc) {
     return rc;
   }
-
-  rc = jfs_meta_setxattr(path, JFS_DIR_IS_DYNAMIC, JFS_DIR_XATTR_FALSE, 1, XATTR_CREATE);
-
-  return rc;
+  
+  return 0;
 }
 
 int 
 jfs_dir_rmdir(const char *path)
 {
   struct jfs_db_op *db_op;
-  
+ 
+  char *file_query;
+  char *metadata_query;
+ 
   int inode;
   int rc;
 
@@ -128,40 +129,41 @@ jfs_dir_rmdir(const char *path)
 	return inode;
   }
 
+  rc = jfs_db_op_create_query(&file_query, 
+                              "DELETE FROM files WHERE inode=%d;",
+                              inode);
+  if(rc) {
+	return rc;
+  }
+
+  rc = jfs_db_op_create_query(&metadata_query,
+                              "DELETE FROM metadata WHERE inode=%d;",
+                              inode);
+  if(rc) {
+    free(file_query);
+    return rc;
+  }
+
+  rc = jfs_db_op_create_multi_op(&db_op, 2, file_query, metadata_query);
+  if(rc) {
+    free(file_query);
+    free(metadata_query);
+    return rc;
+  }
+
+  jfs_write_pool_queue(db_op);
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+  
+  if(rc) {
+    return rc;
+  }
+
   rc = rmdir(path);
   if(rc) {
 	return -errno;
   }
 
-  rc = jfs_db_op_create(&db_op, jfs_write_op, 
-                        "DELETE FROM files WHERE inode=%d;",
-                        inode);
-  if(rc) {
-	return rc;
-  }
-
-  jfs_write_pool_queue(db_op);
-
-  rc = jfs_db_op_wait(db_op);
-  jfs_db_op_destroy(db_op);
-
-  if(rc) {
-    return rc;
-  }
-
-  rc = jfs_db_op_create(&db_op, jfs_write_op,
-                        "DELETE FROM metadata WHERE inode=%d;",
-                        inode);
-
-  if(rc) {
-    return rc;
-  }
-
-  jfs_write_pool_queue(db_op);
-
-  rc = jfs_db_op_wait(db_op);
-  jfs_db_op_destroy(db_op);
-  
   return rc;
 }
 
@@ -422,7 +424,10 @@ jfs_dir_is_dynamic(const char *path)
   
   rc = jfs_meta_do_getxattr(path, JFS_DIR_IS_DYNAMIC, &is_dynamic);
   if(rc) {
-    return 0;
+    if(rc == -ENOATTR) {
+      return 0;
+    }
+    return rc;
   }
 
   if(strcmp(is_dynamic, JFS_DIR_XATTR_TRUE) == 0) {

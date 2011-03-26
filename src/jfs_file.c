@@ -284,45 +284,44 @@ jfs_file_db_add(const char *path, int syminode, int datainode, const char *datap
 {
   struct jfs_db_op *db_op;
 
+  char *file_query;
+  char *symlink_query;
+
   int rc;
 
   /* first add to the files table */
-  rc = jfs_db_op_create(&db_op, jfs_write_op, 
-                        "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
-                        datainode, datapath, filename);
+  rc = jfs_db_op_create_query(&file_query,
+                              "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
+                              datainode, datapath, filename);
   if(rc) {
 	return rc;
   }
   
-  jfs_write_pool_queue(db_op);
-
-  rc = jfs_db_op_wait(db_op);
-  if(rc) {
-	jfs_db_op_destroy(db_op);
-	return rc;
-  }
-  jfs_db_op_destroy(db_op);
-
   /* now add to symlinks */
-  rc = jfs_db_op_create(&db_op, jfs_write_op, 
-                        "INSERT OR ROLLBACK INTO symlinks VALUES(%d,\"%s\",%d);",
-                        syminode, path, datainode);
+  rc = jfs_db_op_create_query(&symlink_query,
+                              "INSERT OR ROLLBACK INTO symlinks VALUES(%d,\"%s\",%d);",
+                              syminode, path, datainode);
+  if(rc) {
+    free(file_query);
+	return rc;
+  }
+
+  rc = jfs_db_op_create_multi_op(&db_op, 2, file_query, symlink_query);
+  if(rc) {
+    free(file_query);
+    free(symlink_query);
+    return rc;
+  }
+  
+  jfs_write_pool_queue(db_op);
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+
   if(rc) {
 	return rc;
   }
   
-  jfs_write_pool_queue(db_op);
-
-  rc = jfs_db_op_wait(db_op);
-  if(rc) {
-	jfs_db_op_destroy(db_op);
-	return rc;
-  }
-  jfs_db_op_destroy(db_op);
-
-  rc = jfs_file_cache_add(syminode, path, datainode, datapath);
-
-  return rc;
+  return jfs_file_cache_add(syminode, path, datainode, datapath);;
 }
 
 /*
@@ -435,12 +434,12 @@ jfs_file_do_unlink(const char *path)
     
     jfs_write_pool_queue(db_op);
     rc = jfs_db_op_wait(db_op);
+    jfs_db_op_destroy(db_op);
+
     if(rc) {
-      jfs_db_op_destroy(db_op);
       free(datapath);
       return rc;
     }
-    jfs_db_op_destroy(db_op);
   }
 
   rc = unlink(path);
@@ -698,6 +697,11 @@ jfs_file_do_rename(const char *from, const char *to)
   char *to_datapath;
   char *filename;
 
+  char *metadata_to_query;
+  char *file_query;
+  char *file_delete_query;
+  char *symlink_query;
+
   size_t from_len;
   size_t to_len;
 
@@ -714,6 +718,7 @@ jfs_file_do_rename(const char *from, const char *to)
   to_copy = NULL;
   to_datapath = NULL;
   filename = NULL;
+  symlink_query = NULL;
 
   to_datapath = NULL;
   from_datainode = 0;
@@ -755,30 +760,110 @@ jfs_file_do_rename(const char *from, const char *to)
     }
   }
 
-  //perform the rename
-  rc = rename(from_copy, to_copy);
-  if(rc) {
-    rc = -errno;
-
-    goto cleanup;
-  }
-
   if(to_inode > -1) {
     //preserve the old metadata
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "UPDATE OR ROLLBACK metadata SET inode=%d WHERE inode=%d;",
-                          from_datainode, to_datainode);
+    rc = jfs_db_op_create_query(&metadata_to_query,
+                                "UPDATE OR ROLLBACK metadata SET inode=%d WHERE inode=%d;",
+                                from_datainode, to_datainode); 
     if(rc) {
       goto cleanup;
     }
-    
+
+    //cleanup the old datapath in the db
+    rc = jfs_db_op_create_query(&file_delete_query,
+                                "DELETE FROM files WHERE inode=%d;",
+                                to_datainode);
+    if(rc) {
+      free(metadata_to_query);
+      goto cleanup;
+    }
+  }
+  
+  if(S_ISREG(from_mode)) {
+    filename = jfs_util_get_filename(to);
+  
+    //update the hardlink
+    rc = jfs_db_op_create_query(&symlink_query,
+                                "UPDATE OR ROLLBACK symlinks SET sympath=\"%s\" WHERE syminode=%d;",
+                                to, from_datainode, from_inode);
+    if(rc) {
+      if(to_inode > -1) {
+        free(metadata_to_query);
+        free(file_delete_query);
+      }
+      goto cleanup;
+    }
+
+    //change the filename
+    rc = jfs_db_op_create_query(&file_query,
+                                "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
+                                filename, from_inode);
+    if(rc) {
+      if(to_inode > -1) {
+        free(metadata_to_query);
+        free(file_delete_query);
+      }
+      free(symlink_query);
+      goto cleanup;
+    }
+
+    rc = jfs_file_cache_update_sympath(from_inode, to);
+    if(rc) {
+      if(to_inode > -1) {
+        free(metadata_to_query);
+        free(file_delete_query);
+      }
+      free(symlink_query);
+      free(file_query);
+      goto cleanup;
+    }
+  }
+  else if(S_ISDIR(from_mode) && from_inode != to_inode) {
+    rc = jfs_db_op_create_query(&file_query,
+                                "UPDATE OR ROLLBACK files SET inode=%d WHERE inode=%d;",
+                                from_inode, to_inode);
+    if(rc) {
+      if(to_inode > -1) {
+        free(metadata_to_query);
+        free(file_delete_query);
+      }
+      goto cleanup;
+    }
+  }
+
+  if(to_inode > -1) {
+    if(symlink_query) {
+      rc = jfs_db_op_create_multi_op(&db_op, 4, metadata_to_query, file_delete_query,
+                                     symlink_query, file_query);
+      if(rc) {
+        free(metadata_to_query);
+        free(file_delete_query);
+        free(file_query);
+        free(symlink_query);
+      }
+    }
+    else {
+      rc = jfs_db_op_create_multi_op(&db_op, 3, metadata_to_query, file_delete_query,
+                                     file_query);
+      if(rc) {
+        free(metadata_to_query);
+        free(file_delete_query);
+        free(file_query);
+      }
+    }
+
     jfs_write_pool_queue(db_op);
-    
-	rc = jfs_db_op_wait(db_op);
-	jfs_db_op_destroy(db_op);
+    rc = jfs_db_op_wait(db_op);
+    jfs_db_op_destroy(db_op);
 
     if(rc) {
       goto cleanup;
+    }
+
+    //perform the rename
+    rc = rename(from_copy, to_copy);
+    if(rc) {
+      rc = -errno;
     }
 
     //delete datapath for to
@@ -795,86 +880,36 @@ jfs_file_do_rename(const char *from, const char *to)
       goto cleanup;
     }
   }
+  else {
+    if(symlink_query) {
+      rc = jfs_db_op_create_multi_op(&db_op, 2, symlink_query, file_query);
+      if(rc) {
+        free(file_query);
+        free(symlink_query);
+      }
+    }
+    else {
+      rc = jfs_do_db_op_create(&db_op, jfs_write_op, file_query);
+      if(rc) {
+        free(file_query);
+      }
+    }
+
+    jfs_write_pool_queue(db_op);
+    rc = jfs_db_op_wait(db_op);
+    jfs_db_op_destroy(db_op);
+
+    if(rc) {
+      goto cleanup;
+    }
+
+    //perform the rename
+    rc = rename(from_copy, to_copy);
+    if(rc) {
+      rc = -errno;
+    }
+  }
   
-  if(S_ISREG(from_mode)) {
-    filename = jfs_util_get_filename(to);
-  
-    //update the hardlink
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "UPDATE OR ROLLBACK symlinks SET sympath=\"%s\", datainode=%d WHERE syminode=%d;",
-                          to, from_datainode, from_inode);
-    if(rc) {
-      goto cleanup;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    jfs_db_op_destroy(db_op);
-
-    if(rc) {
-      goto cleanup;
-    }
-
-    //change the filename
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "UPDATE OR ROLLBACK files SET filename=\"%s\" WHERE inode=(SELECT datainode FROM symlinks WHERE syminode=%d);",
-                          filename, from_inode);
-    if(rc) {
-      goto cleanup;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    jfs_db_op_destroy(db_op);
-
-    if(rc) {
-      goto cleanup;
-    }
-    
-    rc = jfs_file_cache_update_sympath(from_inode, to);
-    if(rc) {
-      goto cleanup;
-    }
-  }
-  else if(S_ISDIR(from_mode) && from_inode != to_inode) {
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "UPDATE OR ROLLBACK files SET inode=%d WHERE inode=%d;",
-                          from_inode, to_inode);
-    if(rc) {
-      goto cleanup;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    jfs_db_op_destroy(db_op);
-
-    if(rc) {
-      goto cleanup;
-    }
-  }
-
-  if(to_inode) {
-    //cleanup the old datapath in the db
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "DELETE FROM files WHERE inode=%d;",
-                          to_datainode);
-    if(rc) {
-      goto cleanup;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    jfs_db_op_destroy(db_op);
-
-    if(rc) {
-      goto cleanup;
-    }
-  }
-
  cleanup:
   free(from_copy);
   free(to_copy);
@@ -1001,10 +1036,10 @@ jfs_file_getattr(const char *path, struct stat *stbuf)
     return rc;
   }
   
-  printf("jfs_file_getattr path:%s datapath:%s\n", path, datapath);
-
   rc = lstat(datapath, stbuf);
-  free(datapath);
+  if(datapath) {
+    free(datapath);
+  }
 
   if(rc) {
 	return -errno;
@@ -1068,7 +1103,9 @@ jfs_file_readlink(const char *path, char *buf, size_t size)
     return rc;
   }
   
-  rc = readlink(path, buf, size - 1);
+  rc = readlink(realpath, buf, size - 1);
+  free(realpath);
+
   if(rc < 0) {
     return -errno;
   }
@@ -1092,8 +1129,7 @@ jfs_file_symlink(const char *from, const char *to)
     return rc;
   }
   
-  rc = symlink(from, realpath_to);
-  
+  rc = symlink(from, realpath_to);  
   if(rc) { 
     free(realpath_to);
     
@@ -1118,7 +1154,6 @@ jfs_file_symlink(const char *from, const char *to)
   }
 
   jfs_write_pool_queue(db_op);
-  
   rc = jfs_db_op_wait(db_op);
   jfs_db_op_destroy(db_op);
 

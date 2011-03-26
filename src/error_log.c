@@ -35,10 +35,7 @@ static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 void log_init(void)
 {
   log = fopen(log_path, "w+");
-  if(log) {
-	log_msg("Opened log file at path:%s\n", log_path);
-  }
-  else {
+  if(!log) {
 	printf("---ERROR---Open log file failed, path:%s\n", log_path);
     exit(EXIT_FAILURE);
   }

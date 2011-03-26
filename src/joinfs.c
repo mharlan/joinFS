@@ -61,6 +61,8 @@
 static thr_pool_t *jfs_read_pool;
 static thr_pool_t *jfs_write_pool;
 
+#define ABS_PATH_INC 512
+
 /*
  * Get a joinFS real path.
  *
@@ -71,7 +73,7 @@ jfs_realpath(const char *path)
 {
   char *jfs_path;
 
-  int path_len;
+  size_t path_len;
   
   path_len = strlen(path) + JFS_CONTEXT->querypath_len + 2;
   jfs_path = malloc(sizeof(*jfs_path) * path_len);
@@ -88,7 +90,7 @@ jfs_realpath(const char *path)
   else {
 	snprintf(jfs_path, path_len, "%s/%s", JFS_CONTEXT->querypath, path);
   }
-
+  
   return jfs_path;
 }
 
@@ -810,21 +812,21 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
+  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
+  */
 
   /*
   argc = 3;
   argv[1] = "-d";
   argv[2] = jfs_context->mountpath;
   */
-
-  /*
+  
   argc = 2;
   argv[1] = jfs_context->mountpath;
-  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

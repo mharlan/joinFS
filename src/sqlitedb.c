@@ -356,17 +356,13 @@ jfs_db_op_wait(struct jfs_db_op *db_op)
 int
 jfs_open_db(sqlite3 **db, int sqlite_attr)
 {
-  const char *dbfile = JFSDB;
-
-  char *err_msg;
-
   sqlite3 *new_db;
 
   int rc;
 
-  rc = sqlite3_open_v2(dbfile, &new_db, sqlite_attr, NULL);
+  rc = sqlite3_open_v2(JFSDB, &new_db, sqlite_attr, NULL);
   if(rc) {
-    log_error("Failed to open database file at: %s\n", dbfile);
+    log_error("Failed to open database file at: %s\n", JFSDB);
     if(new_db) {
       sqlite3_close(new_db);
     }
@@ -374,16 +370,21 @@ jfs_open_db(sqlite3 **db, int sqlite_attr)
     return 0;
   }
   
-  /*
-   * Disabled for performance testing.
-  rc = sqlite3_exec(new_db, "PRAGMA foreign_keys=ON;", NULL, NULL, &err_msg);
+  rc = sqlite3_exec(new_db, "PRAGMA journal_mode=truncate;", NULL, NULL, NULL);
   if(rc) {
     sqlite3_close(new_db);
 
     return rc;
   }
-   */
-  rc = sqlite3_exec(new_db, "PRAGMA journal_mode=truncate;", NULL, NULL, &err_msg);
+  
+  rc = sqlite3_exec(new_db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL);
+  if(rc) {
+    sqlite3_close(new_db);
+
+    return rc;
+  }
+
+  rc = sqlite3_exec(new_db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL);
   if(rc) {
     sqlite3_close(new_db);
 
@@ -410,10 +411,9 @@ jfs_close_db(sqlite3 *db)
 static int
 setup_stmt(sqlite3 *db, sqlite3_stmt **stmt, const char* query)
 {
-  const char *zTail;
   int rc;
 
-  rc = sqlite3_prepare_v2(db, query, strlen(query), stmt, &zTail);
+  rc = sqlite3_prepare_v2(db, query, strlen(query), stmt, NULL);
   if(rc != SQLITE_OK) {
     return rc;
   }
@@ -428,14 +428,12 @@ int
 jfs_query(struct jfs_db_op *db_op)
 {
   sqlite3_stmt *stmt;
-
-  char *err_msg;
-
+  
   int rc;
   int i;
 
   if(db_op->op == jfs_multi_write_op) {
-    rc = sqlite3_exec(db_op->db, "BEGIN TRANSACTION;", NULL, NULL, &err_msg);
+    rc = sqlite3_exec(db_op->db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
     if(rc) {
       return rc;
     }
@@ -449,12 +447,12 @@ jfs_query(struct jfs_db_op *db_op)
       db_op->stmt = stmt;
       rc = jfs_db_result(db_op);
       if(rc) {
-        (void) sqlite3_exec(db_op->db, "ROLLBACK TRANSACTION;", NULL, NULL, &err_msg);
+        sqlite3_exec(db_op->db, "ROLLBACK TRANSACTION;", NULL, NULL, NULL);
         return rc;
       }
     }
 
-    rc = sqlite3_exec(db_op->db, "COMMIT TRANSACTION;", NULL, NULL, &err_msg);
+    rc = sqlite3_exec(db_op->db, "COMMIT TRANSACTION;", NULL, NULL, NULL);
     if(rc) {
       return rc;
     }

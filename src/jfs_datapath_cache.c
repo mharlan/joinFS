@@ -281,16 +281,18 @@ jfs_datapath_cache_miss(int inode, char **datapath)
   }
 
   if(db_op->result == NULL) {
+    db_op->rc = 1;
+    jfs_db_op_destroy(db_op);
     return -ENOENT;
   }
 
   path_len = strlen(db_op->result->datapath) + 1;
   path = malloc(sizeof(*path) * path_len);
   if(!path) {
+    jfs_db_op_destroy(db_op);
     return -ENOMEM;
   }
   strncpy(path, db_op->result->datapath, path_len);
-
   jfs_db_op_destroy(db_op);
 
   rc = jfs_datapath_cache_add(inode, path);

@@ -113,6 +113,7 @@ jfs_util_get_datapath(const char *path, char **datapath)
 {
   int rc;
 
+  *datapath = NULL;
   rc = jfs_util_get_datapath_and_datainode(path, datapath, NULL);
   if(rc) {
     return rc;
@@ -188,35 +189,47 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
       }
       snprintf(r_path, realpath_len, "%s/%s", d_path, filename);
       free(d_path);
-
-      d_path = r_path;
-
+      
       //does it actually exist?
-      d_inode = jfs_util_get_inode(d_path);
+      d_inode = jfs_util_get_inode(r_path);
       if(d_inode < 0) {
-        free(d_path);
-
+        free(r_path);
+        
         return d_inode;
       }
 
       //cache it for next time
-      rc = jfs_dynamic_hierarchy_add_file(path, d_path, d_inode);
+      rc = jfs_dynamic_hierarchy_add_file(path, r_path, d_inode);
       if(rc) {
-        free(d_path);
-
+        free(r_path);
+        
         return rc;
       }
-    }
-    
-    if(datainode) {
-      *datainode = d_inode;
-    }
-    
-    if(datapath) {
-      *datapath = d_path;
+
+      if(datainode) {
+        *datainode = d_inode;
+      }
+      
+      if(datapath) {
+        *datapath = r_path;
+      }
+      else {
+        free(r_path);
+      }
+
+      return 0;
     }
     else {
-      free(d_path);
+      if(datainode) {
+        *datainode = d_inode;
+      }
+      
+      if(datapath) {
+        *datapath = d_path;
+      }
+      else {
+        free(d_path);
+      }
     }
 
     return 0;
