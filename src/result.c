@@ -54,6 +54,9 @@ jfs_db_result(struct jfs_db_op *db_op)
   case(jfs_write_op):
 	rc = jfs_do_write_op(db_op->stmt);
 	break;
+  case(jfs_multi_write_op):
+    rc = jfs_do_write_op(db_op->stmt);
+    break;
   case(jfs_listattr_op):
 	rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->buffer_size);
 	break;

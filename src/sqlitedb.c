@@ -128,6 +128,7 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
   
   db_op->op = jfs_op;
   db_op->query = query;
+  db_op->multi_query = NULL;
   db_op->db = NULL;
   db_op->stmt = NULL;
   db_op->result = NULL;
@@ -138,6 +139,112 @@ jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *form
   pthread_mutex_init(&db_op->mut, NULL);
 
   *op = db_op;
+
+  return 0;
+}
+
+/*
+ * Create a multi-write operation.
+ */
+int jfs_db_op_create_multi_op(struct jfs_db_op **op, int num_queries,...)
+{
+  struct jfs_db_op *db_op;
+
+  char *query;
+
+  va_list args;
+
+  int i;
+
+  db_op = malloc(sizeof(*db_op));
+  if(!db_op) {
+    return -ENOMEM;
+  }
+
+  db_op->multi_query = malloc(sizeof(*db_op->multi_query) * num_queries);
+  if(!db_op->multi_query) {
+    free(db_op);
+    return -ENOMEM;
+  }
+
+  va_start(args, num_queries);
+  for(i = 0; i < num_queries; ++i) {
+    query = va_arg(args, char *);
+    if(!query) {
+      free(db_op);
+      return -EINVAL;
+    }
+
+    db_op->multi_query[i] = query;
+  }
+
+  db_op->op = jfs_multi_write_op;
+  db_op->query = NULL;
+  db_op->db = NULL;
+  db_op->stmt = NULL;
+  db_op->result = NULL;
+  db_op->num_queries = num_queries;
+  db_op->done = 0;
+  db_op->rc = 0;
+
+  pthread_cond_init(&db_op->cond, NULL);
+  pthread_mutex_init(&db_op->mut, NULL);
+
+  *op = db_op;
+
+  return 0;
+}
+
+/*
+ * Create a db query using a format string.
+ */
+int jfs_db_op_create_query(char **query, const char *format, ...)
+{
+  va_list args;
+
+  char *new_query;
+
+  int query_size;
+  int rc;
+
+  rc = 0;
+  new_query = NULL;
+  query_size = JFS_QUERY_INC;
+  
+  new_query = malloc(sizeof(*new_query) * query_size);
+  if(!new_query) {
+    return -ENOMEM;
+  }
+
+  while(1) {
+    va_start(args, format);
+    rc = vsnprintf(new_query, query_size, format, args);
+    va_end(args);
+    
+    if(rc > -1 && rc < query_size) {
+      break;
+    }
+    else if(rc > -1) {
+      query_size = rc + 1;
+    }
+    else {
+      if(errno == EILSEQ) {
+        free(new_query);
+
+        return -errno;
+      }
+      
+      query_size += JFS_QUERY_INC;
+    }
+    
+    free(new_query);
+    new_query = malloc(sizeof(*new_query) * query_size);
+    if(!query) {
+      return -ENOMEM;
+    }
+  }
+
+  *query = new_query;
 
   return 0;
 }
@@ -158,9 +265,11 @@ jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query)
 
   db_op->op = jfs_op;
   db_op->query = query;
+  db_op->multi_query = NULL;
   db_op->db = NULL;
   db_op->stmt = NULL;
   db_op->result = NULL;
+  db_op->num_queries = 0;
   db_op->done = 0;
   db_op->rc = 0;
 
@@ -178,7 +287,7 @@ jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query)
 void
 jfs_db_op_destroy(struct jfs_db_op *db_op)
 {
-  free(db_op->query);
+  int i;
 
   if(!db_op->rc) {
 	switch(db_op->op) {
@@ -207,6 +316,16 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 	default:
 	  break;
 	}
+  }
+
+  if(db_op->op == jfs_multi_write_op) {
+    for(i = 0; i < db_op->num_queries; ++i) {
+      free(db_op->multi_query[i]);
+    }
+    free(db_op->multi_query);
+  }
+  else {
+    free(db_op->query);
   }
 
   free(db_op);
@@ -309,17 +428,48 @@ int
 jfs_query(struct jfs_db_op *db_op)
 {
   sqlite3_stmt *stmt;
+
+  char *err_msg;
+
   int rc;
+  int i;
 
-  rc = setup_stmt(db_op->db, &stmt, db_op->query);
-  if(rc) {
-    return rc;
+  if(db_op->op == jfs_multi_write_op) {
+    rc = sqlite3_exec(db_op->db, "BEGIN TRANSACTION;", NULL, NULL, &err_msg);
+    if(rc) {
+      return rc;
+    }
+
+    for(i = 0; i < db_op->num_queries; ++i) {
+      rc = setup_stmt(db_op->db, &stmt, db_op->multi_query[i]);
+      if(rc) {
+        return rc;
+      }
+
+      db_op->stmt = stmt;
+      rc = jfs_db_result(db_op);
+      if(rc) {
+        (void) sqlite3_exec(db_op->db, "ROLLBACK TRANSACTION;", NULL, NULL, &err_msg);
+        return rc;
+      }
+    }
+
+    rc = sqlite3_exec(db_op->db, "COMMIT TRANSACTION;", NULL, NULL, &err_msg);
+    if(rc) {
+      return rc;
+    }
   }
-
-  db_op->stmt = stmt;
-  rc = jfs_db_result(db_op);
-  if(rc) {
-	return rc;
+  else {
+    rc = setup_stmt(db_op->db, &stmt, db_op->query);
+    if(rc) {
+      return rc;
+    }
+    
+    db_op->stmt = stmt;
+    rc = jfs_db_result(db_op);
+    if(rc) {
+      return rc;
+    }
   }
 
   return 0;

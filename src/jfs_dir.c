@@ -92,12 +92,12 @@ jfs_dir_do_mkdir(const char *path, mode_t mode)
   rc = jfs_db_op_create(&db_op, jfs_write_op, 
                         "INSERT OR ROLLBACK INTO files VALUES(%d,\"%s\",\"%s\");",
                         inode, path, filename);
+  
   if(rc) {
 	return rc;
   }
   
   jfs_write_pool_queue(db_op);
-
   rc = jfs_db_op_wait(db_op);
   jfs_db_op_destroy(db_op);
 
@@ -145,6 +145,23 @@ jfs_dir_rmdir(const char *path)
   rc = jfs_db_op_wait(db_op);
   jfs_db_op_destroy(db_op);
 
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "DELETE FROM metadata WHERE inode=%d;",
+                        inode);
+
+  if(rc) {
+    return rc;
+  }
+
+  jfs_write_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+  
   return rc;
 }
 

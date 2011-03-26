@@ -18,8 +18,8 @@
  ********************************************************************/
 
 #define JFS_THREAD_MIN    12
-#define JFS_THREAD_MAX    64
-#define JFS_THREAD_LINGER 500
+#define JFS_THREAD_MAX    256
+#define JFS_THREAD_LINGER 512
 
 #define FUSE_USE_VERSION  27
 
@@ -247,7 +247,7 @@ jfs_readlink(const char *path, char *buf, size_t size)
   }
   buf[rc] = '\0';
   
-  return 0;
+  return rc;
 }
 
 static int
@@ -364,7 +364,7 @@ jfs_mkdir(const char *path, mode_t mode)
   free(jfs_path);
 
   if(rc) {
-	log_error("jfs_mkdir path:%d, mode:%d, error:%d\n", path, mode, rc);
+	log_error("jfs_mkdir path:%s, mode:%d, error:%d\n", path, mode, rc);
     return rc;
   }
 
@@ -424,11 +424,12 @@ jfs_symlink(const char *from, const char *to)
     free(jfs_path_to);
   }
 
-  if(rc < 0) {
+  if(rc) {
     log_error("jfs_symlink---from:%s, to:%s, error:%d\n", from, to, rc);
+    return rc;
   }
 
-  return rc;
+  return 0;
 }
 
 static int 
@@ -809,14 +810,21 @@ main(int argc, char *argv[])
   printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
+  argc = 4;
+  argv[1] = "-d";
+  argv[2] = "-s";
+  argv[3] = jfs_context->mountpath;
+
   /*
   argc = 3;
   argv[1] = "-d";
   argv[2] = jfs_context->mountpath;
   */
-  
+
+  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
+  */
 
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

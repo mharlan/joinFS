@@ -172,6 +172,7 @@ worker_thread(void *arg)
 	struct jfs_db_op *db_op; 
 	sqlite3          *db;
 	int               rc;
+    int               i;
 	thr_pool_t *pool = (thr_pool_t *)arg;
 
 	/*
@@ -249,6 +250,17 @@ worker_thread(void *arg)
           pthread_mutex_lock(&db_op->mut);
           db_op->db = db;
           rc = jfs_query(db_op);
+          if(rc) {
+            if(db_op->op == jfs_multi_write_op) {
+              log_error("jfs_thread_pool---multi_write failed.\n");
+              for(i = 0; i < db_op->num_queries; ++i) {
+                log_error("jfs_thread_pool---Query:%s, error:%d\n", db_op->multi_query[i], rc);
+              }
+            }
+            else {
+              log_error("jfs_thread_pool---Query:%s, error:%d\n", db_op->query, rc);
+            }
+          }
           
           /*
            * Wake up the thread waiting on the job.

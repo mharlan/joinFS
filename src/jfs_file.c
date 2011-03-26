@@ -375,6 +375,10 @@ jfs_file_do_unlink(const char *path)
 {
   struct jfs_db_op *db_op;
   
+  char *file_query;
+  char *symlink_query;
+  char *metadata_query;
+  
   char *datapath;
 
   int datainode;
@@ -392,73 +396,64 @@ jfs_file_do_unlink(const char *path)
     return inode;
   }
   
+  if(datainode > 0) {
+    rc = jfs_db_op_create_query(&file_query, 
+                                "DELETE FROM files WHERE inode=%d;",
+                                datainode);
+    if(rc) {
+      free(datapath);
+      return rc;
+    }
+    
+    rc = jfs_db_op_create_query(&symlink_query,
+                                "DELETE FROM symlinks WHERE datainode=%d OR syminode=%d;",
+                                datainode, inode);
+    if(rc) {
+      free(datapath);
+      free(file_query);
+      return rc;
+    }
+    
+    rc = jfs_db_op_create_query(&metadata_query,
+                                "DELETE FROM metadata WHERE inode=%d;",
+                                datainode);
+    if(rc) {
+      free(datapath);
+      free(file_query);
+      free(symlink_query);
+      return rc;
+    }
+
+    rc = jfs_db_op_create_multi_op(&db_op, 3, file_query, symlink_query, metadata_query);
+    if(rc) {
+      free(datapath);
+      free(file_query);
+      free(symlink_query);
+      free(metadata_query);
+      return rc;
+    }
+    
+    jfs_write_pool_queue(db_op);
+    rc = jfs_db_op_wait(db_op);
+    if(rc) {
+      jfs_db_op_destroy(db_op);
+      free(datapath);
+      return rc;
+    }
+    jfs_db_op_destroy(db_op);
+  }
+
   rc = unlink(path);
   if(rc) {
     free(datapath);
     return -errno;
   }
   
-  if(datainode > 0) {
-    rc = jfs_db_op_create(&db_op, jfs_write_op, 
-                          "DELETE FROM files WHERE inode=%d;",
-                          datainode);
-    if(rc) {
-      free(datapath);
-      return rc;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    if(rc) {
-      jfs_db_op_destroy(db_op);
-      free(datapath);
-      return rc;
-    }
-    jfs_db_op_destroy(db_op);
-    
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "DELETE FROM symlinks WHERE datainode=%d;",
-                          datainode);
-    if(rc) {
-      free(datapath);
-      return rc;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    if(rc) {
-      jfs_db_op_destroy(db_op);
-      free(datapath);
-      return rc;
-    }
-    jfs_db_op_destroy(db_op);
-    
-    rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "DELETE FROM metadata WHERE inode=%d;",
-                          datainode);
-    if(rc) {
-      free(datapath);
-      return rc;
-    }
-    
-    jfs_write_pool_queue(db_op);
-    
-    rc = jfs_db_op_wait(db_op);
-    if(rc) {
-      jfs_db_op_destroy(db_op);
-      free(datapath);
-      return rc;
-    }
-    jfs_db_op_destroy(db_op);
-  }
-  
   rc = unlink(datapath);
-  if(rc) {
-    rc = -errno;
-  }
   free(datapath);
+  if(rc) {
+    return -errno;
+  }
   
   rc = jfs_file_cache_remove(inode);
   if(rc) {
@@ -1073,8 +1068,6 @@ jfs_file_readlink(const char *path, char *buf, size_t size)
     return rc;
   }
   
-  printf("Reading link at:%s\n", realpath);
-
   rc = readlink(path, buf, size - 1);
   if(rc < 0) {
     return -errno;
@@ -1099,7 +1092,6 @@ jfs_file_symlink(const char *from, const char *to)
     return rc;
   }
   
-  printf("Building symlink from:%s, to:%s\n", from, realpath_to);
   rc = symlink(from, realpath_to);
   
   if(rc) { 

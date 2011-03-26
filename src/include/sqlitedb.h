@@ -41,6 +41,8 @@ struct jfs_db_op {
   sqlite3         *db;
   sqlite3_stmt    *stmt;
   enum jfs_db_ops  op;
+
+  int              num_queries;
   int              done;
   int              rc;
 
@@ -48,6 +50,8 @@ struct jfs_db_op {
   pthread_mutex_t  mut;
 
   char            *query;
+  char           **multi_query;
+
   jfs_list_t      *result;
   size_t           buffer_size;
 };
@@ -62,12 +66,21 @@ void jfs_init_db(void);
  */
 int jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *format, ...);
 
+
 /*
  * Create a database op with pre-created query.
-
- * OLD: Update with passing in enum type as well.
  */
 int jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query);
+
+/*
+ * Create a multi-write transaction operation.
+ */
+int jfs_db_op_create_multi_op(struct jfs_db_op **op, int num_queries,...);
+
+/*
+ * Create a db query using a format string.
+ */
+int jfs_db_op_create_query(char **query, const char *format, ...);
 
 /*
  * Destroy a database operation.
