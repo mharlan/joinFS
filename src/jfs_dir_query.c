@@ -32,8 +32,8 @@
 #include <errno.h>
 
 #define JFS_FOLDER_SIMPLE_QUERY "SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid;"
-#define JFS_FOLDER_QUERY        "SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid AND m.inode=(SELECT f.inode FROM files AS f, metadata AS m, keys AS k WHERE f.inode=m.inode and m.keyid=k.keyid and (%s));"
-#define JFS_FILE_QUERY          "SELECT DISTINCT f.inode, f.filename, f.datapath FROM files AS f, metadata AS m, keys AS k WHERE f.inode=m.inode AND m.keyid=k.keyid AND (%s);"
+#define JFS_FOLDER_QUERY        "SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid AND m.jfs_id=(SELECT l.jfs_id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id and m.keyid=k.keyid and (%s));"
+#define JFS_FILE_QUERY          "SELECT DISTINCT l.jfs_id, l.filename, l.path FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id AND m.keyid=k.keyid AND (%s);"
 
 #define JFS_SQL_OR               " OR "
 #define JFS_KEY_ITEM             "(k.keytext=\"%s\") OR "

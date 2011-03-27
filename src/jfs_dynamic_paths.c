@@ -536,6 +536,8 @@ jfs_dynamic_hierarchy_unlink(const char *path)
     return rc;
   }
 
+  jfs_datapath_cache_remove(file->jfs_id);
+
   free(file->name);
   free(file);
 
@@ -546,8 +548,7 @@ int
 jfs_dynamic_hierarchy_rmdir(const char *path)
 {
   jfs_dirlist_t *dir;
-
-  int jfs_id;
+  
   int not_empty;
   int rc;
 
@@ -582,19 +583,17 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   }
   
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, 1, 0);
-
-  jfs_id = dir->jfs_id;
   pthread_rwlock_unlock(&path_lock);
   
   if(rc) {
     return rc;
   }
 
+  jfs_datapath_cache_remove(dir->jfs_id);
+
   free(dir->name);
   free(dir);
-
-  jfs_datapath_cache_remove(jfs_id);
-
+  
   return 0;
 }
 
@@ -644,7 +643,9 @@ jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root)
     for(file = sglib_jfs_filelist_t_it_init(&file_it, root->files);
         file != NULL; file = sglib_jfs_filelist_t_it_next(&file_it)) {
       sglib_jfs_filelist_t_delete(&root->files, file);
-      
+ 
+      jfs_datapath_cache_remove(file->jfs_id);
+     
       free(file->name);
       free(file);
     }
@@ -657,6 +658,8 @@ jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root)
       jfs_dynamic_hierarchy_folder_cleanup(dir);
       
       sglib_jfs_dirlist_t_delete(&root->folders, dir);
+
+      jfs_datapath_cache_remove(dir->jfs_id);
 
       free(dir->name);
       free(dir);

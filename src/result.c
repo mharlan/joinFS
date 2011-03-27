@@ -208,7 +208,6 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
   jfs_list_t *row;
 
   int col_count;
-  int jfs_id;
   int rc;
 
   head = NULL;

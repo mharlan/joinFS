@@ -24,23 +24,12 @@
 #include <sys/time.h>
 
 /*
- * Create a joinFS static file. The file is added
- * to the Linux VFS and the database.
- *
- * Returns the inode of the new file or -1;
- */
-int jfs_file_create(const char *path, int flags, mode_t mode);
-
-/*
- * Create a joinFS static file. The file is added
- * to the Linux VFS and the database.
- *
- * Returns 0 on success, -1 on failure.
+ * Create a joinFS file.
  */
 int jfs_file_mknod(const char *path, mode_t mode, dev_t rdev);
 
 /*
- * Delets a joinFS static file.
+ * Delets a joinFS link.
  */
 int jfs_file_unlink(const char *path);
 
@@ -55,9 +44,9 @@ int jfs_file_rename(const char *from, const char *to);
 int jfs_file_truncate(const char *path, off_t size);
 
 /*
- * Open a joinFS file.
+ * Open or create a joinFS file.
  */
-int jfs_file_open(const char *path, int flags);
+int jfs_file_open(const char *path, int flags, mode_t mode);
 
 /*
  * Get the system attributes for a file.

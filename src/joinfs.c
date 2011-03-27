@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ulockmgr.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
@@ -222,7 +223,9 @@ jfs_access(const char *path, int mask)
   free(jfs_path);
 
   if(rc) {
-	log_error("jfs_access---path:%s, mask:%d, error:%d\n", path, mask, rc);
+    if(rc != -EACCES) {
+      log_error("jfs_access---path:%s, mask:%d, error:%d\n", path, mask, rc);
+    }
     return rc;
   }
   
@@ -319,7 +322,7 @@ jfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
   int fd;
   
   jfs_path = jfs_realpath(path);
-  fd = jfs_file_create(jfs_path, fi->flags, mode);
+  fd = jfs_file_open(jfs_path, fi->flags, mode);
   free(jfs_path);
 
   if(fd < 0) {
@@ -565,7 +568,7 @@ jfs_open(const char *path, struct fuse_file_info *fi)
   int fd;
   
   jfs_path = jfs_realpath(path);
-  fd = jfs_file_open(jfs_path, fi->flags);
+  fd = jfs_file_open(jfs_path, fi->flags, 0);
   free(jfs_path);
 
   if(fd < 0) {
@@ -637,15 +640,19 @@ jfs_fsync(const char *path, int isdatasync,
 {
   int rc;
 
-  if(isdatasync) {
+  (void) path;
+#ifndef HAVE_FDATASYNC
+  (void) isdatasync;
+  
+#else
+  if(isdatasync)
 	rc = fdatasync(fi->fh);
-  }
-  else {
+  else
+#endif
 	rc = fsync(fi->fh);
-  }
 
   if(rc < 0) {
-    log_error("jfs_fsync---path:%s, isdatasync:%d, error:%d\n", path, isdatasync, -errno);
+    log_error("jfs_fsync---path:%s, error:%d\n", path, -errno);
 	return -errno;
   }
 
@@ -728,21 +735,73 @@ jfs_removexattr(const char *path, const char *name)
 static int
 jfs_release(const char *path, struct fuse_file_info *fi)
 {
-  int rc;
-
   (void) path;
 
-  rc = close(fi->fh);
-  if(rc) {
-    log_error("jfs_release---error:%d\n", -errno);
-    return -errno;
-  }
+  close(fi->fh);
 
   return 0;
 }
 
+static int
+jfs_lock(const char *path, struct fuse_file_info *fi,
+         int cmd, struct flock *lock)
+{
+  (void) path;
+
+  return ulockmgr_op(fi->fh, cmd, lock, &fi->lock_owner,
+                     sizeof(fi->lock_owner));
+}
+
+static int
+jfs_fgetattr(const char *path, struct stat *stbuf,
+             struct fuse_file_info *fi)
+{
+	int rc;
+
+	(void) path;
+
+	rc = fstat(fi->fh, stbuf);
+	if(rc) {
+      return -errno;
+    }
+    
+	return 0;
+}
+
+static int 
+jfs_ftruncate(const char *path, off_t size,
+              struct fuse_file_info *fi)
+{
+	int rc;
+
+	(void) path;
+
+	rc = ftruncate(fi->fh, size);
+	if(rc) {
+      return -errno;
+    }
+
+	return 0;
+}
+
+static int 
+jfs_flush(const char *path, struct fuse_file_info *fi)
+{
+	int rc;
+
+	(void) path;
+	
+	rc = close(dup(fi->fh));
+	if(rc) {
+      return -errno;
+    }
+
+	return 0;
+}
+
 static struct fuse_operations jfs_oper = {
   .getattr	    = jfs_getattr,
+  .fgetattr     = jfs_fgetattr,
   .access	    = jfs_access,
   .readlink	    = jfs_readlink,
   .opendir      = jfs_opendir,
@@ -759,6 +818,7 @@ static struct fuse_operations jfs_oper = {
   .chmod        = jfs_chmod,
   .chown        = jfs_chown,
   .truncate	    = jfs_truncate,
+  .ftruncate    = jfs_ftruncate,
   .utimens	    = jfs_utimens,
   .open		    = jfs_open,
   .read		    = jfs_read,
@@ -771,7 +831,9 @@ static struct fuse_operations jfs_oper = {
   .getxattr	    = jfs_getxattr,
   .listxattr	= jfs_listxattr,
   .removexattr	= jfs_removexattr,
-  .release      = jfs_release
+  .release      = jfs_release,
+  .lock         = jfs_lock,
+  .flush        = jfs_flush
 };
 
 int 

@@ -38,77 +38,9 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-static int jfs_file_do_open(const char *path, int flags);
+static int jfs_file_do_open(const char *path, int flags, mode_t mode);
 static int jfs_file_do_unlink(const char *path);
-static int jfs_file_do_create(const char *path, int flags, mode_t mode);
 static int jfs_file_do_rename(const char *from, const char *to);
-
-/*
- * Create a joinFS static file. The file is added
- * to the Linux VFS and the database.
- *
- * Returns the inode of the newly created file or -1.
- */
-int
-jfs_file_create(const char *path, int flags, mode_t mode)
-{
-  char *realpath;
-  
-  int rc;
-
-  if(jfs_util_is_path_dynamic(path)) {
-    rc = jfs_util_get_datapath(path, &realpath);
-    if(rc) {
-      return rc;
-    }
-  }
-  else {
-    rc = jfs_util_resolve_new_path(path, &realpath);
-    if(rc) {
-      return rc;
-    }
-  }
-
-  rc = jfs_file_do_create(realpath, flags, mode);
-  free(realpath);
-
-  if(rc) {
-    return rc;
-  }
-
-  return 0;
-}
-
-static int
-jfs_file_do_create(const char *path, int flags, mode_t mode)
-{
-  char *filename;
-
-  int inode;
-  int rc;
-  int fd;
-  
-  fd = open(path, flags, mode);
-  if(fd < 0) {
-	return -errno;
-  }
-
-  filename = jfs_util_get_filename(path);
-
-  inode = jfs_util_get_inode(path);
-  if(inode < 0) {
-	close(fd);
-	return inode;
-  }
-
-  rc = jfs_file_db_add(inode, path, filename);
-  if(rc) { 
-    close(fd);
-    return rc;
-  }
-  
-  return fd;
-}
 
 /*
  * Create a joinFS static file. The file is added
@@ -137,7 +69,7 @@ jfs_file_mknod(const char *path, mode_t mode, dev_t rdev)
   }
   
   if(S_ISREG(mode)) {
-	rc = jfs_file_do_create(realpath, O_CREAT | O_EXCL | O_WRONLY, mode);
+	rc = jfs_file_do_open(realpath, O_CREAT | O_EXCL | O_WRONLY, mode);
   } 
   else if(S_ISFIFO(mode)) {
     rc = mkfifo(realpath, mode);
@@ -597,7 +529,7 @@ jfs_file_truncate(const char *path, off_t size)
  * Open a joinFS file.
  */
 int
-jfs_file_open(const char *path, int flags)
+jfs_file_open(const char *path, int flags, mode_t mode)
 {
   char *realpath;
   
@@ -616,30 +548,40 @@ jfs_file_open(const char *path, int flags)
     }
   }
 
-  rc = jfs_file_do_open(realpath, flags);
+  rc = jfs_file_do_open(realpath, flags, mode);
   free(realpath);
 
   return rc;
 }
 
 static int
-jfs_file_do_open(const char *path, int flags)
+jfs_file_do_open(const char *path, int flags, mode_t mode)
 {
+  char *filename;
+
+  int inode;
   int fd;
   int rc;
 
   if(flags & O_CREAT) {
-	fd = open(path, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR);
+	fd = open(path, flags | O_EXCL, mode);
     
+    //doesn't exist, add to db
 	if(fd > 0) {
-	  close(fd);
+	  filename = jfs_util_get_filename(path);
+      inode = jfs_util_get_inode(path);
+      if(inode < 0) {
+        close(fd);
 
-	  rc = unlink(path);
-	  if(rc) {
-		return -errno;
-	  }
-      
-	  return jfs_file_do_create(path, flags, S_IRUSR);
+        return inode;
+      }
+
+      rc = jfs_file_db_add(inode, path, filename);
+      if(rc) {
+        close(fd);
+        
+        return rc;
+      }
 	}
 	else if(errno == EEXIST) {
 	  if(flags & O_EXCL) {
@@ -647,13 +589,17 @@ jfs_file_do_open(const char *path, int flags)
 	  }
 	}
 	else {
-	  return -errno;
+	  fd = open(path, flags, mode);
+      if(fd < 0) {
+        return -errno;
+      }
 	}
   }
-  
-  fd = open(path, flags);
-  if(fd < 0) {
-	return -errno;
+  else {
+    fd = open(path, flags);
+    if(fd < 0) {
+      return -errno;
+    }
   }
 
   return fd;
@@ -738,6 +684,7 @@ jfs_file_readlink(const char *path, char *buf, size_t size)
   if(rc < 0) {
     return -errno;
   }
+  buf[rc] = '\0';
   
   return rc;
 }

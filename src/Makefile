@@ -3,7 +3,7 @@ INCLUDE=-I include/
 CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall -O3
 
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
-LIBS=-lpthread -lrt -lsqlite3 $(FUSELIB)
+LIBS=-lpthread -lulockmgr -lrt -lsqlite3 $(FUSELIB)
 
 SRC=error_log.c \
     sqlitedb.c \
