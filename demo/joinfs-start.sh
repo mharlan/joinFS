@@ -1,1 +1,1 @@
-./joinfs /home/joinfs/git/joinFS/demo/queries /home/joinfs/git/joinFS/demo/data /home/joinfs/git/joinFS/demo/mount
+./joinfs /home/joinfs/git/joinFS/demo/queries /home/joinfs/git/joinFS/demo/mount

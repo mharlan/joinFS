@@ -30,11 +30,9 @@ struct jfs_context {
   FILE *logfile;
 
   char *querypath;
-  char *datapath;
   char *mountpath;
 
   int querypath_len;
-  int datapath_len;
   int mountpath_len;
 
   thr_pool_t *read_pool;

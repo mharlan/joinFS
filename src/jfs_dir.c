@@ -112,7 +112,7 @@ jfs_dir_rmdir(const char *path)
   }
 
   rc = jfs_db_op_create_query(&metadata_query,
-                              "DELETE FROM metadata WHERE jfs_id=(SELECT jfs_id FROM links WHERE path=\"%s\";",
+                              "DELETE FROM metadata WHERE jfs_id=(SELECT jfs_id FROM links WHERE path=\"%s\");",
                               path);
   if(rc) {
     return rc;

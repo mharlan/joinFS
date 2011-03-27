@@ -184,7 +184,6 @@ jfs_destroy(void *arg)
   jfs_dynamic_hierarchy_destroy();
 
   free(JFS_CONTEXT->querypath);
-  free(JFS_CONTEXT->datapath);
   free(JFS_CONTEXT->mountpath);
   free(JFS_CONTEXT);
 
@@ -791,22 +790,18 @@ main(int argc, char *argv[])
   
   for(i = 1; (i < argc) && (argv[i][0] == '-'); i++);
 
-  if((argc - i) < 3) {
-	printf("format: joinfs querydir datadir mountdir\n");
+  if((argc - i) < 2) {
+	printf("format: joinfs querydir mountdir\n");
     exit(EXIT_FAILURE);
   }
 
-  jfs_context->querypath = realpath(argv[1], NULL);
+  jfs_context->querypath = realpath(argv[i], NULL);
   jfs_context->querypath_len = strlen(jfs_context->querypath);
-
-  jfs_context->datapath = realpath(argv[2], NULL);
-  jfs_context->datapath_len = strlen(jfs_context->datapath);
   
-  jfs_context->mountpath = realpath(argv[3], NULL);
+  jfs_context->mountpath = realpath(argv[i + 1], NULL);
   jfs_context->mountpath_len = strlen(jfs_context->mountpath);
   
   printf("querydir:%s\n", jfs_context->querypath);
-  printf("datadir:%s\n", jfs_context->datapath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
   /*

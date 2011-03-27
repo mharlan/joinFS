@@ -39,7 +39,7 @@ INSERT INTO test_table VALUES(30, "30");
 
 CREATE TABLE links(jfs_id INTEGER PRIMARY KEY AUTOINCREMENT,
                    inode INTEGER NOT NULL,
-	   		       path TEXT NOT NULL,
+	   		       path TEXT NOT NULL UNIQUE,
 				   filename TEXT NOT NULL);
 
 CREATE TABLE keys(keyid INTEGER PRIMARY KEY AUTOINCREMENT,
