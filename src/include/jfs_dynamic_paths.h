@@ -27,19 +27,19 @@ int jfs_dynamic_path_init(void);
 
   Returns 0 on success, -ENOENT on failure.
  */
-int jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *datainode);
+int jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *jfs_id);
 
 /*
   Add a dynamic file to the dynamic path hierarchy.
 
   Returns 0 on success, negative error code on failure.
  */
-int jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datainode);
+int jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int jfs_id);
 
 /*
  * Add a folder to the dynamic hierarchy.
  */
-int jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int datainode);
+int jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int jfs_id);
 
 /*
   Rename the file or folder at path to filename.

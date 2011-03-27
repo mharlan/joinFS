@@ -1,9 +1,7 @@
 DROP TABLE IF EXISTS test_table;
-DROP TABLE IF EXISTS files;
-DROP TABLE IF EXISTS symlinks;
+DROP TABLE IF EXISTS links;
 DROP TABLE IF EXISTS keys;
 DROP TABLE IF EXISTS metadata;
-DROP TABLE IF EXISTS reldata;
 
 CREATE TABLE test_table(id INTEGER PRIMARY KEY,
 	   		 			name TEXT NOT NULL);
@@ -39,28 +37,17 @@ INSERT INTO test_table VALUES(28, "28");
 INSERT INTO test_table VALUES(29, "29");
 INSERT INTO test_table VALUES(30, "30");
 
-CREATE TABLE files(inode INTEGER PRIMARY KEY NOT NULL,
-				   datapath TEXT NOT NULL,
+CREATE TABLE links(jfs_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   inode INTEGER NOT NULL,
+	   		       path TEXT NOT NULL,
 				   filename TEXT NOT NULL);
-
-CREATE TABLE symlinks(syminode INTEGER PRIMARY KEY NOT NULL,
-	   		          sympath TEXT NOT NULL,
-					  datainode INTEGER NOT NULL,
-					  FOREIGN KEY(datainode) REFERENCES files(inode) ON DELETE CASCADE ON UPDATE CASCADE);
 
 CREATE TABLE keys(keyid INTEGER PRIMARY KEY AUTOINCREMENT,
 	              keytext TEXT UNIQUE NOT NULL);
 
-CREATE TABLE metadata(inode INTEGER NOT NULL,
+CREATE TABLE metadata(jfs_id INTEGER NOT NULL,
 					  keyid INTEGER NOT NULL,
 					  keyvalue TEXT NOT NULL,
-					  FOREIGN KEY(inode) REFERENCES files(inode) ON DELETE CASCADE ON UPDATE CASCADE,
+					  FOREIGN KEY(jfs_id) REFERENCES files(jfs_id) ON DELETE CASCADE ON UPDATE CASCADE,
 					  FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT ON UPDATE CASCADE,
-					  PRIMARY KEY(inode, keyid));
-
-CREATE TABLE reldata(inode INTEGER NOT NULL,
-					 keyid INTEGER NOT NULL,
-					 keyvalue TEXT NOT NULL,
-					 FOREIGN KEY(inode) REFERENCES files(inode) ON DELETE CASCADE ON UPDATE CASCADE,
-					 FOREIGN KEY(keyid) REFERENCES keys(keyid) ON DELETE RESTRICT ON UPDATE CASCADE,
-					 PRIMARY KEY(inode, keyid, keyvalue));
+					  PRIMARY KEY(jfs_id, keyid));

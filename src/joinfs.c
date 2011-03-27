@@ -37,7 +37,6 @@
 #include "jfs_file.h"
 #include "jfs_meta.h"
 #include "jfs_security.h"
-#include "jfs_file_cache.h"
 #include "jfs_datapath_cache.h"
 #include "jfs_key_cache.h"
 #include "jfs_meta_cache.h"
@@ -126,7 +125,6 @@ jfs_init(struct fuse_conn_info *conn)
           conn->proto_major, conn->proto_minor);
 
   /* initialize caches */
-  jfs_file_cache_init();
   jfs_dynamic_path_init();
   jfs_datapath_cache_init();
   jfs_key_cache_init();
@@ -179,8 +177,7 @@ jfs_destroy(void *arg)
   if(rc != SQLITE_OK) {
 	log_error("SQLITE shutdown FAILED!!!\n");
   }
-
-  jfs_file_cache_destroy();
+  
   jfs_datapath_cache_destroy();
   jfs_key_cache_destroy();
   jfs_meta_cache_destroy();
@@ -323,11 +320,11 @@ jfs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
   int fd;
   
   jfs_path = jfs_realpath(path);
-  fd = jfs_file_create(jfs_path, mode);
+  fd = jfs_file_create(jfs_path, fi->flags, mode);
   free(jfs_path);
 
   if(fd < 0) {
-	log_error("jfs_create---path:%s, mode:%d, error:%d\n", path, mode, fd);
+	log_error("jfs_create---path:%s, flags:%d, mode:%d, error:%d\n", path, fi->flags, mode, fd);
 	return fd;
   }
 

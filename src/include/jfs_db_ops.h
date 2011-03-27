@@ -26,7 +26,6 @@
 enum jfs_db_ops {
   jfs_write_op,
   jfs_multi_write_op,
-  jfs_file_cache_op,
   jfs_key_cache_op,
   jfs_meta_cache_op,
   jfs_datapath_cache_op,

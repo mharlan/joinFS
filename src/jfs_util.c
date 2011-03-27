@@ -23,7 +23,6 @@
 
 #include "error_log.h"
 #include "sqlitedb.h"
-#include "jfs_file_cache.h"
 #include "jfs_dynamic_paths.h"
 #include "jfs_key_cache.h"
 #include "jfs_util.h"
@@ -90,7 +89,7 @@ int
 jfs_util_is_path_dynamic(const char *path)
 {
   char *datapath;
-  int inode;
+  int jfs_id;
   int rc;
 
   datapath = NULL;
@@ -98,8 +97,7 @@ jfs_util_is_path_dynamic(const char *path)
     return 0;
   }
 
-  rc = jfs_dynamic_path_resolution(path, &datapath, &inode);
-  
+  rc = jfs_dynamic_path_resolution(path, &datapath, &jfs_id); 
   if(rc) {
     return 0;
   }
@@ -111,58 +109,19 @@ jfs_util_is_path_dynamic(const char *path)
 int
 jfs_util_get_datapath(const char *path, char **datapath)
 {
-  int rc;
-
-  *datapath = NULL;
-  rc = jfs_util_get_datapath_and_datainode(path, datapath, NULL);
-  if(rc) {
-    return rc;
-  }
-
-  return 0;
-}
-
-int
-jfs_util_get_datainode(const char *path)
-{
-  int datainode;
-  int rc;
-
-  rc = jfs_util_get_datapath_and_datainode(path, NULL, &datainode);
-  if(rc) {
-    return rc;
-  }
-
-  return datainode;
-}
-
-int
-jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *datainode)
-{
   char *filename;
   char *r_path;
   char *subpath;
   char *d_path;
 
-  mode_t mode;
-
   size_t realpath_len;
-
-  int d_inode;
-  int inode;
+  
+  int jfs_id;
   int rc;
 
-  inode = 0;
-  mode = 0;
-  
-  if(jfs_util_is_realpath(path)) {
-    rc = jfs_util_get_inode_and_mode(path, &inode, &mode);
-    if(rc) {
-      return rc;
-    }
-  }
-  else {
-	rc = jfs_dynamic_path_resolution(path, &d_path, &d_inode);
+  jfs_id = 0;
+  if(!jfs_util_is_realpath(path)) {
+	rc = jfs_dynamic_path_resolution(path, &d_path, &jfs_id);
 
     //check if it is stored in a .jfs_sub_query folder
 	if(rc) {
@@ -171,7 +130,7 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
         return rc;
       }
       
-      rc = jfs_dynamic_path_resolution(subpath, &d_path, &d_inode);
+      rc = jfs_dynamic_path_resolution(subpath, &d_path, &jfs_id);
       free(subpath);
 
       if(rc) {
@@ -191,23 +150,18 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
       free(d_path);
       
       //does it actually exist?
-      d_inode = jfs_util_get_inode(r_path);
-      if(d_inode < 0) {
+      if(!jfs_util_is_realpath(r_path)) {
         free(r_path);
         
-        return d_inode;
+        return -ENOENT;
       }
 
       //cache it for next time
-      rc = jfs_dynamic_hierarchy_add_file(path, r_path, d_inode);
+      rc = jfs_dynamic_hierarchy_add_file(path, r_path, jfs_id);
       if(rc) {
         free(r_path);
         
         return rc;
-      }
-
-      if(datainode) {
-        *datainode = d_inode;
       }
       
       if(datapath) {
@@ -220,61 +174,22 @@ jfs_util_get_datapath_and_datainode(const char *path, char **datapath, int *data
       return 0;
     }
     else {
-      if(datainode) {
-        *datainode = d_inode;
-      }
-      
-      if(datapath) {
-        *datapath = d_path;
-      }
-      else {
-        free(d_path);
-      }
+      *datapath = d_path;
     }
 
     return 0;
   }
   
-  if(S_ISREG(mode)) {
-	rc = jfs_file_cache_get_datapath_and_datainode(inode, &d_path, &d_inode);
-    
-	if(rc) {
-      return rc;
-	}
-
-    if(datainode) {
-      *datainode = d_inode;
-    }
-
-    if(datapath) {
-      *datapath = d_path;
-    }
-    else {
-      free(d_path);
-    }
-    
-	return 0;
+  realpath_len = strlen(path) + 1;
+  r_path = malloc(sizeof(*r_path) * realpath_len);
+  if(!r_path) {
+    return -ENOMEM;
   }
-  else {
-    if(datainode) {
-      *datainode = inode;
-    }
-    
-    if(datapath) {
-      realpath_len = strlen(path) + 1;
-      r_path = malloc(sizeof(*r_path) * realpath_len);
-      if(!r_path) {
-        return -ENOMEM;
-      }
-      strncpy(r_path, path, realpath_len);
-      
-      *datapath = r_path;
-    }
-    
-	return 0;
-  }
+  strncpy(r_path, path, realpath_len);
   
-  return -ENOENT;
+  *datapath = r_path;
+
+  return 0;
 }
 
 char *

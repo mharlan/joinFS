@@ -45,18 +45,18 @@ jfs_list_destroy(jfs_list_t *head, enum jfs_db_ops op)
 	switch(op) {
 	case(jfs_listattr_op):
 	  free(item->key);
-	  free(item);
 	  break;
 	case(jfs_readdir_op):
-	  if(item->datapath != NULL) {
+	  if(item->datapath) {
 		free(item->datapath);
 	  }
-
-	  free(item->filename);
-	  free(item);
+      if(item->filename) {
+        free(item->filename);
+      }
 	default:
-	  free(item);
 	  break;
 	}
+
+    free(item);
   }
 }

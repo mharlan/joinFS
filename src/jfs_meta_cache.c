@@ -36,23 +36,23 @@
 
 typedef struct jfs_meta_cache jfs_meta_cache_t;
 struct jfs_meta_cache {
-  int               inode;
   int               keyid;
   char             *value;
+  char             *path;
   
   jfs_meta_cache_t *next;
 };
 
 static jfs_meta_cache_t *hashtable[JFS_META_CACHE_SIZE];
 
-#define JFS_META_CACHE_T_CMP(e1, e2) ((e1->inode - e2->inode) && (e1->keyid - e2->keyid))
+#define JFS_META_CACHE_T_CMP(e1, e2) (!((strcmp(e1->path, e2->path) == 0) && ((e1->keyid - e2->keyid) == 0)))
 
 static unsigned int
 jfs_meta_cache_t_hash(jfs_meta_cache_t *item)
 {
   unsigned int hash;
 
-  hash = (item->inode + item->keyid) % JFS_META_CACHE_SIZE;
+  hash = (strlen(item->path) + item->keyid) % JFS_META_CACHE_SIZE;
 
   return hash;  
 }
@@ -89,6 +89,7 @@ jfs_meta_cache_destroy()
   pthread_rwlock_wrlock(&cache_lock);
   for(item = sglib_hashed_jfs_meta_cache_t_it_init(&it, hashtable);
       item != NULL; item = sglib_hashed_jfs_meta_cache_t_it_next(&it)) {
+    free(item->path);
     free(item->value);
     free(item);
   }
@@ -98,7 +99,7 @@ jfs_meta_cache_destroy()
 }
 
 int
-jfs_meta_cache_get_value(int inode, int keyid, char **value)
+jfs_meta_cache_get_value(const char *path, int keyid, char **value)
 {
   jfs_meta_cache_t  check;
   jfs_meta_cache_t *result;
@@ -106,11 +107,20 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
   char *val;
 
   size_t val_len;
+  size_t path_len;
 
-  check.inode = inode;
   check.keyid = keyid;
+
+  path_len = strlen(path) + 1;
+  check.path = malloc(sizeof(*check.path) * path_len);
+  if(!check.path) {
+    return -ENOMEM;
+  }
+  strncpy(check.path, path, path_len);
+
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_meta_cache_t_find_member(hashtable, &check);
+  free(check.path);
   
   if(!result) {
     pthread_rwlock_unlock(&cache_lock);
@@ -135,32 +145,37 @@ jfs_meta_cache_get_value(int inode, int keyid, char **value)
 }
 
 int
-jfs_meta_cache_add(int inode, int keyid, const char *value)
+jfs_meta_cache_add(const char *path, int keyid, const char *value)
 {
   jfs_meta_cache_t *item;
   
-  char *val;
-
   size_t val_len;
+  size_t path_len;
 
-  jfs_meta_cache_remove(inode, keyid);
+  jfs_meta_cache_remove(path, keyid);
 
   item = malloc(sizeof(*item));
   if(!item) {
 	return -ENOMEM;
   }
 
-  val_len = strlen(value) + 1;
-  val = malloc(sizeof(*val) * val_len);
-  if(!val) {
+  path_len = strlen(path) + 1;
+  item->path = malloc(sizeof(*item->path) * path_len);
+  if(!item->path) {
     free(item);
     return -ENOMEM;
   }
-  strncpy(val, value, val_len);
+  strncpy(item->path, path, path_len);
 
-  item->inode = inode;
+  val_len = strlen(value) + 1;
+  item->value = malloc(sizeof(*item->value) * val_len);
+  if(!item->value) {
+    free(item);
+    free(item->path);
+    return -ENOMEM;
+  }
+  strncpy(item->value, value, val_len);
   item->keyid = keyid;
-  item->value = val;
 
   pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_meta_cache_t_add(hashtable, item);
@@ -170,20 +185,31 @@ jfs_meta_cache_add(int inode, int keyid, const char *value)
 }
 
 int
-jfs_meta_cache_remove(int inode, int keyid)
+jfs_meta_cache_remove(const char *path, int keyid)
 {
   jfs_meta_cache_t check;
   jfs_meta_cache_t *elem;
-  int rc;
 
-  check.inode = inode;
+  size_t path_len;
+
+  int rc;
+  
   check.keyid = keyid;
+
+  path_len = strlen(path) + 1;
+  check.path = malloc(sizeof(*check.path) * path_len);
+  if(!check.path) {
+    return -ENOMEM;
+  }
+  strncpy(check.path, path, path_len);
 
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_meta_cache_t_delete_if_member(hashtable, &check, &elem);
   pthread_rwlock_unlock(&cache_lock);
-  
+  free(check.path);
+
   if(rc) {
+    free(elem->path);
 	free(elem->value);
     free(elem);
   }

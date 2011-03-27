@@ -38,7 +38,7 @@
 typedef struct jfs_filelist jfs_filelist_t;
 struct jfs_filelist {
   char           *name;
-  int             datainode;
+  int             jfs_id;
 
   jfs_filelist_t *next;
 };
@@ -56,7 +56,7 @@ typedef struct jfs_dentry jfs_dentry_t;
 
 struct jfs_dirlist {
   char           *name;
-  int             datainode;
+  int             jfs_id;
 
   jfs_filelist_t *files;
   jfs_dirlist_t  *folders;
@@ -73,6 +73,7 @@ static jfs_dirlist_t jfs_root;
 static pthread_rwlock_t path_lock;
 
 static void jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root);
+
 static int 
 jfs_dynamic_hierarchy_get_node(const char *path, jfs_filelist_t **file, 
                                jfs_dirlist_t **dir, int delete_dir, int delete_file);
@@ -86,7 +87,7 @@ jfs_dynamic_path_init(void)
   jfs_root.files = NULL;
   jfs_root.folders = NULL;
   jfs_root.next = NULL;
-  jfs_root.datainode = 0;
+  jfs_root.jfs_id = 0;
 
   pthread_rwlock_init(&path_lock, NULL);
 
@@ -99,7 +100,7 @@ jfs_dynamic_path_init(void)
   Returns 0 on success, -ENOENT or -ENOMEM on failure.
  */
 int
-jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *datainode)
+jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *jfs_id)
 {
   jfs_dirlist_t *dir;
   jfs_filelist_t *file;
@@ -117,14 +118,14 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *dataino
   }
 
   if(file) {
-    *datainode = file->datainode;
+    *jfs_id = file->jfs_id;
   }
   else {
-    *datainode = dir->datainode;
+    *jfs_id = dir->jfs_id;
   }
   pthread_rwlock_unlock(&path_lock);
 
-  rc = jfs_datapath_cache_get_datapath(*datainode, resolved_path);
+  rc = jfs_datapath_cache_get_datapath(*jfs_id, resolved_path);
   if(rc) {
     return rc;
   }
@@ -256,7 +257,7 @@ Add a dynamic file to the dynamic path hierarchy.
 Returns 0 on success, negative error code on failure.
 */
 int
-jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datainode)
+jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int jfs_id)
 {
   jfs_filelist_t *file;
 
@@ -313,14 +314,14 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
       strncpy(file->name, token, token_len);
       file->name[token_len - 1] = '\0';
 
-      file->datainode = datainode;
+      file->jfs_id = jfs_id;
       file->next = NULL;
       
       sglib_jfs_filelist_t_add(&current_dir->files, file);
       pthread_rwlock_unlock(&path_lock);
       free(copy_path);
       
-      return jfs_datapath_cache_add(datainode, datapath);
+      return jfs_datapath_cache_add(jfs_id, datapath);
     }
     //find the directory the file is in
     else {
@@ -343,7 +344,7 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
       strncpy(check_dir->name, token, token_len);
       check_dir->name[token_len - 1] = '\0';
       
-      check_dir->datainode = 0;
+      check_dir->jfs_id = 0;
       check_dir->files = NULL;
       check_dir->folders = NULL;
       check_dir->next = NULL;
@@ -372,7 +373,7 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int datai
 Add a folder to the dynamic hierarchy.
 */
 int
-jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int datainode)
+jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int jfs_id)
 {
   jfs_dirlist_t *check_dir;
   jfs_dirlist_t *current_dir;
@@ -430,15 +431,15 @@ jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int dat
     check_dir->next = NULL;
 
     if(token == last_token) {
-      check_dir->datainode = datainode;
+      check_dir->jfs_id = jfs_id;
       sglib_jfs_dirlist_t_add(&current_dir->folders, check_dir);
       pthread_rwlock_unlock(&path_lock);
       free(copy_path);
 
-      return jfs_datapath_cache_add(datainode, datapath);
+      return jfs_datapath_cache_add(jfs_id, datapath);
     }
     else {
-      check_dir->datainode = 0;
+      check_dir->jfs_id = 0;
       rc = sglib_jfs_dirlist_t_add_if_not_member(&current_dir->folders, check_dir, &result_dir);
 
       if(rc) { //item was inserted
@@ -546,7 +547,7 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
 {
   jfs_dirlist_t *dir;
 
-  int datainode;
+  int jfs_id;
   int not_empty;
   int rc;
 
@@ -582,7 +583,7 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   
   rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, 1, 0);
 
-  datainode = dir->datainode;
+  jfs_id = dir->jfs_id;
   pthread_rwlock_unlock(&path_lock);
   
   if(rc) {
@@ -592,7 +593,7 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   free(dir->name);
   free(dir);
 
-  jfs_datapath_cache_remove(datainode);
+  jfs_datapath_cache_remove(jfs_id);
 
   return 0;
 }

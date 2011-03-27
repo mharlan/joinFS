@@ -37,7 +37,7 @@
 
 typedef struct jfs_datapath_cache jfs_datapath_cache_t;
 struct jfs_datapath_cache {
-  int                   inode;
+  int                   jfs_id;
   char                 *datapath;
 
   jfs_datapath_cache_t *next;
@@ -45,7 +45,7 @@ struct jfs_datapath_cache {
 
 static jfs_datapath_cache_t *hashtable[JFS_DATAPATH_CACHE_SIZE];
 
-#define JFS_DATAPATH_CACHE_T_CMP(e1, e2) (e1->inode - e2->inode)
+#define JFS_DATAPATH_CACHE_T_CMP(e1, e2) (e1->jfs_id - e2->jfs_id)
 
 /*
  * Hash function for symlinks.
@@ -55,7 +55,7 @@ jfs_datapath_cache_t_hash(jfs_datapath_cache_t *item)
 {
   unsigned int hash;
 
-  hash = item->inode % JFS_DATAPATH_CACHE_SIZE;
+  hash = item->jfs_id % JFS_DATAPATH_CACHE_SIZE;
 
   return hash;
 }
@@ -109,7 +109,7 @@ jfs_datapath_cache_destroy()
 }
 
 int
-jfs_datapath_cache_add(int inode, const char *datapath)
+jfs_datapath_cache_add(int jfs_id, const char *datapath)
 {
   jfs_datapath_cache_t *item;
 
@@ -117,7 +117,7 @@ jfs_datapath_cache_add(int inode, const char *datapath)
 
   size_t path_len;
 
-  jfs_datapath_cache_remove(inode);
+  jfs_datapath_cache_remove(jfs_id);
 
   item = malloc(sizeof(*item));
   if(!item) {
@@ -132,7 +132,7 @@ jfs_datapath_cache_add(int inode, const char *datapath)
   }
   strncpy(path, datapath, path_len);
 
-  item->inode = inode;
+  item->jfs_id = jfs_id;
   item->datapath = path;
 
   pthread_rwlock_wrlock(&cache_lock);
@@ -143,14 +143,14 @@ jfs_datapath_cache_add(int inode, const char *datapath)
 }
 
 int
-jfs_datapath_cache_remove(int inode)
+jfs_datapath_cache_remove(int jfs_id)
 {
   jfs_datapath_cache_t check;
   jfs_datapath_cache_t *elem;
 
   int rc;
 
-  check.inode = inode;
+  check.jfs_id = jfs_id;
 
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
@@ -165,7 +165,7 @@ jfs_datapath_cache_remove(int inode)
 }
 
 int
-jfs_datapath_cache_get_datapath(int inode, char **datapath)
+jfs_datapath_cache_get_datapath(int jfs_id, char **datapath)
 {
   jfs_datapath_cache_t check;
   jfs_datapath_cache_t *result;
@@ -174,14 +174,14 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
 
   size_t path_len;
 
-  check.inode = inode;
+  check.jfs_id = jfs_id;
 
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
 
   if(!result) {
     pthread_rwlock_unlock(&cache_lock);
-	return jfs_datapath_cache_miss(inode, datapath);
+	return jfs_datapath_cache_miss(jfs_id, datapath);
   }
 
   path_len = strlen(result->datapath) + 1;
@@ -198,7 +198,7 @@ jfs_datapath_cache_get_datapath(int inode, char **datapath)
 }
 
 int
-jfs_datapath_cache_change_inode(int inode, int new_inode)
+jfs_datapath_cache_change_inode(int old_jfs_id, int new_jfs_id)
 {
   jfs_datapath_cache_t check;
   jfs_datapath_cache_t *elem;
@@ -210,7 +210,7 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
 
   int rc;
 
-  check.inode = inode;
+  check.jfs_id = old_jfs_id;
 
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
@@ -243,7 +243,7 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
   free(elem);
 
   new->datapath = path;
-
+  new->jfs_id = new_jfs_id;
   pthread_rwlock_wrlock(&cache_lock);
   sglib_hashed_jfs_datapath_cache_t_add(hashtable, new);
   pthread_rwlock_unlock(&cache_lock);
@@ -255,7 +255,7 @@ jfs_datapath_cache_change_inode(int inode, int new_inode)
   Handles the cache miss.
  */
 static int
-jfs_datapath_cache_miss(int inode, char **datapath)
+jfs_datapath_cache_miss(int jfs_id, char **datapath)
 {
   struct jfs_db_op *db_op;
   
@@ -266,8 +266,8 @@ jfs_datapath_cache_miss(int inode, char **datapath)
   int rc;
 
   rc = jfs_db_op_create(&db_op, jfs_datapath_cache_op, 
-                        "SELECT datapath FROM files WHERE inode=%d;", 
-                        inode);
+                        "SELECT path FROM links WHERE jfs_id=%d;", 
+                        jfs_id);
   if(rc) {
     return rc;
   }
@@ -295,8 +295,10 @@ jfs_datapath_cache_miss(int inode, char **datapath)
   strncpy(path, db_op->result->datapath, path_len);
   jfs_db_op_destroy(db_op);
 
-  rc = jfs_datapath_cache_add(inode, path);
+  rc = jfs_datapath_cache_add(jfs_id, path);
   if(rc) {
+    free(path);
+
     return rc;
   }
 

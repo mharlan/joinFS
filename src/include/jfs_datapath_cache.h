@@ -24,12 +24,12 @@ void jfs_datapath_cache_init();
 
 void jfs_datapath_cache_destroy();
 
-int jfs_datapath_cache_add(int inode, const char *datapath);
+int jfs_datapath_cache_add(int jfs_id, const char *datapath);
 
-int jfs_datapath_cache_remove(int inode);
+int jfs_datapath_cache_remove(int jfs_id);
 
-int jfs_datapath_cache_get_datapath(int inode, char **datapath);
+int jfs_datapath_cache_get_datapath(int jfs_id, char **datapath);
 
-int jfs_datapath_cache_change_inode(int inode, int new_inode);
+int jfs_datapath_cache_change_id(int old_jfs_id, int new_jfs_id);
 
 #endif

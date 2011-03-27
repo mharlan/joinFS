@@ -29,7 +29,7 @@
  *
  * Returns the inode of the new file or -1;
  */
-int jfs_file_create(const char *path, mode_t mode);
+int jfs_file_create(const char *path, int flags, mode_t mode);
 
 /*
  * Create a joinFS static file. The file is added
@@ -73,5 +73,7 @@ int jfs_file_readlink(const char *path, char *buf, size_t size);
 int jfs_file_symlink(const char *from, const char *to);
 
 int jfs_file_link(const char *from, const char *to);
+
+int jfs_file_db_add(int inode, const char *path, const char *filename);
 
 #endif

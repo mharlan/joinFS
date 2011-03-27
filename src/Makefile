@@ -2,9 +2,8 @@ CC=gcc
 INCLUDE=-I include/
 CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall -O3
 
-UUIDLIB=/lib/libuuid.so.1.3.0
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
-LIBS=-lpthread -lrt -lsqlite3 $(UUIDLIB) $(FUSELIB)
+LIBS=-lpthread -lrt -lsqlite3 $(FUSELIB)
 
 SRC=error_log.c \
     sqlitedb.c \
@@ -12,9 +11,7 @@ SRC=error_log.c \
     result.c \
     jfs_list.c \
     jfs_file.c \
-    jfs_file_cache.c \
     joinfs.c \
-    jfs_uuid.c \
     jfs_meta.c \
     jfs_util.c \
     jfs_security.c \

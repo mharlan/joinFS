@@ -291,11 +291,6 @@ jfs_db_op_destroy(struct jfs_db_op *db_op)
 
   if(!db_op->rc) {
 	switch(db_op->op) {
-	case(jfs_file_cache_op):
-	  free(db_op->result->datapath);
-      free(db_op->result->sympath);
-	  free(db_op->result);
-	  break;
     case(jfs_datapath_cache_op):
       free(db_op->result->datapath);
       free(db_op->result);

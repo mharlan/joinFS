@@ -36,27 +36,19 @@ typedef struct jfs_list jfs_list_t;
 struct jfs_list {
   jfs_list_t *next;
 
-  int         inode;
+  int         jfs_id;
   char       *datapath;
-  char       *sympath;
   char       *filename;
 
   int         keyid;
   char       *key;
   char       *value;
-
-  int         has_subquery;
-  int         is_subquery;
-  int         uses_filename;
-  int         sub_inode;
-  char       *sub_key;
-  char       *query;
 };
 
 /*
  * SGLIB list header file macros.
  */
-#define JFS_LIST_CMP(a, b) (a->inode - b->inode)
+#define JFS_LIST_CMP(a, b) (a->jfs_id - b->jfs_id)
 SGLIB_DEFINE_LIST_PROTOTYPES(jfs_list_t, JFS_LIST_CMP, next)
 
 void jfs_list_add(jfs_list_t **head, jfs_list_t *node);

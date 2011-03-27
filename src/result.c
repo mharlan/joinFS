@@ -34,7 +34,6 @@
 #include <sys/types.h>
 
 static int jfs_do_write_op(sqlite3_stmt *stmt);
-static int jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_key_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
 static int jfs_do_listattr_op(jfs_list_t **result, sqlite3_stmt *stmt, size_t *buff_size);
 static int jfs_do_meta_cache_op(jfs_list_t **result, sqlite3_stmt *stmt);
@@ -59,9 +58,6 @@ jfs_db_result(struct jfs_db_op *db_op)
     break;
   case(jfs_listattr_op):
 	rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->buffer_size);
-	break;
-  case(jfs_file_cache_op):
-	rc = jfs_do_file_cache_op(&db_op->result, db_op->stmt);
 	break;
   case(jfs_key_cache_op):
 	rc = jfs_do_key_cache_op(&db_op->result, db_op->stmt);
@@ -200,65 +196,6 @@ jfs_do_datapath_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
   return sqlite3_finalize(stmt);
 }
 
-/*
- * Generate a datapath query result.
- */
-static int 
-jfs_do_file_cache_op(jfs_list_t **result, sqlite3_stmt *stmt)
-{
-  const unsigned char *datapath;
-  const unsigned char *sympath;
-
-  size_t datapath_len;
-  size_t sympath_len;
-
-  jfs_list_t *row;
-  int inode;
-  int rc;
-
-  row = malloc(sizeof(*row));
-  if(!row) {
-	sqlite3_finalize(stmt);
-	return -ENOMEM;
-  }
-
-  rc = sqlite3_step(stmt);
-  if(rc == SQLITE_ROW) {
-    sympath = sqlite3_column_text(stmt, 0);
-    sympath_len = sqlite3_column_bytes(stmt, 0) + 1;
-
-	datapath = sqlite3_column_text(stmt, 1);
-	datapath_len = sqlite3_column_bytes(stmt, 1) + 1;
-
-	inode = sqlite3_column_int(stmt, 2);
-
-    row->sympath = malloc(sizeof(*row->sympath) * sympath_len);
-	if(!row->sympath) {
-	  sqlite3_finalize(stmt);
-	  free(row);
-	  return -ENOMEM;
-	}
-	strncpy(row->sympath, (const char *)sympath, sympath_len);
-
-	row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
-	if(!row->datapath) {
-	  sqlite3_finalize(stmt);
-      free(row->sympath);
-	  free(row);
-	  return -ENOMEM;
-	}
-	strncpy(row->datapath, (const char *)datapath, datapath_len);
-
-	row->inode = inode;	  
-	*result = row;
-  }
-  else {
-	free(row);
-  }
-
-  return sqlite3_finalize(stmt);
-}
-
 static int
 jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
 {
@@ -271,7 +208,7 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
   jfs_list_t *row;
 
   int col_count;
-  int inode;
+  int jfs_id;
   int rc;
 
   head = NULL;
@@ -283,6 +220,7 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	  return -ENOMEM;
 	}
 
+    row->jfs_id = 0;
 	row->datapath = NULL;
 	row->filename = NULL;
 
@@ -300,7 +238,7 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	  strncpy(row->filename, (const char *)filename, filename_len);
 	}
 	else {
-	  inode = sqlite3_column_int(stmt, 0);
+	  row->jfs_id = sqlite3_column_int(stmt, 0);
 	  filename = sqlite3_column_text(stmt, 1);
 	  filename_len = sqlite3_column_bytes(stmt, 1) + 1;
 
@@ -312,19 +250,17 @@ jfs_do_readdir_op(jfs_list_t **result, sqlite3_stmt *stmt)
 	  }
 	  strncpy(row->filename, (const char *)filename, filename_len);
 	  
-	  if(col_count == 3) {
-		datapath = sqlite3_column_text(stmt, 2);
-		datapath_len = sqlite3_column_bytes(stmt, 2) + 1;
+      datapath = sqlite3_column_text(stmt, 2);
+      datapath_len = sqlite3_column_bytes(stmt, 2) + 1;
 	  
-		row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
-		if(!row->datapath) {
-		  sqlite3_finalize(stmt);
-		  jfs_list_destroy(head, jfs_readdir_op);
-		  return -ENOMEM;
-		}
-		strncpy(row->datapath, (const char *)datapath, datapath_len);
-	  }
-	}
+      row->datapath = malloc(sizeof(*row->datapath) * datapath_len);
+      if(!row->datapath) {
+        sqlite3_finalize(stmt);
+        jfs_list_destroy(head, jfs_readdir_op);
+        return -ENOMEM;
+      }
+      strncpy(row->datapath, (const char *)datapath, datapath_len);
+    }
 
 	jfs_list_add(&head, row);
   }

@@ -26,8 +26,16 @@
 #include <pthread.h>
 #include <sqlite3.h>
 
-#define JFS_QUERY_SUCCESS -1
-#define JFS_QUERY_FAILED  -2
+#define JFS_SQL_SUCCESS     0
+#define JFS_SQL_ERROR      -100
+#define JFS_SQL_NOMEM      -700
+#define JFS_SQL_FULL       -1300
+#define JFS_SQL_EMPTY      -1600
+#define JFS_SQL_TOOBIG     -1800
+#define JFS_SQL_CONSTRAINT -1900
+#define JFS_SQL_CANTOPEN   -1400
+#define JFS_SQL_BUSY       -500
+
 #define JFS_QUERY_INC     512
 #define JFS_QUERY_MAX     1000000  /* SQLITE_SQL_MAX_LENGTH */
 #define JFS_SQL_RC_SCALE  100

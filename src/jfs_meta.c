@@ -43,8 +43,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 {
   struct jfs_db_op *db_op;
   char *safe_value;
-
-  int datainode;
+  
   int keyid;
   int rc;
   
@@ -60,27 +59,21 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
     free(safe_value);
 	return keyid;
   }
-
-  datainode = jfs_util_get_datainode(path);
-  if(datainode < 1) {
-    free(safe_value);
-	return datainode;
-  }
   
   if(flags == XATTR_CREATE) {
 	rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "INSERT OR ROLLBACK INTO metadata VALUES(%d,%d,\"%s\");",
-                          datainode, keyid, safe_value);
+                          "INSERT OR ROLLBACK INTO metadata VALUES((SELECT jfs_id FROM links WHERE path=\"%s\"),%d,\"%s\");",
+                          path, keyid, safe_value);
   }
   else if(flags == XATTR_REPLACE) {
 	rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
-                          datainode, keyid, safe_value);
+                          "REPLACE INTO metadata VALUES((SELECT jfs_id FROM links WHERE path=\"%s\"),%d,\"%s\");",
+                          path, keyid, safe_value);
   }
   else {
 	rc = jfs_db_op_create(&db_op, jfs_write_op,
-                          "INSERT OR REPLACE INTO metadata VALUES(%d,%d,\"%s\");",
-                          datainode, keyid, safe_value);
+                          "INSERT OR REPLACE INTO metadata VALUES((SELECT jfs_id FROM links WHERE path=\"%s\"),%d,\"%s\");",
+                          path, keyid, safe_value);
   }
   
   if(rc) {
@@ -97,7 +90,7 @@ jfs_meta_setxattr(const char *path, const char *key, const char *value,
 	return rc;
   }
   
-  rc = jfs_meta_cache_add(datainode, keyid, safe_value);
+  rc = jfs_meta_cache_add(path, keyid, safe_value);
   free(safe_value);
 
   return rc;
@@ -137,7 +130,6 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   
   size_t size;
   
-  int datainode;
   int keyid;
   int rc;
 
@@ -145,14 +137,9 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   if(keyid < 1) {
     return keyid;
   }
-
-  datainode = jfs_util_get_datainode(path);
-  if(datainode < 1) {
-	return datainode;
-  }
-
+  
   //try the cache first
-  rc = jfs_meta_cache_get_value(datainode, keyid, &cache_value);
+  rc = jfs_meta_cache_get_value(path, keyid, &cache_value);
   if(!rc) {
     *value = cache_value;
     return 0;    
@@ -160,8 +147,8 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   
   //cache miss, go out to the db
   rc = jfs_db_op_create(&db_op, jfs_meta_cache_op,
-                        "SELECT keyvalue FROM metadata WHERE inode=%d and keyid=%d;",
-                        datainode, keyid);
+                        "SELECT keyvalue FROM metadata WHERE jfs_id=(SELECT jfs_id FROM links WHERE path=\"%s\") and keyid=%d;",
+                        path, keyid);
   if(rc) {
 	return rc;
   }
@@ -192,7 +179,7 @@ jfs_meta_do_getxattr(const char *path, const char *key, char **value)
   strncpy(cache_value, db_op->result->value, size);
   jfs_db_op_destroy(db_op);
 
-  rc = jfs_meta_cache_add(datainode, keyid, cache_value);
+  rc = jfs_meta_cache_add(path, keyid, cache_value);
   if(rc) {
     free(cache_value);
 
@@ -215,17 +202,11 @@ jfs_meta_listxattr(const char *path, char *list, size_t buffer_size)
   size_t attr_size;
 
   char *list_pos;
-  int datainode;
   int rc;
   
-  datainode = jfs_util_get_datainode(path);
-  if(datainode < 1) {
-	return datainode;
-  }
-  
   rc = jfs_db_op_create(&db_op, jfs_listattr_op,
-                        "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.inode=%d;",
-                        datainode);
+                        "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m WHERE k.keyid=m.keyid and m.jfs_id=(SELECT jfs_id FROM links WHERE path=\"%s\");",
+                        path);
   if(rc) {
 	return rc;
   }
@@ -271,22 +252,16 @@ jfs_meta_removexattr(const char *path, const char *key)
   struct jfs_db_op *db_op;
 
   int keyid;
-  int datainode;
   int rc;
   
   keyid = jfs_util_get_keyid(key);
   if(keyid < 1) {
     return keyid;
   }
-
-  datainode = jfs_util_get_datainode(path);
-  if(datainode < 1) {
-	return datainode;
-  }
   
   rc = jfs_db_op_create(&db_op, jfs_write_op,
-                        "DELETE FROM metadata WHERE inode=%d and keyid=%d;",
-                        datainode, keyid);
+                        "DELETE FROM metadata WHERE jfs_id=(SELECT jfs_id FROM links WHERE path=\"%s\") and keyid=%d;",
+                        path, keyid);
   if(rc) {
 	return rc;
   }
@@ -299,7 +274,7 @@ jfs_meta_removexattr(const char *path, const char *key)
 	return rc;
   }
 
-  rc = jfs_meta_cache_remove(datainode, keyid);
+  rc = jfs_meta_cache_remove(path, keyid);
   if(rc) {
     return rc;
   }
