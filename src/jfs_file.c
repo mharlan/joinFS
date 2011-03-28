@@ -685,8 +685,14 @@ jfs_file_readlink(const char *path, char *buf, size_t size)
     return -errno;
   }
   buf[rc] = '\0';
+
+  log_msg("jfs_file_readlink---buf:%s, size:%d\n", buf, rc);
+
+  if(rc >= size) {
+    return rc;
+  }
   
-  return rc;
+  return 0;
 }
 
 int 
@@ -703,7 +709,9 @@ jfs_file_symlink(const char *from, const char *to)
     return rc;
   }
 
-  rc = symlink(from, realpath_to);  
+  log_msg("jfs_file_symlink---from:%s, to:%s\n", from, realpath_to);
+
+  rc = symlink(from, realpath_to);
   if(rc) { 
     free(realpath_to);
     
@@ -717,6 +725,8 @@ jfs_file_symlink(const char *from, const char *to)
     
     return -errno;
   }
+
+  log_msg("jfs_file_db_add inode:%d, path:%s, filename:%s\n", inode, realpath_to, filename);
 
   rc = jfs_file_db_add(inode, realpath_to, filename);
   free(realpath_to);

@@ -181,7 +181,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       if(i > 0) {
         items = i - 1;
       }
-
+      log_msg("ebadmsg1");
       goto cleanup;
     }
 
@@ -226,13 +226,13 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     key = strrchr(parent_key_pairs[i], '=');
     if(!key) {
       rc = -EBADMSG;
-
+      log_msg("ebadmsg2");
       goto cleanup;
     }
 
     if(*(key - 1) != 'k') {
       rc = -EBADMSG;
-
+      log_msg("ebadmsg3");
       goto cleanup;
     }
     ++key;
@@ -264,13 +264,13 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     key = strrchr(dir_key_pairs, '=');
     if(!key) {
       rc = -EBADMSG;
-      
+      log_msg("ebadmsg4");
       goto cleanup;
     }
 
     if(*(key - 1) != 'k') {
       rc = -EBADMSG;
-
+      log_msg("ebadmsg5");
       goto cleanup;
     }
     ++key;
@@ -313,7 +313,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
 
     if(!current_len) {
       rc = -EBADMSG;
-
+      log_msg("ebadmsg6");
       goto cleanup;
     }
     else {
@@ -415,13 +415,13 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       key = strchr(token, '=');
       if(!key) {
         free(key_pairs);
-
+        log_msg("ebadmsg7");
         return -EBADMSG;
       }
 
       if(key != &token[1]) {
         free(key_pairs);
-
+        log_msg("ebadmsg8");
         return -EBADMSG;
       }
       ++key;
@@ -435,7 +435,7 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
     //must be a key before there is a value
     else {
       free(key_pairs);
-
+      log_msg("ebadmsg9");
       return -EBADMSG;
     }
     
@@ -444,13 +444,13 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       value = strchr(token, '=');
       if(!value) {
         free(key_pairs);
-
+        log_msg("ebadmsg10");
         return -EBADMSG;
       }
 
       if(value != &token[1]) {
         free(key_pairs);
-
+        log_msg("ebadmsg11");
         return -EBADMSG;
       }
       ++value;

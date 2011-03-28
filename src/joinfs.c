@@ -78,7 +78,7 @@ jfs_realpath(const char *path)
   path_len = strlen(path) + JFS_CONTEXT->querypath_len + 2;
   jfs_path = malloc(sizeof(*jfs_path) * path_len);
   if(!jfs_path) {
-	return 0;
+	return NULL;
   }
 
   if(path[0] == '/') {
@@ -242,13 +242,12 @@ jfs_readlink(const char *path, char *buf, size_t size)
   rc = jfs_file_readlink(jfs_path, buf, size);
   free(jfs_path);
 
-  if(rc < 0) {
+  if(rc) {
     log_error("jfs_readlink---path:%s, error:%d\n", path, rc);
     return rc;
   }
-  buf[rc] = '\0';
   
-  return rc;
+  return 0;
 }
 
 static int
@@ -415,15 +414,21 @@ jfs_rmdir(const char *path)
 static int 
 jfs_symlink(const char *from, const char *to)
 {
+  //char *jfs_path_from;
   char *jfs_path_to;
+  
   int rc;
   
+  //jfs_path_from = jfs_lrealpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_symlink(from, jfs_path_to);
-  
+
   if(jfs_path_to) {
     free(jfs_path_to);
   }
+  //if(jfs_path_from) {
+  //  free(jfs_path_from);
+  //}
 
   if(rc) {
     log_error("jfs_symlink---from:%s, to:%s, error:%d\n", from, to, rc);
