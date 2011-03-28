@@ -21,6 +21,7 @@
 #define	_REENTRANT
 #endif
 
+#include "error_log.h"
 #include "sqlitedb.h"
 #include "jfs_meta.h"
 #include "jfs_util.h"
@@ -47,7 +48,7 @@ static int jfs_dir_create_query(int items, int is_folder, char *path, char *dir_
 static int jfs_dir_expand_query(size_t *query_len, char **query);
 
 int 
-jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, char **query)
+jfs_dir_query_builder(const char *path, const char *realpath, int *is_folders, char **query)
 {
   char *copy_path;
   char *dir_is_folders;
@@ -65,12 +66,12 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
   dir_key_pairs = NULL;
   path_items = NULL;
 
-  rc = jfs_meta_do_getxattr(path, JFS_DIR_KEY_PAIRS, &dir_key_pairs);
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_KEY_PAIRS, &dir_key_pairs);
   if(rc) {
     return rc;
   }
   
-  rc = jfs_meta_do_getxattr(path, JFS_DIR_IS_FOLDER, &dir_is_folders);
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_IS_FOLDER, &dir_is_folders);
   if(rc) {
     *is_folders = 0;
   }
@@ -87,7 +88,7 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
     free(dir_is_folders);
   }
 
-  rc = jfs_meta_do_getxattr(path, JFS_DIR_PATH_ITEMS, &path_items);
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_PATH_ITEMS, &path_items);
   if(rc) {
     items = 0;
   }
@@ -100,14 +101,14 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
   }
 
   //copy the path so we can modify it
-  path_len = strlen(orig_path) + 1;
+  path_len = strlen(path) + 1;
   copy_path = malloc(sizeof(*copy_path) * path_len);
   if(!copy_path) {
     free(dir_key_pairs);
 
     return -ENOMEM;
   }
-  strncpy(copy_path, orig_path, path_len);
+  strncpy(copy_path, path, path_len);
 
   rc = jfs_dir_create_query(items, *is_folders, copy_path, dir_key_pairs, &dir_query);
   free(dir_key_pairs);
@@ -120,7 +121,7 @@ jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, 
 
     return rc;
   }
-
+  
   *query = dir_query;
 
   return 0;
@@ -148,6 +149,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   int i;
 
   rc = 0;
+  datapath = NULL;
 
   //allocate memory
   values = malloc(sizeof(*values) * (items + 1));
@@ -181,7 +183,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       if(i > 0) {
         items = i - 1;
       }
-      log_msg("ebadmsg1");
+      
       goto cleanup;
     }
 
@@ -189,7 +191,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     ++value;
 
     values[i] = value;
-
+    
     rc = jfs_util_get_datapath(path, &datapath);
     if(rc) {
       free(values[i]);
@@ -199,7 +201,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
 
       goto cleanup;
     }
-
+    
     rc = jfs_meta_do_getxattr(datapath, JFS_DIR_KEY_PAIRS, &key_pairs);
     free(datapath);
 
@@ -226,13 +228,13 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     key = strrchr(parent_key_pairs[i], '=');
     if(!key) {
       rc = -EBADMSG;
-      log_msg("ebadmsg2");
+      
       goto cleanup;
     }
 
     if(*(key - 1) != 'k') {
       rc = -EBADMSG;
-      log_msg("ebadmsg3");
+      
       goto cleanup;
     }
     ++key;
@@ -264,13 +266,13 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     key = strrchr(dir_key_pairs, '=');
     if(!key) {
       rc = -EBADMSG;
-      log_msg("ebadmsg4");
+      
       goto cleanup;
     }
 
     if(*(key - 1) != 'k') {
       rc = -EBADMSG;
-      log_msg("ebadmsg5");
+      
       goto cleanup;
     }
     ++key;
@@ -313,7 +315,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
 
     if(!current_len) {
       rc = -EBADMSG;
-      log_msg("ebadmsg6");
+      
       goto cleanup;
     }
     else {
@@ -415,13 +417,13 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       key = strchr(token, '=');
       if(!key) {
         free(key_pairs);
-        log_msg("ebadmsg7");
+  
         return -EBADMSG;
       }
 
       if(key != &token[1]) {
         free(key_pairs);
-        log_msg("ebadmsg8");
+        
         return -EBADMSG;
       }
       ++key;
@@ -435,7 +437,7 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
     //must be a key before there is a value
     else {
       free(key_pairs);
-      log_msg("ebadmsg9");
+      
       return -EBADMSG;
     }
     
@@ -444,13 +446,13 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       value = strchr(token, '=');
       if(!value) {
         free(key_pairs);
-        log_msg("ebadmsg10");
+        
         return -EBADMSG;
       }
 
       if(value != &token[1]) {
         free(key_pairs);
-        log_msg("ebadmsg11");
+        
         return -EBADMSG;
       }
       ++value;

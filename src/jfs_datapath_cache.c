@@ -108,6 +108,28 @@ jfs_datapath_cache_destroy()
   pthread_rwlock_destroy(&cache_lock);
 }
 
+/*
+ * Destroy the jfs_datapath_cache.
+ */
+void
+jfs_datapath_cache_log()
+{
+  struct sglib_hashed_jfs_datapath_cache_t_iterator it;
+  jfs_datapath_cache_t *item;
+
+  log_msg("DATAPATH CACHE LOG START\n");
+  pthread_rwlock_rdlock(&cache_lock);
+  for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
+	  item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
+	log_msg("jfs_id:%d, datapath:%s\n", item->jfs_id, item->datapath);
+  }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
+
+  log_msg("LOG END\n");
+}
+
 int
 jfs_datapath_cache_add(int jfs_id, const char *datapath)
 {
@@ -151,7 +173,6 @@ jfs_datapath_cache_remove(int jfs_id)
   int rc;
 
   check.jfs_id = jfs_id;
-
   pthread_rwlock_wrlock(&cache_lock);
   rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
   pthread_rwlock_unlock(&cache_lock);
@@ -175,7 +196,6 @@ jfs_datapath_cache_get_datapath(int jfs_id, char **datapath)
   size_t path_len;
 
   check.jfs_id = jfs_id;
-
   pthread_rwlock_rdlock(&cache_lock);
   result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
 
@@ -193,60 +213,6 @@ jfs_datapath_cache_get_datapath(int jfs_id, char **datapath)
   pthread_rwlock_unlock(&cache_lock);
 
   *datapath = path;
-
-  return 0;
-}
-
-int
-jfs_datapath_cache_change_inode(int old_jfs_id, int new_jfs_id)
-{
-  jfs_datapath_cache_t check;
-  jfs_datapath_cache_t *elem;
-  jfs_datapath_cache_t *new;
-
-  char *path;
-
-  size_t path_len;
-
-  int rc;
-
-  check.jfs_id = old_jfs_id;
-
-  pthread_rwlock_wrlock(&cache_lock);
-  rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &elem);
-  pthread_rwlock_unlock(&cache_lock);
-
-  if(!rc) {
-	return -ENOENT;
-  }
-
-  new = malloc(sizeof(*new));
-  if(!new) {
-    free(elem->datapath);
-    free(elem);
-
-    return -ENOMEM;
-  }
-  
-  path_len = strlen(elem->datapath) + 1;
-  path = malloc(sizeof(*path) * path_len);
-  if(!path) {
-    free(new);
-    free(elem->datapath);
-    free(elem);
-    
-    return -ENOMEM;
-  }
-  strncpy(path, elem->datapath, path_len);
-
-  free(elem->datapath);
-  free(elem);
-
-  new->datapath = path;
-  new->jfs_id = new_jfs_id;
-  pthread_rwlock_wrlock(&cache_lock);
-  sglib_hashed_jfs_datapath_cache_t_add(hashtable, new);
-  pthread_rwlock_unlock(&cache_lock);
 
   return 0;
 }

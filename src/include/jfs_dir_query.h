@@ -26,6 +26,6 @@
   Returns -EBADMSG for a badly formatted query.
   Also returns -ENOMEM.
  */
-int jfs_dir_query_builder(const char *orig_path, const char *path, int *is_folders, char **query);
+int jfs_dir_query_builder(const char *path, const char *realpath, int *is_folders, char **query);
 
 #endif

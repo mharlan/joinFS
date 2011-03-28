@@ -44,7 +44,7 @@
 
 static int jfs_dir_is_dynamic(const char *path);
 static int jfs_dir_do_mkdir(const char *path, mode_t mode);
-static int jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, fuse_fill_dir_t filler);
+static int jfs_dir_db_filler(const char *path, const char *realpath, void *buf, fuse_fill_dir_t filler);
 static void safe_jfs_list_destroy(struct sglib_jfs_list_t_iterator *it, jfs_list_t *item);
 
 int
@@ -217,7 +217,7 @@ jfs_dir_readdir(const char *path, DIR *dp, void *buf,
   path = resolved path
  */
 static int
-jfs_dir_db_filler(const char *orig_path, const char *path, void *buf, 
+jfs_dir_db_filler(const char *path, const char *realpath, void *buf, 
                   fuse_fill_dir_t filler)
 {
   struct sglib_jfs_list_t_iterator it;
@@ -235,20 +235,17 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf,
   size_t datapath_len;
 
   int is_folders;
+  int datainode;
   int mask;
   int rc;
 
+  datapath = NULL;
   is_folders = 0;
+  datainode = 0;
   mask = R_OK | F_OK; 
-  memset(&st, 0, sizeof(st));
   
-  rc = stat(path, &st);
-  if(rc) {
-    return -errno;
-  }
-
   query = NULL;
-  rc = jfs_dir_query_builder(orig_path, path, &is_folders, &query);
+  rc = jfs_dir_query_builder(path, realpath, &is_folders, &query);
   if(rc) {
 	return rc;
   }
@@ -262,6 +259,30 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf,
     return rc;
   }
 
+  rc = jfs_dynamic_hierarchy_add_folder(path, realpath);
+  if(rc) {
+    return rc;
+  }
+
+  if(is_folders) {
+    datapath_len = strlen(realpath) + strlen(".jfs_sub_query") + 2;
+    datapath = malloc(sizeof(*datapath) * datapath_len);
+    if(!datapath) {
+      return -ENOMEM;
+    }
+    snprintf(datapath, datapath_len, "%s/%s", realpath, ".jfs_sub_query");
+
+    memset(&st, 0, sizeof(st));
+    rc = stat(datapath, &st);
+    if(rc) {
+      free(datapath);
+      
+      return -errno;
+    }
+    
+    datainode = st.st_ino;
+  }
+  
   rc = jfs_do_db_op_create(&db_op, jfs_readdir_op, query);
   if(rc) {
 	return rc;
@@ -280,50 +301,33 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf,
 
 	return 0;
   }
-
+  
   for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
 	  item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
-    memset(&st, 0, sizeof(item_st));
+    memset(&item_st, 0, sizeof(item_st));
 
-	buffer_len = strlen(orig_path) + strlen(item->filename) + 2;
+	buffer_len = strlen(path) + strlen(item->filename) + 2;
 	buffer = malloc(sizeof(*buffer) * buffer_len);
 	if(!buffer) {
+      if(is_folders) {
+        free(datapath);
+      }
 	  jfs_list_destroy(item, jfs_readdir_op);
 	  jfs_db_op_destroy(db_op);
+      
 	  return -ENOMEM;
 	}
-	snprintf(buffer, buffer_len, "%s/%s", orig_path, item->filename);
+	snprintf(buffer, buffer_len, "%s/%s", path, item->filename);
 	
-	if(is_folders) {
-	  datapath_len = strlen(path) + strlen(".jfs_sub_query") + 2;
-	  datapath = malloc(sizeof(*datapath) * datapath_len);
-	  if(!datapath) {
-        free(buffer);
-		safe_jfs_list_destroy(&it, item);
-		jfs_db_op_destroy(db_op);
-        
-		return -ENOMEM;
-	  }
-	  snprintf(datapath, datapath_len, "%s/%s", path, ".jfs_sub_query");
-	}
-	else {
+	if(!is_folders) {
       memset(&st, 0, sizeof(st));
 
-	  datapath_len = strlen(item->datapath) + 1;
-	  datapath = malloc(sizeof(*datapath) * datapath_len);
-	  if(!datapath) {
-        free(buffer);
-		safe_jfs_list_destroy(&it, item);
-		jfs_db_op_destroy(db_op);
-        
-		return -ENOMEM;
-	  }
-	  strncpy(datapath, item->datapath, datapath_len);
-
-      rc = stat(datapath, &st);
+      rc = stat(item->datapath, &st);
       if(rc) {
+        if(is_folders) {
+          free(datapath);
+        }
         free(buffer);
-        free(datapath);
 		safe_jfs_list_destroy(&it, item);
 		jfs_db_op_destroy(db_op);
 
@@ -333,44 +337,53 @@ jfs_dir_db_filler(const char *orig_path, const char *path, void *buf,
     item_st.st_ino = st.st_ino;
     item_st.st_mode = st.st_mode;
 
-    //check access to the hardlink
-    if(access(datapath, mask) == 0) {
+    if(is_folders) {
       //add for display
       if(filler(buf, item->filename, &item_st, 0) != 0) {
-        safe_jfs_list_destroy(&it, item);
-        free(buffer);
         free(datapath);
+        free(buffer);
+        safe_jfs_list_destroy(&it, item);
         jfs_db_op_destroy(db_op);
         
         return -ENOMEM;
       }
-
-      //dynamic directory path
-      if(is_folders) {
-        rc = jfs_dynamic_hierarchy_add_folder(buffer, datapath, item->jfs_id);
-      }
-      //dynamic file path
-      else {
-        rc = jfs_dynamic_hierarchy_add_file(buffer, datapath, item->jfs_id);
-      }
-
-      if(rc) {
+      
+      rc = jfs_dynamic_hierarchy_add_folder(buffer, datapath);
+    }
+    else if(access(item->datapath, mask) == 0) {
+      //add for display
+      if(filler(buf, item->filename, &item_st, 0) != 0) {
         free(buffer);
-        free(datapath);
         safe_jfs_list_destroy(&it, item);
         jfs_db_op_destroy(db_op);
         
-        return rc;
+        return -ENOMEM;
       }
+      
+      rc = jfs_dynamic_hierarchy_add_file(buffer, item->datapath, item->jfs_id);
+    }
+    
+    if(rc) {
+      if(is_folders) {
+        free(datapath);
+      }
+      free(buffer);
+      safe_jfs_list_destroy(&it, item);
+      jfs_db_op_destroy(db_op);
+      
+      return rc;
     }
 
     free(item->datapath);
 	free(item->filename);
 	free(item);
     free(buffer);
-    free(datapath);
   }
   jfs_db_op_destroy(db_op);
+
+  if(is_folders) {
+    free(datapath);
+  }
 
   return 0;
 }

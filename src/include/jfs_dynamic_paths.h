@@ -39,7 +39,7 @@ int jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int j
 /*
  * Add a folder to the dynamic hierarchy.
  */
-int jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int jfs_id);
+int jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath);
 
 /*
   Rename the file or folder at path to filename.

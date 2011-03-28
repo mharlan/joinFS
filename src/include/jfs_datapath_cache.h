@@ -24,6 +24,8 @@ void jfs_datapath_cache_init();
 
 void jfs_datapath_cache_destroy();
 
+void jfs_datapath_cache_log();
+
 int jfs_datapath_cache_add(int jfs_id, const char *datapath);
 
 int jfs_datapath_cache_remove(int jfs_id);

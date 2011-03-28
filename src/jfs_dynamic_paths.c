@@ -56,7 +56,7 @@ typedef struct jfs_dentry jfs_dentry_t;
 
 struct jfs_dirlist {
   char           *name;
-  int             jfs_id;
+  char           *datapath;
 
   jfs_filelist_t *files;
   jfs_dirlist_t  *folders;
@@ -87,7 +87,7 @@ jfs_dynamic_path_init(void)
   jfs_root.files = NULL;
   jfs_root.folders = NULL;
   jfs_root.next = NULL;
-  jfs_root.jfs_id = 0;
+  jfs_root.datapath = NULL;
 
   pthread_rwlock_init(&path_lock, NULL);
 
@@ -105,6 +105,10 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *jfs_id)
   jfs_dirlist_t *dir;
   jfs_filelist_t *file;
 
+  char *datapath;
+
+  size_t datapath_len;
+
   int rc;
 
   dir = NULL;
@@ -119,15 +123,27 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *jfs_id)
 
   if(file) {
     *jfs_id = file->jfs_id;
+    pthread_rwlock_unlock(&path_lock);
+
+    rc = jfs_datapath_cache_get_datapath(*jfs_id, resolved_path);
+    if(rc) {
+      return rc;
+    }
   }
   else {
-    *jfs_id = dir->jfs_id;
-  }
-  pthread_rwlock_unlock(&path_lock);
+    *jfs_id = 0;
 
-  rc = jfs_datapath_cache_get_datapath(*jfs_id, resolved_path);
-  if(rc) {
-    return rc;
+    datapath_len = strlen(dir->datapath) + 1;
+    datapath = malloc(sizeof(*datapath) * datapath_len);
+    if(!datapath) {
+      pthread_rwlock_unlock(&path_lock);
+
+      return -ENOMEM;
+    }
+    strncpy(datapath, dir->datapath, datapath_len);
+    pthread_rwlock_unlock(&path_lock);
+
+    *resolved_path = datapath;
   }
 
   return 0;
@@ -344,7 +360,7 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int jfs_i
       strncpy(check_dir->name, token, token_len);
       check_dir->name[token_len - 1] = '\0';
       
-      check_dir->jfs_id = 0;
+      check_dir->datapath = NULL;
       check_dir->files = NULL;
       check_dir->folders = NULL;
       check_dir->next = NULL;
@@ -373,18 +389,20 @@ jfs_dynamic_hierarchy_add_file(const char *path, const char *datapath, int jfs_i
 Add a folder to the dynamic hierarchy.
 */
 int
-jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int jfs_id)
+jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath)
 {
   jfs_dirlist_t *check_dir;
   jfs_dirlist_t *current_dir;
   jfs_dirlist_t *result_dir;
 
+  size_t datapath_len;
   size_t copy_path_len;
   size_t token_len;
 
   char *token;
   char *last_token;
   char *copy_path;
+  char *d_path;
 
   int rc;
 
@@ -426,20 +444,31 @@ jfs_dynamic_hierarchy_add_folder(const char *path, const char *datapath, int jfs
     strncpy(check_dir->name, token, token_len);
     check_dir->name[token_len - 1] = '\0';
 
+    check_dir->datapath = NULL;
     check_dir->files = NULL;
     check_dir->folders = NULL;
     check_dir->next = NULL;
 
     if(token == last_token) {
-      check_dir->jfs_id = jfs_id;
+      datapath_len = strlen(datapath) + 1;
+      d_path = malloc(sizeof(*d_path) * datapath_len);
+      if(!d_path) {
+        pthread_rwlock_unlock(&path_lock);
+        free(copy_path);
+        free(check_dir);
+        
+        return -ENOMEM;
+      }
+      strncpy(d_path, datapath, datapath_len);
+
+      check_dir->datapath = d_path;
       sglib_jfs_dirlist_t_add(&current_dir->folders, check_dir);
       pthread_rwlock_unlock(&path_lock);
       free(copy_path);
 
-      return jfs_datapath_cache_add(jfs_id, datapath);
+      return 0;
     }
     else {
-      check_dir->jfs_id = 0;
       rc = sglib_jfs_dirlist_t_add_if_not_member(&current_dir->folders, check_dir, &result_dir);
 
       if(rc) { //item was inserted
@@ -588,9 +617,8 @@ jfs_dynamic_hierarchy_rmdir(const char *path)
   if(rc) {
     return rc;
   }
-
-  jfs_datapath_cache_remove(dir->jfs_id);
-
+  
+  free(dir->datapath);
   free(dir->name);
   free(dir);
   
@@ -658,9 +686,10 @@ jfs_dynamic_hierarchy_folder_cleanup(jfs_dirlist_t *root)
       jfs_dynamic_hierarchy_folder_cleanup(dir);
       
       sglib_jfs_dirlist_t_delete(&root->folders, dir);
-
-      jfs_datapath_cache_remove(dir->jfs_id);
-
+      
+      if(dir->datapath) {
+        free(dir->datapath);
+      }      
       free(dir->name);
       free(dir);
     }
