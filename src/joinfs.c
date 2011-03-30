@@ -873,10 +873,12 @@ main(int argc, char *argv[])
   printf("querydir:%s\n", jfs_context->querypath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
+  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
+  */
 
   /*
   argc = 3;
@@ -884,10 +886,8 @@ main(int argc, char *argv[])
   argv[2] = jfs_context->mountpath;
   */
 
-  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
-  */
   
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

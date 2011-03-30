@@ -1,1 +1,1 @@
-fusermount -u /home/joinfs/git/joinFS/demo/mount
+fusermount -u ./mount

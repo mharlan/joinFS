@@ -18,8 +18,6 @@
 #define	_REENTRANT
 #endif
 
-#define QUERY_TIMEOUT 600000
-
 #include "sqlitedb.h"
 #include "error_log.h"
 #include "thr_pool.h"
@@ -39,8 +37,8 @@ typedef struct timespec timestruc_t;
  */
 typedef struct job job_t;
 struct job {
-	job_t	         *job_next;		/* linked list of jobs */
-    struct jfs_db_op *db_op;
+  job_t	         *job_next;		/* linked list of jobs */
+  struct jfs_db_op *db_op;
 };
 
 /*
@@ -48,31 +46,31 @@ struct job {
  */
 typedef struct active active_t;
 struct active {
-  	active_t	*active_next;	/* linked list of threads */
-	pthread_t	 active_tid;	/* active thread id */
+  active_t	*active_next;	/* linked list of threads */
+  pthread_t	 active_tid;	/* active thread id */
 };
 
 /*
  * The thread pool, opaque to the clients.
  */
 struct thr_pool {
-	thr_pool_t	    *pool_forw;	/* circular linked list */
-	thr_pool_t	    *pool_back;	/* of all thread pools */
-	pthread_mutex_t	 pool_mutex;	/* protects the pool data */
-    pthread_cond_t	 pool_busycv;	/* synchronization in pool_queue */
-	pthread_cond_t	 pool_workcv;	/* synchronization with workers */
-	pthread_cond_t   pool_waitcv;	/* synchronization in pool_wait() */
-	active_t	    *pool_active;	/* list of threads performing work */
-	job_t		    *pool_head;	/* head of FIFO job queue */
-	job_t		    *pool_tail;	/* tail of FIFO job queue */
-	pthread_attr_t   pool_attr;	/* attributes of the workers */
-	int		         pool_flags;	/* see below */
-	uint_t		     pool_linger;	/* seconds before idle workers exit */
-	int		         pool_minimum;	/* minimum number of worker threads */
-	int		         pool_maximum;	/* maximum number of worker threads */
-	int		         pool_nthreads;	/* current number of worker threads */
-	int		         pool_idle;	/* number of idle workers */
-    int              sqlite_attr; /* sqlite connection attributes */
+  thr_pool_t	    *pool_forw;	/* circular linked list */
+  thr_pool_t	    *pool_back;	/* of all thread pools */
+  pthread_mutex_t	 pool_mutex;	/* protects the pool data */
+  pthread_cond_t	 pool_busycv;	/* synchronization in pool_queue */
+  pthread_cond_t	 pool_workcv;	/* synchronization with workers */
+  pthread_cond_t   pool_waitcv;	/* synchronization in pool_wait() */
+  active_t	    *pool_active;	/* list of threads performing work */
+  job_t		    *pool_head;	/* head of FIFO job queue */
+  job_t		    *pool_tail;	/* tail of FIFO job queue */
+  pthread_attr_t   pool_attr;	/* attributes of the workers */
+  int		         pool_flags;	/* see below */
+  uint_t		     pool_linger;	/* seconds before idle workers exit */
+  int		         pool_minimum;	/* minimum number of worker threads */
+  int		         pool_maximum;	/* maximum number of worker threads */
+  int		         pool_nthreads;	/* current number of worker threads */
+  int		         pool_idle;	/* number of idle workers */
+  int              sqlite_attr; /* sqlite connection attributes */
 };
 
 /* pool_flags */
@@ -93,15 +91,15 @@ static void *worker_thread(void *);
 static int
 create_worker(thr_pool_t *pool)
 {
-	pthread_t pid;
-	sigset_t oset;
-	int error;
+  pthread_t pid;
+  sigset_t oset;
+  int error;
 
-	(void) pthread_sigmask(SIG_SETMASK, &fillset, &oset);
-	error = pthread_create(&pid, &pool->pool_attr, worker_thread, pool);
-	(void) pthread_sigmask(SIG_SETMASK, &oset, NULL);
-
-	return error;
+  (void) pthread_sigmask(SIG_SETMASK, &fillset, &oset);
+  error = pthread_create(&pid, &pool->pool_attr, worker_thread, pool);
+  (void) pthread_sigmask(SIG_SETMASK, &oset, NULL);
+  
+  return error;
 }
 
 /*
@@ -115,27 +113,27 @@ create_worker(thr_pool_t *pool)
 static void
 worker_cleanup(thr_pool_t *pool)
 {
-	--pool->pool_nthreads;
-	if(pool->pool_flags & POOL_DESTROY) {
-      if(pool->pool_nthreads == 0) {
-        (void) pthread_cond_broadcast(&pool->pool_busycv);
-      }
-	} 
-    else if(pool->pool_head != NULL &&
-             pool->pool_nthreads < pool->pool_maximum &&
-             create_worker(pool) == 0) {
-      pool->pool_nthreads++;
-	}
+  --pool->pool_nthreads;
+  if(pool->pool_flags & POOL_DESTROY) {
+    if(pool->pool_nthreads == 0) {
+      (void) pthread_cond_broadcast(&pool->pool_busycv);
+    }
+  } 
+  else if(pool->pool_head != NULL &&
+	  pool->pool_nthreads < pool->pool_maximum &&
+	  create_worker(pool) == 0) {
+    pool->pool_nthreads++;
+  }
 	(void) pthread_mutex_unlock(&pool->pool_mutex);
 }
 
 static void
 notify_waiters(thr_pool_t *pool)
 {
-	if(pool->pool_head == NULL && pool->pool_active == NULL) {
-      pool->pool_flags &= ~POOL_WAIT;
-      (void) pthread_cond_broadcast(&pool->pool_waitcv);
-	}
+  if(pool->pool_head == NULL && pool->pool_active == NULL) {
+    pool->pool_flags &= ~POOL_WAIT;
+    (void) pthread_cond_broadcast(&pool->pool_waitcv);
+  }
 }
 
 /*
@@ -144,157 +142,155 @@ notify_waiters(thr_pool_t *pool)
 static void
 job_cleanup(thr_pool_t *pool)
 {
-	pthread_t my_tid = pthread_self();
-	active_t *activep;
-	active_t **activepp;
-
-	(void) pthread_mutex_lock(&pool->pool_mutex);
-	for(activepp = &pool->pool_active; 
-        (activep = *activepp) != NULL;
-        activepp = &activep->active_next) {
-      if(activep->active_tid == my_tid) {
-        *activepp = activep->active_next;
-        break;
+  pthread_t my_tid = pthread_self();
+  active_t *activep;
+  active_t **activepp;
+  
+  (void) pthread_mutex_lock(&pool->pool_mutex);
+  for(activepp = &pool->pool_active; 
+      (activep = *activepp) != NULL;
+      activepp = &activep->active_next) {
+    if(activep->active_tid == my_tid) {
+      *activepp = activep->active_next;
+      break;
       }
-	}
-	if(pool->pool_flags & POOL_WAIT) {
-      notify_waiters(pool);
-    }
+  }
+  if(pool->pool_flags & POOL_WAIT) {
+    notify_waiters(pool);
+  }
 }
 
 static void *
 worker_thread(void *arg)
 {
-	int               timedout;
-	job_t            *job;
-	active_t          active;
-	timestruc_t       ts;
-	struct jfs_db_op *db_op; 
-	sqlite3          *db;
-	int               rc;
-    int               i;
-	thr_pool_t *pool = (thr_pool_t *)arg;
+  int               timedout;
+  job_t            *job;
+  active_t          active;
+  timestruc_t       ts;
+  struct jfs_db_op *db_op; 
+  sqlite3          *db;
+  int               rc;
+  int               i;
+  thr_pool_t *pool = (thr_pool_t *)arg;
+  
+  /*
+   * Get a db connection object before performing jobs.
+   */
+  rc = jfs_open_db(&db, pool->sqlite_attr);
+  if(rc) {
+    return NULL;
+  }
 
-	/*
-	 * Get a db connection object before performing jobs.
-	 */
-	rc = jfs_open_db(&db, pool->sqlite_attr);
-    if(rc) {
-      return NULL;
+  /*
+   * This is the worker's main loop.  It will only be left
+   * if a timeout occurs or if the pool is being destroyed.
+   */
+  (void) pthread_mutex_lock(&pool->pool_mutex);
+  pthread_cleanup_push((void (*)(void *))worker_cleanup,
+		       (void *)pool);
+  active.active_tid = pthread_self();
+  
+  for(;;) {
+    /*
+     * We don't know what this thread was doing during
+     * its last job, so we reset its signal mask and
+     * cancellation state back to the initial values.
+     */
+    (void) pthread_sigmask(SIG_SETMASK, &fillset, NULL);
+    (void) pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+    (void) pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+    timedout = 0;
+    pool->pool_idle++;
+    if(pool->pool_flags & POOL_WAIT) {
+      notify_waiters(pool);
     }
-
-	sqlite3_busy_timeout(db, QUERY_TIMEOUT);
-
-	/*
-	 * This is the worker's main loop.  It will only be left
-	 * if a timeout occurs or if the pool is being destroyed.
-	 */
-	(void) pthread_mutex_lock(&pool->pool_mutex);
-	pthread_cleanup_push((void (*)(void *))worker_cleanup,
-						 (void *)pool);
-	active.active_tid = pthread_self();
-    
-	for(;;) {
-		/*
-		 * We don't know what this thread was doing during
-		 * its last job, so we reset its signal mask and
-		 * cancellation state back to the initial values.
-		 */
-		(void) pthread_sigmask(SIG_SETMASK, &fillset, NULL);
-		(void) pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
-		(void) pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-
-		timedout = 0;
-		pool->pool_idle++;
-		if(pool->pool_flags & POOL_WAIT) {
-			notify_waiters(pool);
-        }
-		while(pool->pool_head == NULL &&
-              !(pool->pool_flags & POOL_DESTROY)) {
-          if(pool->pool_nthreads <= pool->pool_minimum) {
-            (void) pthread_cond_wait(&pool->pool_workcv,
-                                     &pool->pool_mutex);
-          } 
-          else {
-            (void) clock_gettime(CLOCK_REALTIME, (struct timespec *) &ts);
-            ts.tv_sec += pool->pool_linger;
-            if(pool->pool_linger == 0 ||
-               pthread_cond_timedwait(&pool->pool_workcv,
-                                      &pool->pool_mutex, &ts) == ETIMEDOUT) {
-              timedout = 1;
-              break;
-            }
-          }
-		}
-		pool->pool_idle--;
-		if(pool->pool_flags & POOL_DESTROY) {
-			break;
-        }
-		if((job = pool->pool_head) != NULL) {
-          timedout = 0;
-          db_op = job->db_op;
-          pool->pool_head = job->job_next;
-          if(job == pool->pool_tail) {
-            pool->pool_tail = NULL;
-          }
-          active.active_next = pool->pool_active;
-          pool->pool_active = &active;
-          (void) pthread_mutex_unlock(&pool->pool_mutex);
-          pthread_cleanup_push((void (*)(void *))job_cleanup,
-                               (void *)pool);
-          free(job);
-          
-		  /*
-		   * Perform the database operation.
-		   */
-          pthread_mutex_lock(&db_op->mut);
-          db_op->db = db;
-          rc = jfs_query(db_op);
-          if(rc) {
-            if(db_op->op == jfs_multi_write_op) {
-              log_error("jfs_thread_pool---multi_write failed.\n");
-              for(i = 0; i < db_op->num_queries; ++i) {
-                log_error("jfs_thread_pool---Query:%s, error:%d\n", db_op->multi_query[i], rc);
-              }
-            }
-            else {
-              log_error("jfs_thread_pool---Query:%s, error:%d\n", db_op->query, rc);
-            }
-          }
-          
-          /*
-           * Wake up the thread waiting on the job.
-           */
-          db_op->db = NULL;
-          db_op->rc = rc;
-          db_op->done = 1;
-          pthread_cond_signal(&db_op->cond);
-          pthread_mutex_unlock(&db_op->mut);
-          
-          /*
-           * If the job function calls pthread_exit(), the thread
-           * calls job_cleanup(pool) and worker_cleanup(pool);
-           * the integrity of the pool is thereby maintained.
-           */
-          pthread_cleanup_pop(1);	/* job_cleanup(pool) */
-		}
-		if(timedout && pool->pool_nthreads > pool->pool_minimum) {
-          /*
-           * We timed out and there is no work to be done
-           * and the number of workers exceeds the minimum.
-           * Exit now to reduce the size of the pool.
-           */
-          break;
-		}
+    while(pool->pool_head == NULL &&
+	  !(pool->pool_flags & POOL_DESTROY)) {
+      if(pool->pool_nthreads <= pool->pool_minimum) {
+	(void) pthread_cond_wait(&pool->pool_workcv,
+				 &pool->pool_mutex);
+      } 
+      else {
+	(void) clock_gettime(CLOCK_REALTIME, (struct timespec *) &ts);
+	ts.tv_sec += pool->pool_linger;
+	if(pool->pool_linger == 0 ||
+	   pthread_cond_timedwait(&pool->pool_workcv,
+				  &pool->pool_mutex, &ts) == ETIMEDOUT) {
+	  timedout = 1;
+	  break;
 	}
-    
-	/*
-	 * Cleanup the db connection.
-	 */
-	jfs_close_db(db);
-    
-	pthread_cleanup_pop(1);	/* worker_cleanup(pool) */
-	return NULL;
+      }
+    }
+    pool->pool_idle--;
+    if(pool->pool_flags & POOL_DESTROY) {
+      break;
+    }
+    if((job = pool->pool_head) != NULL) {
+      timedout = 0;
+      db_op = job->db_op;
+      pool->pool_head = job->job_next;
+      if(job == pool->pool_tail) {
+	pool->pool_tail = NULL;
+      }
+      active.active_next = pool->pool_active;
+      pool->pool_active = &active;
+      (void) pthread_mutex_unlock(&pool->pool_mutex);
+      pthread_cleanup_push((void (*)(void *))job_cleanup,
+			   (void *)pool);
+      free(job);
+      
+      /*
+       * Perform the database operation.
+       */
+      pthread_mutex_lock(&db_op->mut);
+      db_op->db = db;
+      rc = jfs_query(db_op);
+      if(rc) {
+	if(db_op->op == jfs_multi_write_op) {
+	  log_error("jfs_thread_pool---multi_write failed.\n");
+	  for(i = 0; i < db_op->num_queries; ++i) {
+	    log_error("jfs_thread_pool---Query:%s, error:%d\n", db_op->multi_query[i], rc);
+	  }
+	}
+	else {
+	  log_error("jfs_thread_pool---Query:%s, error:%d\n", db_op->query, rc);
+	}
+      }
+      
+      /*
+       * Wake up the thread waiting on the job.
+       */
+      db_op->db = NULL;
+      db_op->rc = rc;
+      db_op->done = 1;
+      pthread_cond_signal(&db_op->cond);
+      pthread_mutex_unlock(&db_op->mut);
+      
+      /*
+       * If the job function calls pthread_exit(), the thread
+       * calls job_cleanup(pool) and worker_cleanup(pool);
+       * the integrity of the pool is thereby maintained.
+       */
+      pthread_cleanup_pop(1);	/* job_cleanup(pool) */
+    }
+    if(timedout && pool->pool_nthreads > pool->pool_minimum) {
+      /*
+       * We timed out and there is no work to be done
+       * and the number of workers exceeds the minimum.
+       * Exit now to reduce the size of the pool.
+       */
+      break;
+    }
+  }
+  
+  /*
+   * Cleanup the db connection.
+   */
+  jfs_close_db(db);
+  
+  pthread_cleanup_pop(1);	/* worker_cleanup(pool) */
+  return NULL;
 }
 
 static void
@@ -341,13 +337,13 @@ jfs_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
 	(void) sigfillset(&fillset);
 
 	if(min_threads > max_threads || max_threads < 1) {
-      errno = EINVAL;
-      return NULL;
+	  errno = EINVAL;
+	  return NULL;
 	}
 
 	if((pool = malloc(sizeof (*pool))) == NULL) {
-      errno = ENOMEM;
-      return NULL;
+	  errno = ENOMEM;
+	  return NULL;
 	}
     
 	(void) pthread_mutex_init(&pool->pool_mutex, NULL);
@@ -377,18 +373,18 @@ jfs_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
 	/* insert into the global list of all thread pools */
 	(void) pthread_mutex_lock(&thr_pool_lock);
 	if(thr_pools == NULL) {
-      pool->pool_forw = pool;
-      pool->pool_back = pool;
-      thr_pools = pool;
+	  pool->pool_forw = pool;
+	  pool->pool_back = pool;
+	  thr_pools = pool;
 	} 
-    else {
-      thr_pools->pool_back->pool_forw = pool;
-      pool->pool_forw = thr_pools;
-      pool->pool_back = thr_pools->pool_back;
-      thr_pools->pool_back = pool;
+	else {
+	  thr_pools->pool_back->pool_forw = pool;
+	  pool->pool_forw = thr_pools;
+	  pool->pool_back = thr_pools->pool_back;
+	  thr_pools->pool_back = pool;
 	}
 	(void) pthread_mutex_unlock(&thr_pool_lock);
-    
+	
 	return pool;
 }
 
@@ -396,32 +392,32 @@ int
 jfs_pool_queue(thr_pool_t *pool, struct jfs_db_op *db_op)
 {
 	job_t *job;
-
+	
 	if((job = malloc(sizeof (*job))) == NULL) {
-      errno = ENOMEM;
-      return (-1);
+	  errno = ENOMEM;
+	  return (-1);
 	}
 	job->job_next = NULL;
 	job->db_op = db_op;
     
 	(void) pthread_mutex_lock(&pool->pool_mutex);
-
+	
 	if(pool->pool_head == NULL) {
-      pool->pool_head = job;
-    }
+	  pool->pool_head = job;
+	}
 	else {
-      pool->pool_tail->job_next = job;
-    }
+	  pool->pool_tail->job_next = job;
+	}
 	pool->pool_tail = job;
-    
+	
 	if(pool->pool_idle > 0) {
-      (void) pthread_cond_signal(&pool->pool_workcv);
-    }
+	  (void) pthread_cond_signal(&pool->pool_workcv);
+	}
 	else if(pool->pool_nthreads < pool->pool_maximum &&
-            create_worker(pool) == 0) {
-      pool->pool_nthreads++;
-    }
-    
+		create_worker(pool) == 0) {
+	  pool->pool_nthreads++;
+	}
+	
 	(void) pthread_mutex_unlock(&pool->pool_mutex);
 	return 0;
 }

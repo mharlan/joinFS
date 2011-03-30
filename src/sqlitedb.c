@@ -34,7 +34,8 @@
 #include <sqlite3.h>
 #include <pthread.h>
 
-#define JFSDB   "/home/joinfs/git/joinFS/demo/joinfs.db"
+#define QUERY_TIMEOUT 600000
+#define JFSDB   "/home/matt/git/joinFS/demo/joinfs.db"
 #define ERR_MAX 256
 
 //does not need to be public, prepares queries
@@ -385,6 +386,7 @@ jfs_open_db(sqlite3 **db, int sqlite_attr)
 
     return rc;
   }
+  sqlite3_busy_timeout(new_db, QUERY_TIMEOUT);
 
   *db = new_db;
   

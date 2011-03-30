@@ -29,7 +29,7 @@
 #include <pthread.h>
 
 static FILE *log;
-static const char *log_path = "/home/joinfs/git/joinFS/demo/error_log.txt";
+static const char *log_path = "/home/matt/git/joinFS/demo/error_log.txt";
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void log_init(void)

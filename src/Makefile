@@ -3,7 +3,8 @@ INCLUDE=-I include/
 CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall -O3
 
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
-LIBS=-lpthread -lulockmgr -lrt -lsqlite3 $(FUSELIB)
+SQLLIB=-Wl,-R/usr/local/lib -lsqlite3
+LIBS=-lpthread -lulockmgr -lrt $(SQLLIB) $(FUSELIB)
 
 SRC=error_log.c \
     sqlitedb.c \
@@ -25,7 +26,6 @@ SRC=error_log.c \
 OBJS=$(SRC:%.c=obj/%.o)
 
 TESTSRC=tests/jfs_pool_test.c \
-		tests/jfs_uuid_test.c \
 		tests/jfs_realpath_test.c \
 		tests/jfs_meta_test.c \
 		tests/jfs_query_builder_test.c
@@ -35,7 +35,6 @@ TESTOBJS=obj/error_log.o \
 	 	 obj/thr_pool.o \
 	 	 obj/result.o \
 	 	 obj/jfs_list.o \
-	 	 obj/jfs_uuid.o
 
 TESTS=$(TESTSRC:%.c=%)
 
