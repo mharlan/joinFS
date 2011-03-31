@@ -1,0 +1,20 @@
+#!/bin/bash
+
+SAVEIFS=$IFS
+IFS=$(echo -en "\n\b")
+
+for file in $*
+do
+    echo "---Adding metadata for file ${file}"
+    setfattr -n title -v  `id3 -l -R "${file}" | grep Title | sed "s/Title: //"` ${file}
+    setfattr -n artist -v `id3 -l -R "${file}" | grep Artist | sed "s/Artist: //"` ${file}
+    setfattr -n album -v `id3 -l -R "${file}" | grep Album | sed "s/Album: //"` ${file}
+    setfattr -n year -v `id3 -l -R "${file}" | grep Year | sed "s/Year: //"` ${file}
+    setfattr -n genre -v `id3 -l -R "${file}" | grep Genre | sed "s/Genre: //"` ${file}
+    setfattr -n track -v `id3 -l -R "${file}" | grep Track | sed "s/Track: //"` ${file}
+    setfattr -n comment -v `id3 -l -R "${file}" | grep Comment | sed "s/Comment: //"` ${file}
+done
+
+IFS=$SAVEIFS
+
+

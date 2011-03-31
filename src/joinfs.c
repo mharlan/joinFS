@@ -838,7 +838,9 @@ static struct fuse_operations jfs_oper = {
   .removexattr	= jfs_removexattr,
   .release      = jfs_release,
   .lock         = jfs_lock,
-  .flush        = jfs_flush
+  .flush        = jfs_flush,
+
+  .flag_nullpath_ok = 1,
 };
 
 int 
@@ -871,12 +873,10 @@ main(int argc, char *argv[])
   printf("querydir:%s\n", jfs_context->querypath);
   printf("mountdir:%s\n", jfs_context->mountpath);
 
-  /*
   argc = 4;
   argv[1] = "-d";
   argv[2] = "-s";
   argv[3] = jfs_context->mountpath;
-  */
 
   /*
   argc = 3;
@@ -884,8 +884,10 @@ main(int argc, char *argv[])
   argv[2] = jfs_context->mountpath;
   */
 
+  /*
   argc = 2;
   argv[1] = jfs_context->mountpath;
+  */
   
   printf("Starting joinFS, mountpath:%s\n", argv[1]);
   rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;

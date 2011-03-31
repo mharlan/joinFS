@@ -183,6 +183,8 @@ jfs_dir_readdir(const char *path, DIR *dp, void *buf,
   char *datapath;
   
   int rc;
+
+  printf("---jfs_dir_readdir, path:%s\n", path);
   
   while((de = readdir(dp)) != NULL) {
     memset(&st, 0, sizeof(st));
@@ -190,6 +192,7 @@ jfs_dir_readdir(const char *path, DIR *dp, void *buf,
     st.st_mode = de->d_type << 12;
     
     if(filler(buf, de->d_name, &st, 0) != 0) {
+      printf("filler fails\n");
       return -errno;
     }
   }
@@ -206,6 +209,9 @@ jfs_dir_readdir(const char *path, DIR *dp, void *buf,
 
       return rc;
     }
+  }
+  else {
+    printf("is not dynamic\n");
   }
   free(datapath);
 
@@ -244,12 +250,16 @@ jfs_dir_db_filler(const char *path, const char *realpath, void *buf,
   datainode = 0;
   mask = R_OK | F_OK; 
   
+  printf("---jfs_db_readder start\n");
+
   query = NULL;
   rc = jfs_dir_query_builder(path, realpath, &is_folders, &query);
   if(rc) {
 	return rc;
   }
-  
+ 
+  printf("---query:%s\n", query);
+ 
   if(query == NULL) {
 	return 0;
   }
@@ -287,6 +297,8 @@ jfs_dir_db_filler(const char *path, const char *realpath, void *buf,
   if(rc) {
 	return rc;
   }
+
+  printf("---jfs_readdir query:%s\n", query);
   
   jfs_read_pool_queue(db_op);
 
@@ -401,6 +413,8 @@ jfs_dir_is_dynamic(const char *path)
     }
     return rc;
   }
+
+  printf("---jfs_meta is dynamic\n");
 
   if(strcmp(is_dynamic, JFS_DIR_XATTR_TRUE) == 0) {
     free(is_dynamic);

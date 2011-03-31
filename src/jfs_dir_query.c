@@ -71,8 +71,11 @@ jfs_dir_query_builder(const char *path, const char *realpath, int *is_folders, c
     return rc;
   }
   
+  printf("---key_pairs, path:%s, realpath:%s\n", path, realpath);
+
   rc = jfs_meta_do_getxattr(realpath, JFS_DIR_IS_FOLDER, &dir_is_folders);
   if(rc) {
+    rc = 0;
     *is_folders = 0;
   }
   else {
@@ -84,17 +87,22 @@ jfs_dir_query_builder(const char *path, const char *realpath, int *is_folders, c
     }
   }
 
+  printf("---jfs_dir_is_folder\n");
+
   if(dir_is_folders) {
     free(dir_is_folders);
   }
 
   rc = jfs_meta_do_getxattr(realpath, JFS_DIR_PATH_ITEMS, &path_items);
   if(rc) {
+    rc = 0;
     items = 0;
   }
   else {
     items = atoi(path_items);
   }
+
+  printf("---jfs_dir_path_items\n");
 
   if(path_items) {
     free(path_items);
@@ -156,7 +164,7 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
   if(!values) {
     return -ENOMEM;
   }
-
+  
   parent_key_pairs = malloc(sizeof(*parent_key_pairs) * (items + 1));
   if(!parent_key_pairs) {
     free(values);
@@ -194,19 +202,21 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     
     rc = jfs_util_get_datapath(path, &datapath);
     if(rc) {
-      free(values[i]);
       if(i > 0) {
         items = i - 1;
       }
 
       goto cleanup;
     }
+
+    printf("---datapath:%s\n", datapath);
     
     rc = jfs_meta_do_getxattr(datapath, JFS_DIR_KEY_PAIRS, &key_pairs);
     free(datapath);
 
+    printf("----got key pairs:%s\n", key_pairs);
+
     if(rc) {
-      free(values[i]);
       if(i > 0) {
         items = i - 1;
       }
@@ -259,10 +269,8 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     current_len += strlen(JFS_INTERSECT);
     if(current_len >= query_len) {
       rc = jfs_dir_expand_query(&query_len, &query);
-      if(rc) {
-        free(key_pairs);
-        
-        return rc;
+      if(rc) {        
+        goto cleanup;
       }
     }
     sprintf(&query[current_pos], JFS_INTERSECT);
@@ -499,19 +507,17 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       //already got next token, which is not a value 
     }
 
-    if(token != NULL) {
-      current_len += intersect_len;
-      if(current_len >= query_len) {
-        rc = jfs_dir_expand_query(&query_len, &query);
-        if(rc) {
-          free(key_pairs);
-
-          return rc;
-        }
+    current_len += intersect_len;
+    if(current_len >= query_len) {
+      rc = jfs_dir_expand_query(&query_len, &query);
+      if(rc) {
+        free(key_pairs);
+        
+        return rc;
       }
-      sprintf(&query[current_pos], JFS_INTERSECT);
-      current_pos = current_len;
     }
+    sprintf(&query[current_pos], JFS_INTERSECT);
+    current_pos = current_len;
   }
   free(key_pairs);
 
