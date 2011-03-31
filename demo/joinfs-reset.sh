@@ -1,5 +1,4 @@
-rm -r data/ queries/ mount/
-mkdir data
+rm -r queries/ mount/
 mkdir queries
 mkdir mount
 ./db-install.sh

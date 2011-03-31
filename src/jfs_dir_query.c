@@ -33,14 +33,14 @@
 #include <errno.h>
 
 #define JFS_FOLDER_SIMPLE_QUERY "SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid;"
-#define JFS_FOLDER_QUERY        "SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid AND m.jfs_id=(SELECT l.jfs_id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id and m.keyid=k.keyid and (%s));"
-#define JFS_FILE_QUERY          "SELECT DISTINCT l.jfs_id, l.filename, l.path FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id AND m.keyid=k.keyid AND (%s);"
+#define JFS_FOLDER_QUERY        "SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=\"%s\" AND m.keyid=k.keyid AND m.jfs_id IN (%s);"
+#define JFS_FILE_QUERY          "SELECT DISTINCT l.jfs_id, l.filename, l.path FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id AND m.keyid=k.keyid AND m.jfs_id IN (%s);"
 
-#define JFS_SQL_OR               " OR "
-#define JFS_KEY_ITEM             "(k.keytext=\"%s\") OR "
-#define JFS_KEY_ITEM_ADJUST      2
-#define JFS_KEY_PAIR_ITEM        "(k.keytext=\"%s\" AND m.keyvalue=\"%s\") OR "
-#define JFS_KEY_PAIR_ITEM_ADJUST 4
+#define JFS_KEY_QUERY           "SELECT l.jfs_id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id and m.keyid=k.keyid and k.keytext=\"%s\""
+#define JFS_PAIR_QUERY          "SELECT l.jfs_id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs_id=m.jfs_id and m.keyid=k.keyid and k.keytext=\"%s\" and m.keyvalue=\"%s\""
+#define JFS_INTERSECT           " INTERSECT "
+#define JFS_ITEM_ADJUST         2
+#define JFS_PAIR_ADJUST         4
 
 static int jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_current_pos, 
                                    size_t *dir_current_len, size_t *dir_query_len, char **dir_query);
@@ -246,14 +246,26 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
     
     value = values[i];
     current_pos = current_len;
-    current_len += strlen(key) + strlen(value) + strlen(JFS_KEY_PAIR_ITEM) - JFS_KEY_PAIR_ITEM_ADJUST;
+    current_len += strlen(key) + strlen(value) + strlen(JFS_PAIR_QUERY) - JFS_PAIR_ADJUST;
     if(current_len >= query_len) {
       rc = jfs_dir_expand_query(&query_len, &query);
       if(rc) {
         goto cleanup;
       }
     }
-    sprintf(&query[current_pos], JFS_KEY_PAIR_ITEM, key, value);
+    sprintf(&query[current_pos], JFS_PAIR_QUERY, key, value);
+    current_pos = current_len;
+
+    current_len += strlen(JFS_INTERSECT);
+    if(current_len >= query_len) {
+      rc = jfs_dir_expand_query(&query_len, &query);
+      if(rc) {
+        free(key_pairs);
+        
+        return rc;
+      }
+    }
+    sprintf(&query[current_pos], JFS_INTERSECT);
     current_pos = current_len;
   }
 
@@ -293,8 +305,8 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       snprintf(outer_query, query_len, JFS_FOLDER_SIMPLE_QUERY, key);
     }
     else {
-      //remove the last OR
-      current_len -= strlen(JFS_SQL_OR);
+      //remove the last intersect
+      current_len -= strlen(JFS_INTERSECT);
       query[current_len] = '\0';
 
       query_len = strlen(JFS_FOLDER_QUERY) + strlen(key) + current_len + 1;
@@ -319,8 +331,8 @@ jfs_dir_create_query(int items, int is_folders, char *path, char *dir_key_pairs,
       goto cleanup;
     }
     else {
-      //remove the last OR
-      current_len -= strlen(JFS_SQL_OR);
+      //remove the last intersect
+      current_len -= strlen(JFS_INTERSECT);
       query[current_len] = '\0';
 
       query_len = strlen(JFS_FILE_QUERY) + current_len + 1;
@@ -382,9 +394,9 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
   size_t current_len;
   size_t query_len;
   size_t key_pairs_len;
-  size_t jfs_sql_or_len;
-  size_t key_item_len;
-  size_t key_pair_item_len;
+  size_t intersect_len;
+  size_t key_query_len;
+  size_t pair_query_len;
 
   int rc;
 
@@ -398,9 +410,9 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
   current_pos = current_len;
   query = *dir_query;
 
-  jfs_sql_or_len = strlen(JFS_SQL_OR);
-  key_item_len = strlen(JFS_KEY_ITEM) - JFS_KEY_ITEM_ADJUST;
-  key_pair_item_len = strlen(JFS_KEY_PAIR_ITEM) - JFS_KEY_PAIR_ITEM_ADJUST;
+  intersect_len = strlen(JFS_INTERSECT);
+  key_query_len = strlen(JFS_KEY_QUERY) - JFS_ITEM_ADJUST;
+  pair_query_len = strlen(JFS_PAIR_QUERY) - JFS_PAIR_ADJUST;
   key_pairs_len = strlen(dir_key_pairs) + 1;
 
   key_pairs = malloc(sizeof(*key_pairs) * key_pairs_len);
@@ -457,7 +469,7 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
       }
       ++value;
       
-      current_len += strlen(key) + strlen(value) + key_pair_item_len;
+      current_len += strlen(key) + strlen(value) + pair_query_len;
       if(current_len >= query_len) {
         rc = jfs_dir_expand_query(&query_len, &query);
         if(rc) {
@@ -466,13 +478,13 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
           return rc;
         }
       }
-      sprintf(&query[current_pos], JFS_KEY_PAIR_ITEM, key, value);
+      sprintf(&query[current_pos], JFS_PAIR_QUERY, key, value);
       current_pos = current_len;
 
       token = strtok(NULL, ";");
     }
     else {
-      current_len += strlen(key) + key_item_len;
+      current_len += strlen(key) + key_query_len;
       if(current_len >= query_len) {
         rc = jfs_dir_expand_query(&query_len, &query);
         if(rc) {
@@ -481,10 +493,24 @@ jfs_dir_parse_key_pairs(int skip_last, const char *dir_key_pairs, size_t *dir_cu
           return rc;
         }
       }
-      sprintf(&query[current_pos], JFS_KEY_ITEM, key);
+      sprintf(&query[current_pos], JFS_KEY_QUERY, key);
       current_pos = current_len;
 
       //already got next token, which is not a value 
+    }
+
+    if(token != NULL) {
+      current_len += intersect_len;
+      if(current_len >= query_len) {
+        rc = jfs_dir_expand_query(&query_len, &query);
+        if(rc) {
+          free(key_pairs);
+
+          return rc;
+        }
+      }
+      sprintf(&query[current_pos], JFS_INTERSECT);
+      current_pos = current_len;
     }
   }
   free(key_pairs);

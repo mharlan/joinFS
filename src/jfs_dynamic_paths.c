@@ -133,16 +133,28 @@ jfs_dynamic_path_resolution(const char *path, char **resolved_path, int *jfs_id)
   else {
     *jfs_id = 0;
 
-    datapath_len = strlen(dir->datapath) + 1;
-    datapath = malloc(sizeof(*datapath) * datapath_len);
-    if(!datapath) {
+    if(dir->datapath == NULL) {
       pthread_rwlock_unlock(&path_lock);
 
-      return -ENOMEM;
+      datapath_len = strlen(path) + 1;
+      datapath = malloc(sizeof(*datapath) * datapath_len);
+      if(!datapath) {
+        return -ENOMEM;
+      }
+      strncpy(datapath, path, datapath_len);
     }
-    strncpy(datapath, dir->datapath, datapath_len);
-    pthread_rwlock_unlock(&path_lock);
-
+    else {
+      datapath_len = strlen(dir->datapath) + 1;
+      datapath = malloc(sizeof(*datapath) * datapath_len);
+      if(!datapath) {
+        pthread_rwlock_unlock(&path_lock);
+        
+        return -ENOMEM;
+      }
+      strncpy(datapath, dir->datapath, datapath_len);
+      pthread_rwlock_unlock(&path_lock);
+    }
+    
     *resolved_path = datapath;
   }
 
