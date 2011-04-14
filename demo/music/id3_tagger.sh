@@ -6,10 +6,7 @@ IFS=$(echo -en "\n\b")
 for file in $*
 do
     # echo "---Adding metadata for file ${file}"
-
-    setfattr -n level1 -v level1 -h $file
-    setfattr -n level2 -v level2 -h $file
-    setfattr -n level3 -v level3 -h $file
+    
     setfattr -n "type" -v music -h $file
     setfattr -n format -v mp3 -h $file
 
@@ -35,7 +32,8 @@ do
 
     val=$(id3 -l -R "${file}" | grep Genre | sed "s/Genre: //")
     val=$(echo "${val}" | sed 's/ *$//g')
-    # echo "---Title:${val}"
+    val=$(echo "${val}" | sed 's/([0-9]\+)//')
+    echo "---Genre:${val}"
     setfattr -n genre -v $val -h $file
 
     val=$(id3 -l -R "${file}" | grep Track | sed "s/Track: //")
