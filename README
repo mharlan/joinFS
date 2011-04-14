@@ -1,10 +1,10 @@
 Copyright 2010, 2011 Matthew Harlan
 
+This is not yet in release form, but it will be soon.
+
 Dependencies:
 
 FUSE
 sqlite3
-libuuid
-libattr
 pthreads
 

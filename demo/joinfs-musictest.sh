@@ -1,30 +1,53 @@
-mkdir mount/music_files
+# set metdata
+./id3_tagger.sh *.mp3
 
-cp music/*.MP3 mount/music_files/
+mkdir ../Library
 
-mkdir mount/Library
-mkdir mount/Library/Music
-mkdir mount/Library/Music/.jfs_sub_query
-mkdir mount/Library/Music/.jfs_sub_query/.jfs_sub_query
+# MP3s - Artist/Album/File
+mkdir ../Library/Music
+mkdir ../Library/Music/.jfs_sub_query
+mkdir ../Library/Music/.jfs_sub_query/.jfs_sub_query
 
-setfattr -n type   -v "music"             mount/music_files/*.MP3
-setfattr -n format -v "mp3"               mount/music_files/*.MP3
-setfattr -n artist -v "Radiohead"         mount/music_files/*.MP3
-setfattr -n album  -v "The King of Limbs" mount/music_files/*.MP3
+setfattr -n _jfs_dir_is_dynamic -v "y"                                       ../Library/Music
+setfattr -n _jfs_dir_is_folder  -v "y"                                       ../Library/Music
+setfattr -n _jfs_dir_path_items -v "0"                                       ../Library/Music
+setfattr -n _jfs_dir_key_pairs  -v "k=type;v=music;k=format;v=mp3;k=artist;" ../Library/Music
 
-setfattr -n _jfs_dir_is_dynamic -v "y"                                       mount/Library/Music
-setfattr -n _jfs_dir_is_folder  -v "y"                                       mount/Library/Music
-setfattr -n _jfs_dir_path_items -v "0"                                       mount/Library/Music
-setfattr -n _jfs_dir_key_pairs  -v "k=type;v=music;k=format;v=mp3;k=artist;" mount/Library/Music
+setfattr -n _jfs_dir_is_dynamic -v "y"        ../Library/Music/.jfs_sub_query
+setfattr -n _jfs_dir_is_folder  -v "y"        ../Library/Music/.jfs_sub_query
+setfattr -n _jfs_dir_path_items -v "1"        ../Library/Music/.jfs_sub_query
+setfattr -n _jfs_dir_key_pairs  -v "k=album;" ../Library/Music/.jfs_sub_query
 
-setfattr -n _jfs_dir_is_dynamic -v "y"        mount/Library/Music/.jfs_sub_query
-setfattr -n _jfs_dir_is_folder  -v "y"        mount/Library/Music/.jfs_sub_query
-setfattr -n _jfs_dir_path_items -v "1"        mount/Library/Music/.jfs_sub_query
-setfattr -n _jfs_dir_key_pairs  -v "k=album;" mount/Library/Music/.jfs_sub_query
+setfattr -n _jfs_dir_is_dynamic -v "y" ../Library/Music/.jfs_sub_query/.jfs_sub_query
+setfattr -n _jfs_dir_is_folder  -v "n" ../Library/Music/.jfs_sub_query/.jfs_sub_query
+setfattr -n _jfs_dir_path_items -v "2" ../Library/Music/.jfs_sub_query/.jfs_sub_query
+setfattr -n _jfs_dir_key_pairs  -v ";" ../Library/Music/.jfs_sub_query/.jfs_sub_query
 
-setfattr -n _jfs_dir_is_dynamic -v "y" mount/Library/Music/.jfs_sub_query/.jfs_sub_query
-setfattr -n _jfs_dir_is_folder  -v "n" mount/Library/Music/.jfs_sub_query/.jfs_sub_query
-setfattr -n _jfs_dir_path_items -v "2" mount/Library/Music/.jfs_sub_query/.jfs_sub_query
-setfattr -n _jfs_dir_key_pairs  -v ";" mount/Library/Music/.jfs_sub_query/.jfs_sub_query
+# All MP3s
+mkdir ../Library/Music_All
 
-# sqlite3 joinfs.db 'SELECT f.filename, k.keytext, m.keyvalue FROM files AS f, keys AS k, metadata AS m WHERE k.keyid=m.keyid and f.inode=m.inode;'
+setfattr -n _jfs_dir_is_dynamic -v "y"                              ../Library/Music_All
+setfattr -n _jfs_dir_is_folder  -v "n"                              ../Library/Music_All
+setfattr -n _jfs_dir_path_items -v "0"                              ../Library/Music_All
+setfattr -n _jfs_dir_key_pairs  -v "k=type;v=music;k=format;v=mp3;" ../Library/Music_All
+
+# MP3s - Genre/Artist/Files
+mkdir ../Library/Music_Genres
+mkdir ../Library/Music_Genres/.jfs_sub_query
+mkdir ../Library/Music_Genres/.jfs_sub_query/.jfs_sub_query
+
+setfattr -n _jfs_dir_is_dynamic -v "y"                                       ../Library/Music_Genres
+setfattr -n _jfs_dir_is_folder  -v "y"                                       ../Library/Music_Genres
+setfattr -n _jfs_dir_path_items -v "0"                                       ../Library/Music_Genres
+setfattr -n _jfs_dir_key_pairs  -v "k=type;v=music;k=format;v=mp3;k=genre;"  ../Library/Music_Genres
+
+setfattr -n _jfs_dir_is_dynamic -v "y"         ../Library/Music_Genres/.jfs_sub_query
+setfattr -n _jfs_dir_is_folder  -v "y"         ../Library/Music_Genres/.jfs_sub_query
+setfattr -n _jfs_dir_path_items -v "1"         ../Library/Music_Genres/.jfs_sub_query
+setfattr -n _jfs_dir_key_pairs  -v "k=artist;" ../Library/Music_Genres/.jfs_sub_query
+
+setfattr -n _jfs_dir_is_dynamic -v "y" ../Library/Music_Genres/.jfs_sub_query/.jfs_sub_query
+setfattr -n _jfs_dir_is_folder  -v "n" ../Library/Music_Genres/.jfs_sub_query/.jfs_sub_query
+setfattr -n _jfs_dir_path_items -v "2" ../Library/Music_Genres/.jfs_sub_query/.jfs_sub_query
+setfattr -n _jfs_dir_key_pairs  -v ";" ../Library/Music_Genres/.jfs_sub_query/.jfs_sub_query
+
