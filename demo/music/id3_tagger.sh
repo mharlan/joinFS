@@ -33,7 +33,7 @@ do
     val=$(id3 -l -R "${file}" | grep Genre | sed "s/Genre: //")
     val=$(echo "${val}" | sed 's/ *$//g')
     val=$(echo "${val}" | sed 's/([0-9]\+)//')
-    echo "---Genre:${val}"
+    # echo "---Genre:${val}"
     setfattr -n genre -v $val -h $file
 
     val=$(id3 -l -R "${file}" | grep Track | sed "s/Track: //")
