@@ -1,0 +1,306 @@
+\hypertarget{jfs__datapath__cache_8c}{
+\section{jfs\_\-datapath\_\-cache.c File Reference}
+\label{jfs__datapath__cache_8c}\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}}
+}
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-datapath\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sglib.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}joinfs.h\char`\"{}}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__datapath__cache}{jfs\_\-datapath\_\-cache}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__datapath__cache_8c_a9076e06b44a738b5cb4ba546bd704295}{JFS\_\-DATAPATH\_\-CACHE\_\-SIZE}~1000
+\item 
+\#define \hyperlink{jfs__datapath__cache_8c_a2d258caaa9f2f3cc3bd2dc3c0d2b591c}{JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP}(e1, e2)~(e1-\/$>$jfs\_\-id -\/ e2-\/$>$jfs\_\-id)
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \hyperlink{structjfs__datapath__cache}{jfs\_\-datapath\_\-cache} \hyperlink{jfs__datapath__cache_8c_a35d8af6c8bb6da4fd9a68733cad28f6a}{jfs\_\-datapath\_\-cache\_\-t}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{jfs__datapath__cache_8c_ab5a21f8da00b02f6d8a55d3e36973e2e}{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES} (SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(\hyperlink{structjfs__datapath__cache}{jfs\_\-datapath\_\-cache\_\-t}, SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(JFS\_\-DATAPATH\_\-CACHE\_\-SIZE, jfs\_\-datapath\_\-cache\_\-t\_\-hash)
+\item 
+void \hyperlink{jfs__datapath__cache_8c_a68dd6b3a8262f84cef8937d3225246c8}{jfs\_\-datapath\_\-cache\_\-destroy} ()
+\item 
+void \hyperlink{jfs__datapath__cache_8c_ad8ab2d4b152e87975fe05b2081293c92}{jfs\_\-datapath\_\-cache\_\-log} ()
+\item 
+int \hyperlink{jfs__datapath__cache_8c_ab09518c6cc7c15fc9708e97a81082627}{jfs\_\-datapath\_\-cache\_\-add} (int jfs\_\-id, const char $\ast$datapath)
+\item 
+int \hyperlink{jfs__datapath__cache_8c_a1429c3899c2f8af5c06f1ca2354fe14c}{jfs\_\-datapath\_\-cache\_\-remove} (int jfs\_\-id)
+\item 
+int \hyperlink{jfs__datapath__cache_8c_a96d6b80248e74b5fc971298be641d586}{jfs\_\-datapath\_\-cache\_\-get\_\-datapath} (int jfs\_\-id, char $\ast$$\ast$datapath)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__datapath__cache_8c_a9076e06b44a738b5cb4ba546bd704295}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!JFS\_\-DATAPATH\_\-CACHE\_\-SIZE@{JFS\_\-DATAPATH\_\-CACHE\_\-SIZE}}
+\index{JFS\_\-DATAPATH\_\-CACHE\_\-SIZE@{JFS\_\-DATAPATH\_\-CACHE\_\-SIZE}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{JFS\_\-DATAPATH\_\-CACHE\_\-SIZE}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-DATAPATH\_\-CACHE\_\-SIZE~1000}}
+\label{jfs__datapath__cache_8c_a9076e06b44a738b5cb4ba546bd704295}
+\hypertarget{jfs__datapath__cache_8c_a2d258caaa9f2f3cc3bd2dc3c0d2b591c}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP@{JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP}}
+\index{JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP@{JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-DATAPATH\_\-CACHE\_\-T\_\-CMP(
+\begin{DoxyParamCaption}
+\item[{}]{e1, }
+\item[{}]{e2}
+\end{DoxyParamCaption}
+)~(e1-\/$>$jfs\_\-id -\/ e2-\/$>$jfs\_\-id)}}
+\label{jfs__datapath__cache_8c_a2d258caaa9f2f3cc3bd2dc3c0d2b591c}
+
+
+\subsection{Typedef Documentation}
+\hypertarget{jfs__datapath__cache_8c_a35d8af6c8bb6da4fd9a68733cad28f6a}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!jfs\_\-datapath\_\-cache\_\-t@{jfs\_\-datapath\_\-cache\_\-t}}
+\index{jfs\_\-datapath\_\-cache\_\-t@{jfs\_\-datapath\_\-cache\_\-t}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{jfs\_\-datapath\_\-cache\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf jfs\_\-datapath\_\-cache} {\bf jfs\_\-datapath\_\-cache\_\-t}}}
+\label{jfs__datapath__cache_8c_a35d8af6c8bb6da4fd9a68733cad28f6a}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__datapath__cache_8c_ab09518c6cc7c15fc9708e97a81082627}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!jfs\_\-datapath\_\-cache\_\-add@{jfs\_\-datapath\_\-cache\_\-add}}
+\index{jfs\_\-datapath\_\-cache\_\-add@{jfs\_\-datapath\_\-cache\_\-add}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{jfs\_\-datapath\_\-cache\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-datapath\_\-cache\_\-add (
+\begin{DoxyParamCaption}
+\item[{int}]{ jfs\_\-id, }
+\item[{const char $\ast$}]{ datapath}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__datapath__cache_8c_ab09518c6cc7c15fc9708e97a81082627}
+Add a path to the data path cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em jfs\_\-id}]The joinFS ID for the data path. \item[{\em datapath}]The data path being added. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_datapath_cache_t *item;
+
+  char *path;
+
+  size_t path_len;
+
+  jfs_datapath_cache_remove(jfs_id);
+
+  item = malloc(sizeof(*item));
+  if(!item) {
+        return -ENOMEM;
+  }
+
+  path_len = strlen(datapath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    free(item);
+    return -ENOMEM;
+  }
+  strncpy(path, datapath, path_len);
+
+  item->jfs_id = jfs_id;
+  item->datapath = path;
+
+  pthread_rwlock_wrlock(&cache_lock);
+  sglib_hashed_jfs_datapath_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__datapath__cache_8c_a68dd6b3a8262f84cef8937d3225246c8}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!jfs\_\-datapath\_\-cache\_\-destroy@{jfs\_\-datapath\_\-cache\_\-destroy}}
+\index{jfs\_\-datapath\_\-cache\_\-destroy@{jfs\_\-datapath\_\-cache\_\-destroy}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{jfs\_\-datapath\_\-cache\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-datapath\_\-cache\_\-destroy (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__datapath__cache_8c_a68dd6b3a8262f84cef8937d3225246c8}
+Destory the joinFS data path cache. 
+
+
+\begin{DoxyCode}
+{
+  struct sglib_hashed_jfs_datapath_cache_t_iterator it;
+  jfs_datapath_cache_t *item;
+  
+  pthread_rwlock_wrlock(&cache_lock);
+  for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
+          item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
+        free(item->datapath);
+        free(item);
+  }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__datapath__cache_8c_a96d6b80248e74b5fc971298be641d586}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!jfs\_\-datapath\_\-cache\_\-get\_\-datapath@{jfs\_\-datapath\_\-cache\_\-get\_\-datapath}}
+\index{jfs\_\-datapath\_\-cache\_\-get\_\-datapath@{jfs\_\-datapath\_\-cache\_\-get\_\-datapath}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{jfs\_\-datapath\_\-cache\_\-get\_\-datapath}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-datapath\_\-cache\_\-get\_\-datapath (
+\begin{DoxyParamCaption}
+\item[{int}]{ jfs\_\-id, }
+\item[{char $\ast$$\ast$}]{ datapath}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__datapath__cache_8c_a96d6b80248e74b5fc971298be641d586}
+Get a data path from the data path cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em jfs\_\-id}]The joinFS ID for the data path. \item[{\em datapath}]Where the data path is returned. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_datapath_cache_t check;
+  jfs_datapath_cache_t *result;
+
+  char *path;
+
+  size_t path_len;
+
+  check.jfs_id = jfs_id;
+  pthread_rwlock_rdlock(&cache_lock);
+  result = sglib_hashed_jfs_datapath_cache_t_find_member(hashtable, &check);
+
+  if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+        return jfs_datapath_cache_miss(jfs_id, datapath);
+  }
+
+  path_len = strlen(result->datapath) + 1;
+  path = malloc(sizeof(*path) * path_len);
+  if(!path) {
+    return -ENOMEM;
+  }
+  strncpy(path, result->datapath, path_len);
+  pthread_rwlock_unlock(&cache_lock);
+
+  *datapath = path;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__datapath__cache_8c_ad8ab2d4b152e87975fe05b2081293c92}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!jfs\_\-datapath\_\-cache\_\-log@{jfs\_\-datapath\_\-cache\_\-log}}
+\index{jfs\_\-datapath\_\-cache\_\-log@{jfs\_\-datapath\_\-cache\_\-log}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{jfs\_\-datapath\_\-cache\_\-log}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-datapath\_\-cache\_\-log (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__datapath__cache_8c_ad8ab2d4b152e87975fe05b2081293c92}
+Log the contents of the data path cache. 
+
+
+\begin{DoxyCode}
+{
+  struct sglib_hashed_jfs_datapath_cache_t_iterator it;
+  jfs_datapath_cache_t *item;
+
+  log_msg("DATAPATH CACHE LOG START\n");
+  pthread_rwlock_rdlock(&cache_lock);
+  for(item = sglib_hashed_jfs_datapath_cache_t_it_init(&it,hashtable); 
+          item != NULL; item = sglib_hashed_jfs_datapath_cache_t_it_next(&it)) {
+        log_msg("jfs_id:%d, datapath:%s\n", item->jfs_id, item->datapath);
+  }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
+
+  log_msg("LOG END\n");
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__datapath__cache_8c_a1429c3899c2f8af5c06f1ca2354fe14c}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!jfs\_\-datapath\_\-cache\_\-remove@{jfs\_\-datapath\_\-cache\_\-remove}}
+\index{jfs\_\-datapath\_\-cache\_\-remove@{jfs\_\-datapath\_\-cache\_\-remove}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{jfs\_\-datapath\_\-cache\_\-remove}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-datapath\_\-cache\_\-remove (
+\begin{DoxyParamCaption}
+\item[{int}]{ jfs\_\-id}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__datapath__cache_8c_a1429c3899c2f8af5c06f1ca2354fe14c}
+Remove a path from the data path cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em jfs\_\-id}]The joinFS ID for the data path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_datapath_cache_t check;
+  jfs_datapath_cache_t *elem;
+
+  int rc;
+
+  check.jfs_id = jfs_id;
+  pthread_rwlock_wrlock(&cache_lock);
+  rc = sglib_hashed_jfs_datapath_cache_t_delete_if_member(hashtable, &check, &ele
+      m);
+  pthread_rwlock_unlock(&cache_lock);
+  
+  if(rc) {
+    free(elem->datapath);
+    free(elem);
+  }
+  
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__datapath__cache_8c_ab5a21f8da00b02f6d8a55d3e36973e2e}{
+\index{jfs\_\-datapath\_\-cache.c@{jfs\_\-datapath\_\-cache.c}!SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}!jfs_datapath_cache.c@{jfs\_\-datapath\_\-cache.c}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES (
+\begin{DoxyParamCaption}
+\item[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(}]{ jfs\_\-datapath\_\-cache\_\-t, }
+\item[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(}]{ JFS\_\-DATAPATH\_\-CACHE\_\-SIZE, }
+\item[{jfs\_\-datapath\_\-cache\_\-t\_\-hash}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__datapath__cache_8c_ab5a21f8da00b02f6d8a55d3e36973e2e}
+
+
+
+\begin{DoxyCode}
+{
+  pthread_rwlock_init(&cache_lock, NULL);
+  sglib_hashed_jfs_datapath_cache_t_init(hashtable);
+}
+\end{DoxyCode}
+
+

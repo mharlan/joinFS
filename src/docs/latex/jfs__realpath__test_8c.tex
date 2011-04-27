@@ -1,0 +1,66 @@
+\hypertarget{jfs__realpath__test_8c}{
+\section{tests/jfs\_\-realpath\_\-test.c File Reference}
+\label{jfs__realpath__test_8c}\index{tests/jfs\_\-realpath\_\-test.c@{tests/jfs\_\-realpath\_\-test.c}}
+}
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__realpath__test_8c_ab790f3b7f88acd90507a59fb352fa1e7}{JFS\_\-MPATH}~\char`\"{}/home/joinfs/git/joinFS/demo/.queries\char`\"{}
+\item 
+\#define \hyperlink{jfs__realpath__test_8c_a95e10e1a5d46a0eedbe7585b8f955831}{JFS\_\-MPATH\_\-LEN}~37
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__realpath__test_8c_ae66f6b31b5ad750f1fe042a706a4e3d4}{main} ()
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__realpath__test_8c_ab790f3b7f88acd90507a59fb352fa1e7}{
+\index{jfs\_\-realpath\_\-test.c@{jfs\_\-realpath\_\-test.c}!JFS\_\-MPATH@{JFS\_\-MPATH}}
+\index{JFS\_\-MPATH@{JFS\_\-MPATH}!jfs_realpath_test.c@{jfs\_\-realpath\_\-test.c}}
+\subsubsection[{JFS\_\-MPATH}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-MPATH~\char`\"{}/home/joinfs/git/joinFS/demo/.queries\char`\"{}}}
+\label{jfs__realpath__test_8c_ab790f3b7f88acd90507a59fb352fa1e7}
+\hypertarget{jfs__realpath__test_8c_a95e10e1a5d46a0eedbe7585b8f955831}{
+\index{jfs\_\-realpath\_\-test.c@{jfs\_\-realpath\_\-test.c}!JFS\_\-MPATH\_\-LEN@{JFS\_\-MPATH\_\-LEN}}
+\index{JFS\_\-MPATH\_\-LEN@{JFS\_\-MPATH\_\-LEN}!jfs_realpath_test.c@{jfs\_\-realpath\_\-test.c}}
+\subsubsection[{JFS\_\-MPATH\_\-LEN}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-MPATH\_\-LEN~37}}
+\label{jfs__realpath__test_8c_a95e10e1a5d46a0eedbe7585b8f955831}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__realpath__test_8c_ae66f6b31b5ad750f1fe042a706a4e3d4}{
+\index{jfs\_\-realpath\_\-test.c@{jfs\_\-realpath\_\-test.c}!main@{main}}
+\index{main@{main}!jfs_realpath_test.c@{jfs\_\-realpath\_\-test.c}}
+\subsubsection[{main}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__realpath__test_8c_ae66f6b31b5ad750f1fe042a706a4e3d4}
+
+
+
+\begin{DoxyCode}
+{
+  char *jfs_path;
+
+  printf("Started joinFS realpath test.\n");
+
+  jfs_path = jfs_realpath("/");
+  free(jfs_path);
+
+  jfs_path = jfs_realpath("");
+  free(jfs_path);
+
+  printf("Finished joinFS realpath tests.\n");
+
+  return 0;
+}
+\end{DoxyCode}
+
+

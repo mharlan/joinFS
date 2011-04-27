@@ -1,0 +1,136 @@
+\hypertarget{jfs__dir__query_8h}{
+\section{include/jfs\_\-dir\_\-query.h File Reference}
+\label{jfs__dir__query_8h}\index{include/jfs\_\-dir\_\-query.h@{include/jfs\_\-dir\_\-query.h}}
+}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__dir__query_8h_ae13e4d78e6790ed5a28ad0204963f4b5}{JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__dir__query_8h_abb5830bd56c2f8aa49c6e2e2c6364280}{jfs\_\-dir\_\-query\_\-builder} (const char $\ast$path, const char $\ast$realpath, int $\ast$is\_\-folders, char $\ast$$\ast$query)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__dir__query_8h_ae13e4d78e6790ed5a28ad0204963f4b5}{
+\index{jfs\_\-dir\_\-query.h@{jfs\_\-dir\_\-query.h}!JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H@{JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H}}
+\index{JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H@{JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H}!jfs_dir_query.h@{jfs\_\-dir\_\-query.h}}
+\subsubsection[{JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H}]{\setlength{\rightskip}{0pt plus 5cm}\#define JONIFS\_\-JFS\_\-DIR\_\-QUERY\_\-H}}
+\label{jfs__dir__query_8h_ae13e4d78e6790ed5a28ad0204963f4b5}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__dir__query_8h_abb5830bd56c2f8aa49c6e2e2c6364280}{
+\index{jfs\_\-dir\_\-query.h@{jfs\_\-dir\_\-query.h}!jfs\_\-dir\_\-query\_\-builder@{jfs\_\-dir\_\-query\_\-builder}}
+\index{jfs\_\-dir\_\-query\_\-builder@{jfs\_\-dir\_\-query\_\-builder}!jfs_dir_query.h@{jfs\_\-dir\_\-query.h}}
+\subsubsection[{jfs\_\-dir\_\-query\_\-builder}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dir\_\-query\_\-builder (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ realpath, }
+\item[{int $\ast$}]{ is\_\-folders, }
+\item[{char $\ast$$\ast$}]{ query}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dir__query_8h_abb5830bd56c2f8aa49c6e2e2c6364280}
+Builds the dynamic folder query from metadata. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinfs directory path. \item[{\em realpath}]The real file system directory path. \item[{\em is\_\-folders}]Return value that specifies whether or not the query results should be folders. \item[{\em query}]The returned SQL query. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *copy_path;
+  char *dir_is_folders;
+  char *dir_key_pairs;
+  char *path_items;
+  char *dir_query;
+
+  size_t path_len;
+
+  int items;
+  int rc;
+  
+  dir_query = NULL;
+  dir_is_folders = NULL;
+  dir_key_pairs = NULL;
+  path_items = NULL;
+
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_KEY_PAIRS, &dir_key_pairs);
+  if(rc) {
+    return rc;
+  }
+  
+  printf("---key_pairs, path:%s, realpath:%s\n", path, realpath);
+
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_IS_FOLDER, &dir_is_folders);
+  if(rc) {
+    rc = 0;
+    *is_folders = 0;
+  }
+  else {
+    if(strcmp(dir_is_folders, JFS_DIR_XATTR_TRUE) == 0) {
+      *is_folders = 1;
+    }
+    else {
+      *is_folders = 0;
+    }
+  }
+
+  printf("---jfs_dir_is_folder\n");
+
+  if(dir_is_folders) {
+    free(dir_is_folders);
+  }
+
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_PATH_ITEMS, &path_items);
+  if(rc) {
+    rc = 0;
+    items = 0;
+  }
+  else {
+    items = atoi(path_items);
+  }
+
+  printf("---jfs_dir_path_items\n");
+
+  if(path_items) {
+    free(path_items);
+  }
+
+  //copy the path so we can modify it
+  path_len = strlen(path) + 1;
+  copy_path = malloc(sizeof(*copy_path) * path_len);
+  if(!copy_path) {
+    free(dir_key_pairs);
+
+    return -ENOMEM;
+  }
+  strncpy(copy_path, path, path_len);
+
+  rc = jfs_dir_create_query(items, *is_folders, copy_path, dir_key_pairs, &dir_qu
+      ery);
+  free(dir_key_pairs);
+  free(copy_path);
+
+  if(rc) {
+    if(dir_query) {
+      free(dir_query);
+    }
+
+    return rc;
+  }
+  
+  *query = dir_query;
+
+  return 0;
+}
+\end{DoxyCode}
+
+

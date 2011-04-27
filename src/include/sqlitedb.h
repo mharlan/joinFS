@@ -1,3 +1,6 @@
+#ifndef JOINFS_JFS_SQLITEDB_H
+#define JOINFS_JFS_SQLITEDB_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -16,9 +19,6 @@
  * You should have received a copy of the GNU General Public License
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
-
-#ifndef JOINFS_JFS_SQLITEDB_H
-#define JOINFS_JFS_SQLITEDB_H
 
 #include "jfs_list.h"
 #include "jfs_db_ops.h"
@@ -40,10 +40,10 @@
 #define JFS_QUERY_MAX     1000000  /* SQLITE_SQL_MAX_LENGTH */
 #define JFS_SQL_RC_SCALE  100
 
-/*
+/*!
  * Structure for thread pool database operations.
  *
- * Errors are stored in size.
+ * Errors are stored in rc.
  */
 struct jfs_db_op {
   sqlite3         *db;
@@ -64,59 +64,83 @@ struct jfs_db_op {
   size_t           buffer_size;
 };
 
-/*
+/*!
  * Initialize the SQL database.
  */
 void jfs_init_db(void);
 
-/*
+/*!
  * Creates a database operation.
+ * \param op The returned database operation.
+ * \param jfs_op The type of database operation.
+ * \param format The query format string.
+ * \param ... The format variables.
+ * \return Error code or 0.
  */
 int jfs_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, const char *format, ...);
 
 
-/*
+/*!
  * Create a database op with pre-created query.
+ * \param op The returned database operation.
+ * \param jfs_op The type of database operation.
+ * \param query The query to be performed.
+ * \return Error code or 0.
  */
 int jfs_do_db_op_create(struct jfs_db_op **op, enum jfs_db_ops jfs_op, char *query);
 
-/*
+/*!
  * Create a multi-write transaction operation.
+ * \param op The returned database operation.
+ * \param jfs_op The type of database operation.
+ * \param num_queries The number of queries.
+ * \param ... The format queries.
+ * \return Error code or 0.
  */
 int jfs_db_op_create_multi_op(struct jfs_db_op **op, int num_queries,...);
 
-/*
+/*!
  * Create a db query using a format string.
+ * \param query The returned query.
+ * \param format The query format string.
+ * \param ... The format variables.
+ * \return Error code or 0.
  */
 int jfs_db_op_create_query(char **query, const char *format, ...);
 
-/*
+/*!
  * Destroy a database operation.
+ * \param db_op The database operation.
  */
 void jfs_db_op_destroy(struct jfs_db_op *db_op);
 
-/*
+/*!
  * Performs a database operation that blocks while waiting
  * for the query result.
- *
- * Returns the size of the result or an error code if the
- * query failed.
+ * \param db_op The database operation.
+ * \return Error code or 0.
  */
 int jfs_db_op_wait(struct jfs_db_op *db_op);
 
-/*
- * Create a jfsdb handle. The handle can not
+/*!
+ * Create a database connection handle. The handle can not
  * be shared accross threads.
+ * \param db The new database handle.
+ * \param sqlite_attr Sqlite attributes.
+ * \return Error code or 0.
  */
 int jfs_open_db(sqlite3 **db, int sqlite_attr);
 
-/*
- * Close a jfsdb connection.
+/*!
+ * Close a database connection.
+ * \param db The new database handle.
  */
 void jfs_close_db(sqlite3 *db);
 
-/*
+/*!
  * Performs a query using the jfs_db_op struct.
+ * \param db_op The database operation.
+ * \result Error code or 0.
  */
 int jfs_query(struct jfs_db_op *db_op);
 

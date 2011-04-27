@@ -1,3 +1,6 @@
+#ifndef JOINFS_JOINFS_H
+#define JOINFS_JOINFS_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -17,15 +20,15 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_JOINFS_H
-#define JOINFS_JOINFS_H
-
 #include "sqlitedb.h"
 #include "thr_pool.h"
 
 #include <stdio.h>
 #include <limits.h>
 
+/*!
+ * The joinFS superblock.
+ */
 struct jfs_context {
   FILE *logfile;
 
@@ -43,19 +46,23 @@ struct jfs_context {
 
 extern struct jfs_context joinfs_context;
 
-/*
+/*!
  * Queue a database read operation.
  *
  * The caller should call jfs_db_op_wait to wait
  * for the queued result to finish.
+ * \param db_op The database operation.
+ * \return Error code or 0.
  */
 int jfs_read_pool_queue(struct jfs_db_op *db_op);
 
-/*
+/*!
  * Queue a database write operation.
  *
  * The caller should call jfs_db_op_wait to wait
  * for the queued result to finish.
+ * \param db_op The database operation.
+ * \return Error code or 0.
  */
 int jfs_write_pool_queue(struct jfs_db_op *db_op);
 

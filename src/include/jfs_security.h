@@ -1,3 +1,6 @@
+#ifndef JOINFS_JFS_SECURITY_H
+#define JOINFS_JFS_SECURITY_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -17,15 +20,31 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_JFS_SECURITY_H
-#define JOINFS_JFS_SECURITY_H
-
 #include <sys/types.h>
 
+/*!
+ * The file system chmod function.
+ * \param path The system path.
+ * \param mode The file mode.
+ * \return Error code or 0.
+ */
 int jfs_security_chmod(const char *path, mode_t mode);
 
+/*!
+ * The file system chown function.
+ * \param path The system path.
+ * \param uid The user id.
+ * \param gid The group id.
+ * \return Error code or 0.
+ */
 int jfs_security_chown(const char *path, uid_t uid, gid_t gid);
 
+/*!
+ * The file system access function.
+ * \param path The system path.
+ * \param mask The access mask.
+ * \return Error code or 0.
+ */
 int jfs_security_access(const char *path, int mask);
 
 #endif

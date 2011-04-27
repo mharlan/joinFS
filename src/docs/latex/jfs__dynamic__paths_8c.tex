@@ -1,0 +1,734 @@
+\hypertarget{jfs__dynamic__paths_8c}{
+\section{jfs\_\-dynamic\_\-paths.c File Reference}
+\label{jfs__dynamic__paths_8c}\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}}
+}
+{\ttfamily \#include \char`\"{}jfs\_\-util.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-dynamic\_\-paths.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-datapath\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sglib.h\char`\"{}}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__filelist}{jfs\_\-filelist}
+\item 
+struct \hyperlink{structjfs__dirlist}{jfs\_\-dirlist}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__dynamic__paths_8c_a2171bb1bc1445c56ebff4449bbf34ab5}{JFS\_\-FILELIST\_\-T\_\-CMP}(e1, e2)~(!(e1-\/$>$name \&\& e2-\/$>$name \&\& !strcmp(e1-\/$>$name, e2-\/$>$name)))
+\item 
+\#define \hyperlink{jfs__dynamic__paths_8c_ae8d8fa63567380f2f9ba5345d34ef222}{JFS\_\-DIRLIST\_\-T\_\-CMP}(e1, e2)~(!(e1-\/$>$name \&\& e2-\/$>$name \&\& !strcmp(e1-\/$>$name, e2-\/$>$name)))
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \hyperlink{structjfs__filelist}{jfs\_\-filelist} \hyperlink{jfs__dynamic__paths_8c_ad663a5ea77fa46599fb16bffe736f8a1}{jfs\_\-filelist\_\-t}
+\item 
+typedef struct \hyperlink{structjfs__dirlist}{jfs\_\-dirlist} \hyperlink{jfs__dynamic__paths_8c_ab967b1138c14799a603792dbe9e8e223}{jfs\_\-dirlist\_\-t}
+\item 
+typedef struct jfs\_\-dentry \hyperlink{jfs__dynamic__paths_8c_ac6d1aee027fafdacbcff3ac7ada8bcd8}{jfs\_\-dentry\_\-t}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a00f11b4fff57ebcf7dc7d3326e17f14c}{jfs\_\-dynamic\_\-path\_\-init} (void)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_afa0348e41951ec7da7c029bd26ae6df7}{jfs\_\-dynamic\_\-path\_\-resolution} (const char $\ast$path, char $\ast$$\ast$resolved\_\-path, int $\ast$jfs\_\-id)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_ae3e1f6da304009554473b241536626ef}{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file} (const char $\ast$path, const char $\ast$datapath, int jfs\_\-id)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a251f11217697cdd546700dc4301343e1}{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder} (const char $\ast$path, const char $\ast$datapath)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a3600bbb8951386f46cb836085043b640}{jfs\_\-dynamic\_\-hierarchy\_\-rename} (const char $\ast$path, const char $\ast$filename)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a9bb514b6d2fcd89540971234d0684eda}{jfs\_\-dynamic\_\-hierarchy\_\-destroy} (void)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a300f1d19711e8c9b6047dd1c21654b23}{jfs\_\-dynamic\_\-hierarchy\_\-unlink} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a6d5a41117bd20f8344166b83c002cc5f}{jfs\_\-dynamic\_\-hierarchy\_\-rmdir} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__dynamic__paths_8c_a0916b78dbdf96b4e9308bd4b3d93b70f}{jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder} (const char $\ast$path)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__dynamic__paths_8c_ae8d8fa63567380f2f9ba5345d34ef222}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!JFS\_\-DIRLIST\_\-T\_\-CMP@{JFS\_\-DIRLIST\_\-T\_\-CMP}}
+\index{JFS\_\-DIRLIST\_\-T\_\-CMP@{JFS\_\-DIRLIST\_\-T\_\-CMP}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{JFS\_\-DIRLIST\_\-T\_\-CMP}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-DIRLIST\_\-T\_\-CMP(
+\begin{DoxyParamCaption}
+\item[{}]{e1, }
+\item[{}]{e2}
+\end{DoxyParamCaption}
+)~(!(e1-\/$>$name \&\& e2-\/$>$name \&\& !strcmp(e1-\/$>$name, e2-\/$>$name)))}}
+\label{jfs__dynamic__paths_8c_ae8d8fa63567380f2f9ba5345d34ef222}
+\hypertarget{jfs__dynamic__paths_8c_a2171bb1bc1445c56ebff4449bbf34ab5}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!JFS\_\-FILELIST\_\-T\_\-CMP@{JFS\_\-FILELIST\_\-T\_\-CMP}}
+\index{JFS\_\-FILELIST\_\-T\_\-CMP@{JFS\_\-FILELIST\_\-T\_\-CMP}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{JFS\_\-FILELIST\_\-T\_\-CMP}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-FILELIST\_\-T\_\-CMP(
+\begin{DoxyParamCaption}
+\item[{}]{e1, }
+\item[{}]{e2}
+\end{DoxyParamCaption}
+)~(!(e1-\/$>$name \&\& e2-\/$>$name \&\& !strcmp(e1-\/$>$name, e2-\/$>$name)))}}
+\label{jfs__dynamic__paths_8c_a2171bb1bc1445c56ebff4449bbf34ab5}
+
+
+\subsection{Typedef Documentation}
+\hypertarget{jfs__dynamic__paths_8c_ac6d1aee027fafdacbcff3ac7ada8bcd8}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dentry\_\-t@{jfs\_\-dentry\_\-t}}
+\index{jfs\_\-dentry\_\-t@{jfs\_\-dentry\_\-t}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dentry\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct jfs\_\-dentry {\bf jfs\_\-dentry\_\-t}}}
+\label{jfs__dynamic__paths_8c_ac6d1aee027fafdacbcff3ac7ada8bcd8}
+\hypertarget{jfs__dynamic__paths_8c_ab967b1138c14799a603792dbe9e8e223}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dirlist\_\-t@{jfs\_\-dirlist\_\-t}}
+\index{jfs\_\-dirlist\_\-t@{jfs\_\-dirlist\_\-t}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dirlist\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf jfs\_\-dirlist} {\bf jfs\_\-dirlist\_\-t}}}
+\label{jfs__dynamic__paths_8c_ab967b1138c14799a603792dbe9e8e223}
+\hypertarget{jfs__dynamic__paths_8c_ad663a5ea77fa46599fb16bffe736f8a1}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-filelist\_\-t@{jfs\_\-filelist\_\-t}}
+\index{jfs\_\-filelist\_\-t@{jfs\_\-filelist\_\-t}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-filelist\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf jfs\_\-filelist} {\bf jfs\_\-filelist\_\-t}}}
+\label{jfs__dynamic__paths_8c_ad663a5ea77fa46599fb16bffe736f8a1}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__dynamic__paths_8c_ae3e1f6da304009554473b241536626ef}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file@{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file@{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-add\_\-file (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ datapath, }
+\item[{int}]{ jfs\_\-id}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_ae3e1f6da304009554473b241536626ef}
+Add a dynamic file to the dynamic path hierarchy. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinfs path. \item[{\em resolved\_\-path}]The real file system path. \item[{\em jfs\_\-id}]The joinFS ID for the file system item. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_filelist_t *file;
+
+  jfs_dirlist_t *current_dir;
+  jfs_dirlist_t *result_dir;
+  jfs_dirlist_t *check_dir;
+
+  size_t copy_path_len;
+  size_t token_len;
+
+  char *copy_path;
+  char *last_token;
+  char *token;
+
+  int rc;
+
+  if(strlen(path) < 2 || path[0] != '/') {
+    return -ENOENT;
+  }
+
+  copy_path_len = strlen(path) + 1;
+  copy_path = malloc(sizeof(*copy_path) * copy_path_len);
+  if(!copy_path) {
+    return -ENOMEM;
+  }
+  strncpy(copy_path, path, copy_path_len);
+
+  last_token = strrchr(copy_path, '/') + 1;
+  token = strtok(&copy_path[1], "/");
+  current_dir = &jfs_root;
+
+  pthread_rwlock_wrlock(&path_lock);
+  while(token != NULL) {
+    token_len = strlen(token) + 1;
+
+    //resolve the path and add the file
+    if(token == last_token) {
+      file = malloc(sizeof(*file));
+      if(!file) {
+        pthread_rwlock_unlock(&path_lock);
+        free(copy_path);
+
+        return -ENOMEM;
+      }
+
+      file->name = malloc(sizeof(*file->name) * token_len);
+      if(!file->name) {
+        pthread_rwlock_unlock(&path_lock);
+        free(copy_path);
+        free(file);
+
+        return -ENOMEM;
+      }
+      strncpy(file->name, token, token_len);
+      file->name[token_len - 1] = '\0';
+
+      file->jfs_id = jfs_id;
+      file->next = NULL;
+      
+      sglib_jfs_filelist_t_add(&current_dir->files, file);
+      pthread_rwlock_unlock(&path_lock);
+      free(copy_path);
+      
+      return jfs_datapath_cache_add(jfs_id, datapath);
+    }
+    //find the directory the file is in
+    else {
+      check_dir = malloc(sizeof(*check_dir));
+      if(!check_dir) {
+        pthread_rwlock_unlock(&path_lock);
+        free(copy_path);
+        
+        return -ENOMEM;
+      }
+      
+      check_dir->name = malloc(sizeof(*check_dir->name) * token_len);
+      if(!check_dir->name) {
+        pthread_rwlock_unlock(&path_lock);
+        free(check_dir);
+        free(copy_path);
+        
+        return -ENOMEM;
+      }
+      strncpy(check_dir->name, token, token_len);
+      check_dir->name[token_len - 1] = '\0';
+      
+      check_dir->datapath = NULL;
+      check_dir->files = NULL;
+      check_dir->folders = NULL;
+      check_dir->next = NULL;
+      
+      rc = sglib_jfs_dirlist_t_add_if_not_member(&current_dir->folders, check_dir
+      , &result_dir);
+      if(rc) { //item was inserted
+        current_dir = check_dir;
+      }
+      else { //was already in the list
+        current_dir = result_dir;
+
+        free(check_dir->name);
+        free(check_dir);
+      }
+    }
+
+    token = strtok(NULL, "/");
+  }
+  pthread_rwlock_unlock(&path_lock);
+  free(copy_path);
+  
+  return -ENOENT;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a251f11217697cdd546700dc4301343e1}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder@{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder@{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-add\_\-folder (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ datapath}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a251f11217697cdd546700dc4301343e1}
+Add a dynamic folder to the dynamic path hierarchy. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinfs path. \item[{\em resolved\_\-path}]The real file system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_dirlist_t *check_dir;
+  jfs_dirlist_t *current_dir;
+  jfs_dirlist_t *result_dir;
+
+  size_t datapath_len;
+  size_t copy_path_len;
+  size_t token_len;
+
+  char *token;
+  char *last_token;
+  char *copy_path;
+  char *d_path;
+
+  int rc;
+
+  if(strlen(path) < 2 || path[0] != '/') {
+    return -ENOENT;
+  }
+
+  copy_path_len = strlen(path) + 1;
+  copy_path = malloc(sizeof(*copy_path) * copy_path_len);
+  if(!copy_path) {
+    return -ENOMEM;
+  }
+  strncpy(copy_path, path, copy_path_len);
+  
+  last_token = strrchr(copy_path, '/') + 1;
+  token = strtok(&copy_path[1], "/");
+  current_dir = &jfs_root;
+  
+  pthread_rwlock_wrlock(&path_lock);
+  while(token != NULL) {
+    token_len = strlen(token) + 1;
+
+    check_dir = malloc(sizeof(*check_dir));
+    if(!check_dir) {
+      pthread_rwlock_unlock(&path_lock);
+      free(copy_path);
+      
+      return -ENOMEM;
+    }
+
+    check_dir->name = malloc(sizeof(*check_dir->name) * token_len);
+    if(!check_dir->name) {
+      pthread_rwlock_unlock(&path_lock);
+      free(copy_path);
+      free(check_dir);
+
+      return -ENOMEM;
+    }
+    strncpy(check_dir->name, token, token_len);
+    check_dir->name[token_len - 1] = '\0';
+
+    check_dir->datapath = NULL;
+    check_dir->files = NULL;
+    check_dir->folders = NULL;
+    check_dir->next = NULL;
+
+    if(token == last_token) {
+      datapath_len = strlen(datapath) + 1;
+      d_path = malloc(sizeof(*d_path) * datapath_len);
+      if(!d_path) {
+        pthread_rwlock_unlock(&path_lock);
+        free(copy_path);
+        free(check_dir);
+        
+        return -ENOMEM;
+      }
+      strncpy(d_path, datapath, datapath_len);
+
+      check_dir->datapath = d_path;
+      sglib_jfs_dirlist_t_add(&current_dir->folders, check_dir);
+      pthread_rwlock_unlock(&path_lock);
+      free(copy_path);
+
+      return 0;
+    }
+    else {
+      rc = sglib_jfs_dirlist_t_add_if_not_member(&current_dir->folders, check_dir
+      , &result_dir);
+
+      if(rc) { //item was inserted
+        current_dir = check_dir;
+      }
+      else { //was already in the list
+        current_dir = result_dir;
+
+        free(check_dir->name);
+        free(check_dir);
+      }
+    }
+
+    token = strtok(NULL, "/");
+  }
+  pthread_rwlock_unlock(&path_lock);
+  free(copy_path);
+  
+  return -ENOENT;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a9bb514b6d2fcd89540971234d0684eda}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-destroy@{jfs\_\-dynamic\_\-hierarchy\_\-destroy}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-destroy@{jfs\_\-dynamic\_\-hierarchy\_\-destroy}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-destroy (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a9bb514b6d2fcd89540971234d0684eda}
+Destroy the entire dynamic hierarchy. \begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  pthread_rwlock_wrlock(&path_lock);
+  jfs_dynamic_hierarchy_folder_cleanup(&jfs_root);
+  pthread_rwlock_unlock(&path_lock);
+  pthread_rwlock_destroy(&path_lock);
+
+  free(jfs_root.name);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a0916b78dbdf96b4e9308bd4b3d93b70f}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder@{jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder@{jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-invalidate\_\-folder (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a0916b78dbdf96b4e9308bd4b3d93b70f}
+Delete the contents of the folder from the hierarchy.
+
+The folder itself remains. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinFS path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_dirlist_t  *root;
+
+  int rc;
+  
+  root = NULL;
+  pthread_rwlock_wrlock(&path_lock);
+  rc = jfs_dynamic_hierarchy_get_node(path, NULL, &root, 0, 0);
+  
+  if(rc == -ENOENT) {
+    pthread_rwlock_unlock(&path_lock);
+    
+    return 0;
+  }
+  else if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+
+    return rc;
+  }
+
+  jfs_dynamic_hierarchy_folder_cleanup(root);
+  pthread_rwlock_unlock(&path_lock);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a3600bbb8951386f46cb836085043b640}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-rename@{jfs\_\-dynamic\_\-hierarchy\_\-rename}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-rename@{jfs\_\-dynamic\_\-hierarchy\_\-rename}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-rename}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-rename (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ filename}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a3600bbb8951386f46cb836085043b640}
+Rename the file or folder at path to filename. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The current joinFS path. \item[{\em filename}]The new filename. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_filelist_t *file;
+  jfs_dirlist_t  *dir;
+
+  char *new_filename;
+
+  size_t filename_len;
+
+  int rc;
+
+  dir = NULL;
+  file = NULL;
+  pthread_rwlock_wrlock(&path_lock);
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, 0, 0);
+  
+  if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+    
+    return rc;
+  }
+
+  filename_len = strlen(filename) + 1;
+  new_filename = malloc(sizeof(*new_filename) * filename_len);
+  if(!new_filename) {
+    pthread_rwlock_unlock(&path_lock);
+
+    return -ENOMEM;
+  }
+  strncpy(new_filename, filename, filename_len);
+
+  if(file) {
+    free(file->name);
+    file->name = new_filename;
+  }
+  else {
+    free(dir->name);
+    dir->name = new_filename;
+  }
+  pthread_rwlock_unlock(&path_lock);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a6d5a41117bd20f8344166b83c002cc5f}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-rmdir@{jfs\_\-dynamic\_\-hierarchy\_\-rmdir}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-rmdir@{jfs\_\-dynamic\_\-hierarchy\_\-rmdir}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-rmdir}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-rmdir (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a6d5a41117bd20f8344166b83c002cc5f}
+Removes a directory from the dynamic hierachy.
+
+Use jfs\_\-hierarchy\_\-invalidate\_\-folder to recursively delete the contents of a folder. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinFS path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_dirlist_t *dir;
+  
+  int not_empty;
+  int rc;
+
+  dir = NULL;
+
+  pthread_rwlock_wrlock(&path_lock);
+  rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, 0, 0);
+  
+  if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+
+    return rc;
+  }
+
+  not_empty = 0;
+  if(dir->folders) {
+    not_empty += sglib_jfs_dirlist_t_len(dir->folders);
+    if(not_empty) {
+      pthread_rwlock_unlock(&path_lock);
+
+      return -ENOTEMPTY;
+    }
+  }
+
+  if(dir->files) {
+    not_empty += sglib_jfs_filelist_t_len(dir->files);
+    if(not_empty) {
+      pthread_rwlock_unlock(&path_lock);
+
+      return -ENOTEMPTY;
+    }
+  }
+  
+  rc = jfs_dynamic_hierarchy_get_node(path, NULL, &dir, 1, 0);
+  pthread_rwlock_unlock(&path_lock);
+  
+  if(rc) {
+    return rc;
+  }
+  
+  free(dir->datapath);
+  free(dir->name);
+  free(dir);
+  
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a300f1d19711e8c9b6047dd1c21654b23}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-hierarchy\_\-unlink@{jfs\_\-dynamic\_\-hierarchy\_\-unlink}}
+\index{jfs\_\-dynamic\_\-hierarchy\_\-unlink@{jfs\_\-dynamic\_\-hierarchy\_\-unlink}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-hierarchy\_\-unlink}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-hierarchy\_\-unlink (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a300f1d19711e8c9b6047dd1c21654b23}
+Removes a file from the dynamic hierarchy. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinFS path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_filelist_t *file;
+
+  int rc;
+
+  file = NULL;
+  
+  pthread_rwlock_wrlock(&path_lock);
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, NULL, 0, 1);
+  pthread_rwlock_unlock(&path_lock);
+  
+  if(rc) { 
+    return rc;
+  }
+
+  jfs_datapath_cache_remove(file->jfs_id);
+
+  free(file->name);
+  free(file);
+
+  return rc;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_a00f11b4fff57ebcf7dc7d3326e17f14c}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-path\_\-init@{jfs\_\-dynamic\_\-path\_\-init}}
+\index{jfs\_\-dynamic\_\-path\_\-init@{jfs\_\-dynamic\_\-path\_\-init}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-path\_\-init}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-path\_\-init (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_a00f11b4fff57ebcf7dc7d3326e17f14c}
+Initialize the dynamic path hierarchy. \begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_root.name = malloc(sizeof(*jfs_root.name) * (strlen("jfs_root") + 1));
+  strncpy(jfs_root.name, "jfs_root", strlen("jfs_root") + 1);
+  
+  jfs_root.files = NULL;
+  jfs_root.folders = NULL;
+  jfs_root.next = NULL;
+  jfs_root.datapath = NULL;
+
+  pthread_rwlock_init(&path_lock, NULL);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dynamic__paths_8c_afa0348e41951ec7da7c029bd26ae6df7}{
+\index{jfs\_\-dynamic\_\-paths.c@{jfs\_\-dynamic\_\-paths.c}!jfs\_\-dynamic\_\-path\_\-resolution@{jfs\_\-dynamic\_\-path\_\-resolution}}
+\index{jfs\_\-dynamic\_\-path\_\-resolution@{jfs\_\-dynamic\_\-path\_\-resolution}!jfs_dynamic_paths.c@{jfs\_\-dynamic\_\-paths.c}}
+\subsubsection[{jfs\_\-dynamic\_\-path\_\-resolution}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dynamic\_\-path\_\-resolution (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$$\ast$}]{ resolved\_\-path, }
+\item[{int $\ast$}]{ jfs\_\-id}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dynamic__paths_8c_afa0348e41951ec7da7c029bd26ae6df7}
+Resolves a dynamic path into a datapath. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinfs path. \item[{\em resolved\_\-path}]Returns the real file system path. \item[{\em jfs\_\-id}]Returns the joinFS ID for the file system item. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_dirlist_t *dir;
+  jfs_filelist_t *file;
+
+  char *datapath;
+
+  size_t datapath_len;
+
+  int rc;
+
+  dir = NULL;
+  file = NULL;
+  pthread_rwlock_rdlock(&path_lock);
+  rc = jfs_dynamic_hierarchy_get_node(path, &file, &dir, 0, 0);
+
+  if(rc) {
+    pthread_rwlock_unlock(&path_lock);
+    return rc;
+  }
+
+  if(file) {
+    *jfs_id = file->jfs_id;
+    pthread_rwlock_unlock(&path_lock);
+
+    rc = jfs_datapath_cache_get_datapath(*jfs_id, resolved_path);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
+    *jfs_id = 0;
+
+    if(dir->datapath == NULL) {
+      pthread_rwlock_unlock(&path_lock);
+
+      datapath_len = strlen(path) + 1;
+      datapath = malloc(sizeof(*datapath) * datapath_len);
+      if(!datapath) {
+        return -ENOMEM;
+      }
+      strncpy(datapath, path, datapath_len);
+    }
+    else {
+      datapath_len = strlen(dir->datapath) + 1;
+      datapath = malloc(sizeof(*datapath) * datapath_len);
+      if(!datapath) {
+        pthread_rwlock_unlock(&path_lock);
+        
+        return -ENOMEM;
+      }
+      strncpy(datapath, dir->datapath, datapath_len);
+      pthread_rwlock_unlock(&path_lock);
+    }
+    
+    *resolved_path = datapath;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+

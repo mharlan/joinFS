@@ -1,3 +1,6 @@
+#ifndef JOINFS_JFS_DB_OPS_H
+#define JOINFS_JFS_DB_OPS_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -16,10 +19,8 @@
  * You should have received a copy of the GNU General Public License
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
-#ifndef JOINFS_JFS_DB_OPS_H
-#define JOINFS_JFS_DB_OPS_H
 
-/*
+/*!
  * Enumerator used to determine what kind
  * of database operation is being executed.
  */

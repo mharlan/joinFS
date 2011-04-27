@@ -1,0 +1,85 @@
+\hypertarget{structjfs__context}{
+\section{jfs\_\-context Struct Reference}
+\label{structjfs__context}\index{jfs\_\-context@{jfs\_\-context}}
+}
+
+
+{\ttfamily \#include $<$joinfs.h$>$}
+
+\subsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+FILE $\ast$ \hyperlink{structjfs__context_a56a037d2db7ac28aef025ac0a24a210e}{logfile}
+\item 
+char $\ast$ \hyperlink{structjfs__context_a67f036982dd208c903bb0ef7e2d18894}{querypath}
+\item 
+char $\ast$ \hyperlink{structjfs__context_adcf87cdd6e1b9172e8379742c858e583}{mountpath}
+\item 
+char $\ast$ \hyperlink{structjfs__context_aec391a1656ed91a493333bb0a06bb788}{logpath}
+\item 
+char $\ast$ \hyperlink{structjfs__context_a8f4217519412c4a747d62dd4180dc4a6}{dbpath}
+\item 
+int \hyperlink{structjfs__context_a2e1a836c640ab2e62aad24469acbf599}{querypath\_\-len}
+\item 
+int \hyperlink{structjfs__context_a4f819b63c7abd6d48eaa8aee3963b741}{mountpath\_\-len}
+\item 
+\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$ \hyperlink{structjfs__context_a407aea616bfd6fae32ef4e4a8adffa7a}{read\_\-pool}
+\item 
+\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$ \hyperlink{structjfs__context_af6a489c5b07ac7edac9e7c9c8394bfe1}{write\_\-pool}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The joinFS superblock. 
+
+\subsection{Field Documentation}
+\hypertarget{structjfs__context_a8f4217519412c4a747d62dd4180dc4a6}{
+\index{jfs\_\-context@{jfs\_\-context}!dbpath@{dbpath}}
+\index{dbpath@{dbpath}!jfs_context@{jfs\_\-context}}
+\subsubsection[{dbpath}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf jfs\_\-context::dbpath}}}
+\label{structjfs__context_a8f4217519412c4a747d62dd4180dc4a6}
+\hypertarget{structjfs__context_a56a037d2db7ac28aef025ac0a24a210e}{
+\index{jfs\_\-context@{jfs\_\-context}!logfile@{logfile}}
+\index{logfile@{logfile}!jfs_context@{jfs\_\-context}}
+\subsubsection[{logfile}]{\setlength{\rightskip}{0pt plus 5cm}FILE$\ast$ {\bf jfs\_\-context::logfile}}}
+\label{structjfs__context_a56a037d2db7ac28aef025ac0a24a210e}
+\hypertarget{structjfs__context_aec391a1656ed91a493333bb0a06bb788}{
+\index{jfs\_\-context@{jfs\_\-context}!logpath@{logpath}}
+\index{logpath@{logpath}!jfs_context@{jfs\_\-context}}
+\subsubsection[{logpath}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf jfs\_\-context::logpath}}}
+\label{structjfs__context_aec391a1656ed91a493333bb0a06bb788}
+\hypertarget{structjfs__context_adcf87cdd6e1b9172e8379742c858e583}{
+\index{jfs\_\-context@{jfs\_\-context}!mountpath@{mountpath}}
+\index{mountpath@{mountpath}!jfs_context@{jfs\_\-context}}
+\subsubsection[{mountpath}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf jfs\_\-context::mountpath}}}
+\label{structjfs__context_adcf87cdd6e1b9172e8379742c858e583}
+\hypertarget{structjfs__context_a4f819b63c7abd6d48eaa8aee3963b741}{
+\index{jfs\_\-context@{jfs\_\-context}!mountpath\_\-len@{mountpath\_\-len}}
+\index{mountpath\_\-len@{mountpath\_\-len}!jfs_context@{jfs\_\-context}}
+\subsubsection[{mountpath\_\-len}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf jfs\_\-context::mountpath\_\-len}}}
+\label{structjfs__context_a4f819b63c7abd6d48eaa8aee3963b741}
+\hypertarget{structjfs__context_a67f036982dd208c903bb0ef7e2d18894}{
+\index{jfs\_\-context@{jfs\_\-context}!querypath@{querypath}}
+\index{querypath@{querypath}!jfs_context@{jfs\_\-context}}
+\subsubsection[{querypath}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf jfs\_\-context::querypath}}}
+\label{structjfs__context_a67f036982dd208c903bb0ef7e2d18894}
+\hypertarget{structjfs__context_a2e1a836c640ab2e62aad24469acbf599}{
+\index{jfs\_\-context@{jfs\_\-context}!querypath\_\-len@{querypath\_\-len}}
+\index{querypath\_\-len@{querypath\_\-len}!jfs_context@{jfs\_\-context}}
+\subsubsection[{querypath\_\-len}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf jfs\_\-context::querypath\_\-len}}}
+\label{structjfs__context_a2e1a836c640ab2e62aad24469acbf599}
+\hypertarget{structjfs__context_a407aea616bfd6fae32ef4e4a8adffa7a}{
+\index{jfs\_\-context@{jfs\_\-context}!read\_\-pool@{read\_\-pool}}
+\index{read\_\-pool@{read\_\-pool}!jfs_context@{jfs\_\-context}}
+\subsubsection[{read\_\-pool}]{\setlength{\rightskip}{0pt plus 5cm}{\bf thr\_\-pool\_\-t}$\ast$ {\bf jfs\_\-context::read\_\-pool}}}
+\label{structjfs__context_a407aea616bfd6fae32ef4e4a8adffa7a}
+\hypertarget{structjfs__context_af6a489c5b07ac7edac9e7c9c8394bfe1}{
+\index{jfs\_\-context@{jfs\_\-context}!write\_\-pool@{write\_\-pool}}
+\index{write\_\-pool@{write\_\-pool}!jfs_context@{jfs\_\-context}}
+\subsubsection[{write\_\-pool}]{\setlength{\rightskip}{0pt plus 5cm}{\bf thr\_\-pool\_\-t}$\ast$ {\bf jfs\_\-context::write\_\-pool}}}
+\label{structjfs__context_af6a489c5b07ac7edac9e7c9c8394bfe1}
+
+
+The documentation for this struct was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+include/\hyperlink{joinfs_8h}{joinfs.h}\end{DoxyCompactItemize}

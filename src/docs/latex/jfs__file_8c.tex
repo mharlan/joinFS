@@ -1,0 +1,805 @@
+\hypertarget{jfs__file_8c}{
+\section{jfs\_\-file.c File Reference}
+\label{jfs__file_8c}\index{jfs\_\-file.c@{jfs\_\-file.c}}
+}
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-file.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-util.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-dynamic\_\-paths.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-datapath\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}joinfs.h\char`\"{}}\par
+{\ttfamily \#include $<$fuse.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$unistd.h$>$}\par
+{\ttfamily \#include $<$sys/time.h$>$}\par
+{\ttfamily \#include $<$sys/types.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__file_8c_a22c39ec090cd46d0a081ee76d01e17ec}{jfs\_\-file\_\-mknod} (const char $\ast$path, mode\_\-t mode, dev\_\-t rdev)
+\item 
+int \hyperlink{jfs__file_8c_a2888f1189e499ae4c735d426ce35c826}{jfs\_\-file\_\-db\_\-add} (int inode, const char $\ast$path, const char $\ast$filename)
+\item 
+int \hyperlink{jfs__file_8c_aa38a869eca26d04c5762bc8ce0eb13a3}{jfs\_\-file\_\-unlink} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__file_8c_ad87788c2d94b81a11f96eb332a5a157d}{jfs\_\-file\_\-rename} (const char $\ast$from, const char $\ast$to)
+\item 
+int \hyperlink{jfs__file_8c_a865300f46acfc1ab355ea35396ff136d}{jfs\_\-file\_\-truncate} (const char $\ast$path, off\_\-t size)
+\item 
+int \hyperlink{jfs__file_8c_adcde41a6e3be960e141130e34a309103}{jfs\_\-file\_\-open} (const char $\ast$path, int flags, mode\_\-t mode)
+\item 
+int \hyperlink{jfs__file_8c_ad4a736c2a8df6ce9e81c2f82cc1e147b}{jfs\_\-file\_\-getattr} (const char $\ast$path, struct stat $\ast$stbuf)
+\item 
+int \hyperlink{jfs__file_8c_ad9800655961849f19749e6c0e019686f}{jfs\_\-file\_\-utimes} (const char $\ast$path, const struct timeval tv\mbox{[}2\mbox{]})
+\item 
+int \hyperlink{jfs__file_8c_a95ed26382dc80810b248fd89ac217f91}{jfs\_\-file\_\-statfs} (const char $\ast$path, struct statvfs $\ast$stbuf)
+\item 
+int \hyperlink{jfs__file_8c_a1e0a9370659006ffb8b2c95a752f3f8e}{jfs\_\-file\_\-readlink} (const char $\ast$path, char $\ast$buf, size\_\-t size)
+\item 
+int \hyperlink{jfs__file_8c_a2d2b7122531c0b33fc5d2153cd4b5472}{jfs\_\-file\_\-symlink} (const char $\ast$from, const char $\ast$to)
+\item 
+int \hyperlink{jfs__file_8c_a6ed09d8f37f445773676562a3c233609}{jfs\_\-file\_\-link} (const char $\ast$from, const char $\ast$to)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__file_8c_a2888f1189e499ae4c735d426ce35c826}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-db\_\-add@{jfs\_\-file\_\-db\_\-add}}
+\index{jfs\_\-file\_\-db\_\-add@{jfs\_\-file\_\-db\_\-add}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-db\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-db\_\-add (
+\begin{DoxyParamCaption}
+\item[{int}]{ inode, }
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ filename}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a2888f1189e499ae4c735d426ce35c826}
+Add a file to the database. 
+\begin{DoxyParams}{Parameters}
+\item[{\em inode}]The file system inode number. \item[{\em path}]The system path. \item[{\em filename}]The filename. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+
+  int rc;
+
+  /* first add to the files table */
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "INSERT OR ROLLBACK INTO links VALUES(NULL, %d,\"%s\",\"%
+      s\");",
+                        inode, path, filename);
+  if(rc) {
+        return rc;
+  }
+  
+  jfs_write_pool_queue(db_op);
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+
+  if(rc) {
+        return rc;
+  }
+  
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_ad4a736c2a8df6ce9e81c2f82cc1e147b}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-getattr@{jfs\_\-file\_\-getattr}}
+\index{jfs\_\-file\_\-getattr@{jfs\_\-file\_\-getattr}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-getattr}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-getattr (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{struct stat $\ast$}]{ stbuf}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_ad4a736c2a8df6ce9e81c2f82cc1e147b}
+Get the system attributes for a file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em stbuf}]The attribute buffer. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+
+  int rc;
+  
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+  
+  rc = lstat(datapath, stbuf);
+  if(datapath) {
+    free(datapath);
+  }
+
+  if(rc) {
+        return -errno;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_a6ed09d8f37f445773676562a3c233609}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-link@{jfs\_\-file\_\-link}}
+\index{jfs\_\-file\_\-link@{jfs\_\-file\_\-link}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-link}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-link (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ from, }
+\item[{const char $\ast$}]{ to}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a6ed09d8f37f445773676562a3c233609}
+Creat a hardlink. 
+\begin{DoxyParams}{Parameters}
+\item[{\em from}]The source path. \item[{\em to}]The new location path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *realpath_to;
+  char *filename;
+
+  int inode;
+  int rc;
+
+  rc = jfs_util_resolve_new_path(to, &realpath_to);
+  if(rc) {
+    return rc;
+  }
+
+  rc = link(from, realpath_to);  
+  if(rc) { 
+    free(realpath_to);
+    
+    return -errno;
+  }
+  
+  filename = jfs_util_get_filename(realpath_to);
+  inode = jfs_util_get_inode(realpath_to);
+  if(inode < 0) {
+    free(realpath_to);
+    
+    return inode;
+  }
+
+  rc = jfs_file_db_add(inode, realpath_to, filename);
+  free(realpath_to);
+
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_a22c39ec090cd46d0a081ee76d01e17ec}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-mknod@{jfs\_\-file\_\-mknod}}
+\index{jfs\_\-file\_\-mknod@{jfs\_\-file\_\-mknod}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-mknod}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-mknod (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{mode\_\-t}]{ mode, }
+\item[{dev\_\-t}]{ rdev}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a22c39ec090cd46d0a081ee76d01e17ec}
+Create a joinFS file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinFS path. \item[{\em mode}]The file creation mode. \item[{\em rdev}]The file dev\_\-t. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *realpath;
+  
+  int rc;
+
+  if(jfs_util_is_path_dynamic(path)) {
+    rc = jfs_util_get_datapath(path, &realpath);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
+    rc = jfs_util_resolve_new_path(path, &realpath);
+    if(rc) {
+      return rc;
+    }
+  }
+  
+  if(S_ISREG(mode)) {
+        rc = jfs_file_do_open(realpath, O_CREAT | O_EXCL | O_WRONLY, mode);
+  } 
+  else if(S_ISFIFO(mode)) {
+    rc = mkfifo(realpath, mode);
+    if(rc) {
+      rc = -errno;
+    }
+  }
+  else {
+    rc = mknod(realpath, mode, rdev);
+    if(rc) {
+      rc = -errno;
+    }
+  }
+  free(realpath);
+  
+  return rc;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_adcde41a6e3be960e141130e34a309103}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-open@{jfs\_\-file\_\-open}}
+\index{jfs\_\-file\_\-open@{jfs\_\-file\_\-open}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-open}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-open (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{int}]{ flags, }
+\item[{mode\_\-t}]{ mode}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_adcde41a6e3be960e141130e34a309103}
+Open or create a joinFS file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file path. \item[{\em flags}]The open flags. \item[{\em mode}]The create mode if creating. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *realpath;
+  
+  int rc;
+
+  if(jfs_util_is_path_dynamic(path)) {
+    rc = jfs_util_get_datapath(path, &realpath);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
+    rc = jfs_util_resolve_new_path(path, &realpath);
+    if(rc) {
+      return rc;
+    }
+  }
+
+  rc = jfs_file_do_open(realpath, flags, mode);
+  free(realpath);
+
+  return rc;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_a1e0a9370659006ffb8b2c95a752f3f8e}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-readlink@{jfs\_\-file\_\-readlink}}
+\index{jfs\_\-file\_\-readlink@{jfs\_\-file\_\-readlink}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-readlink}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-readlink (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$}]{ buf, }
+\item[{size\_\-t}]{ size}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a1e0a9370659006ffb8b2c95a752f3f8e}
+Read the contents of a link. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em buf}]The result buffer. \item[{\em size}]The result buffer size. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  int rc;
+  
+  rc = readlink(path, buf, size - 1);
+  if(rc < 0) {
+    return -errno;
+  }
+  buf[rc] = '\0';
+  
+  if(rc >= size) {
+    return rc;
+  }
+  
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_ad87788c2d94b81a11f96eb332a5a157d}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-rename@{jfs\_\-file\_\-rename}}
+\index{jfs\_\-file\_\-rename@{jfs\_\-file\_\-rename}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-rename}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-rename (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ from, }
+\item[{const char $\ast$}]{ to}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_ad87788c2d94b81a11f96eb332a5a157d}
+Perform a rename on a joinFS file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em from}]The original path. \item[{\em to}]The new path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *from_subpath;
+  char *to_subpath;
+  char *from_datapath;
+  char *to_datapath;
+  char *subpath;
+  char *filename;
+  char *real_from;
+  char *real_to;
+
+  size_t real_len;
+
+  int from_is_dynamic;
+  int to_is_dynamic;
+  int from_id;
+  int to_id;
+  int rc;
+
+  from_id = 0;
+  to_id = 0;
+  to_is_dynamic = 0;
+  from_is_dynamic = 0;
+  from_datapath = NULL;
+  to_datapath = NULL;
+  subpath = NULL;
+  from_subpath = NULL;
+  to_subpath = NULL;
+  real_from = NULL;
+  real_to = NULL;
+
+  filename = jfs_util_get_filename(from);
+  if(!filename) {
+    rc = -ENOENT;
+
+    goto cleanup;
+  }
+
+  rc = jfs_util_get_subpath(from, &from_subpath);
+  if(rc) {
+    goto cleanup;
+  }
+
+  rc = jfs_util_get_subpath(to, &to_subpath);
+  if(rc) {
+    goto cleanup;
+  }
+
+  //see if rename was called from a dynamic object
+  if(!jfs_util_is_realpath(from)) {
+    rc = jfs_dynamic_path_resolution(from, &real_from, &from_id);
+
+    //.jfs_sub_query edge case
+    if(rc) {
+      rc = jfs_dynamic_path_resolution(from_subpath, &from_datapath, &from_id);
+      if(rc) {
+        goto cleanup;
+      }
+      
+      real_len = strlen(from_datapath) + strlen(filename) + 2; //null and '/'
+      real_from = malloc(sizeof(*real_from) * real_len);
+      if(!real_from) {
+        free(from_datapath);
+        rc = -ENOMEM;
+
+        goto cleanup;
+      }
+      snprintf(real_from, real_len, "%s/%s", from_datapath, filename);
+      free(from_datapath);
+
+      if(!jfs_util_is_realpath(real_from)) {
+        rc = -ENOENT;
+
+        goto cleanup;
+      }
+    }
+    else {
+      //can't rename a dynamic folder
+      if(strcmp(jfs_util_get_filename(real_from), ".jfs_sub_query") == 0) {
+        rc = -EISDIR;
+
+        goto cleanup;
+      }
+      
+      from_is_dynamic = 1;
+    }
+  }
+  else {
+    real_from = (char *)from;
+  }
+
+  filename = jfs_util_get_filename(to);
+  if(!filename) {
+    rc = -ENOENT;
+    
+    goto cleanup;
+  }
+
+  //is too a dynamic path item
+  if(jfs_util_is_path_dynamic(to)) {
+    rc = jfs_dynamic_path_resolution(to, &real_to, &to_id);
+    
+    //.jfs_sub_query edge case
+    if(rc) {
+      rc = jfs_dynamic_path_resolution(to_subpath, &to_datapath, &to_id);
+      if(rc) {
+        goto cleanup;
+      }
+      
+      real_len = strlen(to_datapath) + strlen(filename) + 2; //null and '/'
+      real_to = malloc(sizeof(*real_to) * real_len);
+      if(!real_to) {
+        free(to_datapath);
+        rc = -ENOMEM;
+
+        goto cleanup;
+      }
+      snprintf(real_to, real_len, "%s/%s", to_datapath, filename);
+      free(to_datapath);
+      
+      if(!jfs_util_is_realpath(real_to)) {
+        rc = -ENOENT;
+
+        goto cleanup;
+      }
+    }
+    else {
+      //can't rename a dynamic folder
+      if(strcmp(jfs_util_get_filename(real_to), ".jfs_sub_query") == 0) {
+        rc = -EISDIR;
+
+        goto cleanup;
+      }
+      
+      to_is_dynamic = 1;
+    }
+  }
+  //is to being saved to a dynamic folder?
+  else if(from_is_dynamic && (strcmp(to_subpath, from_subpath) == 0)) {
+    rc = jfs_util_get_subpath(real_from, &subpath);
+    if(rc) {
+      goto cleanup;
+    }
+    
+    real_len = strlen(subpath) + strlen(filename) + 1;
+    real_to = malloc(sizeof(*real_to) * real_len);
+    if(!real_to) {
+      rc = -ENOMEM;
+
+      goto cleanup;
+    }
+    snprintf(real_to, real_len, "%s%s", subpath, filename);
+    
+    to_is_dynamic = 1;
+  }
+  else {
+    real_to = (char *)to;
+  }
+  
+  rc = jfs_file_do_rename(real_from, real_to);
+
+  if(rc) {
+    goto cleanup;
+  }
+  
+  if(from_is_dynamic) {
+    rc = jfs_dynamic_hierarchy_unlink(from);
+    if(rc) {
+      goto cleanup;
+    }
+  }
+
+  if(to_is_dynamic) {
+    rc = jfs_dynamic_hierarchy_unlink(to);
+    if(rc && rc != -ENOENT) {
+      goto cleanup;
+    }
+
+    rc = jfs_dynamic_hierarchy_add_file(to, real_from, from_id);
+  }
+  
+cleanup:
+  if(subpath) {
+    free(subpath);
+  }
+  if(from_subpath) {
+    free(from_subpath);
+  }
+  if(to_subpath) {
+    free(to_subpath);
+  }
+  if(real_from != from && real_from) {
+    free(real_from);
+  }
+  if(real_to != to && real_to) {
+    free(real_to);
+  }
+
+  return rc;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_a95ed26382dc80810b248fd89ac217f91}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-statfs@{jfs\_\-file\_\-statfs}}
+\index{jfs\_\-file\_\-statfs@{jfs\_\-file\_\-statfs}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-statfs}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-statfs (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{struct statvfs $\ast$}]{ stbuf}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a95ed26382dc80810b248fd89ac217f91}
+Get the file system attribute buffer. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em stbuf}]The attribute buffer. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = statvfs(datapath, stbuf);
+  free(datapath);
+
+  if(rc) {
+    return -errno;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_a2d2b7122531c0b33fc5d2153cd4b5472}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-symlink@{jfs\_\-file\_\-symlink}}
+\index{jfs\_\-file\_\-symlink@{jfs\_\-file\_\-symlink}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-symlink}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-symlink (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ from, }
+\item[{const char $\ast$}]{ to}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a2d2b7122531c0b33fc5d2153cd4b5472}
+Create a symlink. 
+\begin{DoxyParams}{Parameters}
+\item[{\em from}]The source path. \item[{\em to}]The new location path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *realpath_to;
+  char *filename;
+
+  int inode;
+  int rc;
+
+  rc = jfs_util_resolve_new_path(to, &realpath_to);
+  if(rc) {
+    return rc;
+  }
+  
+  rc = symlink(from, realpath_to);
+  if(rc) { 
+    free(realpath_to);
+    
+    return -errno;
+  }
+  
+  filename = jfs_util_get_filename(realpath_to);
+  inode = jfs_util_get_inode(realpath_to);
+  if(inode < 0) {
+    free(realpath_to);
+    
+    return -errno;
+  }
+  
+  rc = jfs_file_db_add(inode, realpath_to, filename);
+  free(realpath_to);
+
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_a865300f46acfc1ab355ea35396ff136d}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-truncate@{jfs\_\-file\_\-truncate}}
+\index{jfs\_\-file\_\-truncate@{jfs\_\-file\_\-truncate}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-truncate}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-truncate (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{off\_\-t}]{ size}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_a865300f46acfc1ab355ea35396ff136d}
+Truncate a joinFS file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file path. \item[{\em size}]The truncate offset size. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+        return rc;
+  }
+
+  rc = truncate(datapath, size);
+  if(rc) {
+        rc = -errno;
+  }
+  free(datapath);
+
+  return rc;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_aa38a869eca26d04c5762bc8ce0eb13a3}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-unlink@{jfs\_\-file\_\-unlink}}
+\index{jfs\_\-file\_\-unlink@{jfs\_\-file\_\-unlink}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-unlink}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-unlink (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_aa38a869eca26d04c5762bc8ce0eb13a3}
+Deletes a joinFS link. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The link path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+
+  int jfs_id;
+  int rc;
+ 
+  //see if unlink was called on a dynamic path object
+  if(!jfs_util_is_realpath(path)) {
+    rc = jfs_dynamic_path_resolution(path, &datapath, &jfs_id);
+    if(rc) {
+      return rc;
+    }
+
+    if(strcmp(jfs_util_get_filename(datapath), ".jfs_sub_query") == 0) {
+      free(datapath);
+      return -EISDIR;
+    }
+
+    rc = jfs_dynamic_hierarchy_unlink(path);
+    if(rc) {
+      free(datapath);
+      return rc;
+    }
+
+    rc = jfs_file_do_unlink(datapath);
+    free(datapath);
+
+    return rc;
+  }
+
+  return jfs_file_do_unlink(path);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__file_8c_ad9800655961849f19749e6c0e019686f}{
+\index{jfs\_\-file.c@{jfs\_\-file.c}!jfs\_\-file\_\-utimes@{jfs\_\-file\_\-utimes}}
+\index{jfs\_\-file\_\-utimes@{jfs\_\-file\_\-utimes}!jfs_file.c@{jfs\_\-file.c}}
+\subsubsection[{jfs\_\-file\_\-utimes}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-file\_\-utimes (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const struct timeval}]{ tv\mbox{[}2\mbox{]}}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__file_8c_ad9800655961849f19749e6c0e019686f}
+Get access time information for a file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em tv}]The time value buffer. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  int rc;
+  
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+        return rc;
+  }
+ 
+  rc = utimes(datapath, tv);
+  free(datapath);
+
+  if(rc) {
+        return -errno;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+

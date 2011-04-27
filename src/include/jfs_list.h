@@ -1,3 +1,6 @@
+#ifndef JOINFS_JFS_LIST_H
+#define JOINFS_JFS_LIST_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -17,9 +20,6 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_JFS_LIST_H
-#define JOINFS_JFS_LIST_H
-
 #include "sglib.h"
 #include "jfs_db_ops.h"
 
@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-/*
+/*!
  * The jfs_list node. Used for storing
  * a database result row.
  */
@@ -51,8 +51,18 @@ struct jfs_list {
 #define JFS_LIST_CMP(a, b) (a->jfs_id - b->jfs_id)
 SGLIB_DEFINE_LIST_PROTOTYPES(jfs_list_t, JFS_LIST_CMP, next)
 
+/*!
+ *  Add a node to a jfs list.
+ * \param head The list head.
+ * \param node The node to add.
+ */
 void jfs_list_add(jfs_list_t **head, jfs_list_t *node);
 
+/*!
+ *  Destroy a jfs list
+ * \param head The list head.
+ * \param op The type result in the jfs list.
+ */
 void jfs_list_destroy(jfs_list_t *head, enum jfs_db_ops op);
 
 #endif

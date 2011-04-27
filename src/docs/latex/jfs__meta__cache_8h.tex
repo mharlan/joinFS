@@ -1,0 +1,245 @@
+\hypertarget{jfs__meta__cache_8h}{
+\section{include/jfs\_\-meta\_\-cache.h File Reference}
+\label{jfs__meta__cache_8h}\index{include/jfs\_\-meta\_\-cache.h@{include/jfs\_\-meta\_\-cache.h}}
+}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{jfs__meta__cache_8h_a42588d575100eb7dd34e507785ab9de1}{jfs\_\-meta\_\-cache\_\-init} ()
+\item 
+void \hyperlink{jfs__meta__cache_8h_a0305c6e77e35d9ef171ffd9930032f86}{jfs\_\-meta\_\-cache\_\-destroy} ()
+\item 
+int \hyperlink{jfs__meta__cache_8h_a790d61eb3f110066c1cebdaec9abc462}{jfs\_\-meta\_\-cache\_\-get\_\-value} (const char $\ast$path, int keyid, char $\ast$$\ast$value)
+\item 
+int \hyperlink{jfs__meta__cache_8h_abc475b4d78ea3d1223d663e30391c5c6}{jfs\_\-meta\_\-cache\_\-add} (const char $\ast$path, int keyid, const char $\ast$value)
+\item 
+int \hyperlink{jfs__meta__cache_8h_ad2b30d6bdd1ad0d4cafa668ad49c5d91}{jfs\_\-meta\_\-cache\_\-remove} (const char $\ast$path, int keyid)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__meta__cache_8h_abc475b4d78ea3d1223d663e30391c5c6}{
+\index{jfs\_\-meta\_\-cache.h@{jfs\_\-meta\_\-cache.h}!jfs\_\-meta\_\-cache\_\-add@{jfs\_\-meta\_\-cache\_\-add}}
+\index{jfs\_\-meta\_\-cache\_\-add@{jfs\_\-meta\_\-cache\_\-add}!jfs_meta_cache.h@{jfs\_\-meta\_\-cache.h}}
+\subsubsection[{jfs\_\-meta\_\-cache\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-cache\_\-add (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{int}]{ keyid, }
+\item[{const char $\ast$}]{ value}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta__cache_8h_abc475b4d78ea3d1223d663e30391c5c6}
+Add metadata to the metadata cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em keyid}]The metadata tag id. \item[{\em value}]The metadata value. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_meta_cache_t *item;
+  
+  size_t val_len;
+  size_t path_len;
+
+  jfs_meta_cache_remove(path, keyid);
+
+  item = malloc(sizeof(*item));
+  if(!item) {
+        return -ENOMEM;
+  }
+
+  path_len = strlen(path) + 1;
+  item->path = malloc(sizeof(*item->path) * path_len);
+  if(!item->path) {
+    free(item);
+    return -ENOMEM;
+  }
+  strncpy(item->path, path, path_len);
+
+  val_len = strlen(value) + 1;
+  item->value = malloc(sizeof(*item->value) * val_len);
+  if(!item->value) {
+    free(item);
+    free(item->path);
+    return -ENOMEM;
+  }
+  strncpy(item->value, value, val_len);
+  item->keyid = keyid;
+
+  pthread_rwlock_wrlock(&cache_lock);
+  sglib_hashed_jfs_meta_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta__cache_8h_a0305c6e77e35d9ef171ffd9930032f86}{
+\index{jfs\_\-meta\_\-cache.h@{jfs\_\-meta\_\-cache.h}!jfs\_\-meta\_\-cache\_\-destroy@{jfs\_\-meta\_\-cache\_\-destroy}}
+\index{jfs\_\-meta\_\-cache\_\-destroy@{jfs\_\-meta\_\-cache\_\-destroy}!jfs_meta_cache.h@{jfs\_\-meta\_\-cache.h}}
+\subsubsection[{jfs\_\-meta\_\-cache\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-meta\_\-cache\_\-destroy (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta__cache_8h_a0305c6e77e35d9ef171ffd9930032f86}
+Destroy the \hyperlink{structjfs__meta__cache}{jfs\_\-meta\_\-cache}.
+
+Called when joinFS gets dismount. 
+
+
+\begin{DoxyCode}
+{
+  struct sglib_hashed_jfs_meta_cache_t_iterator it;
+  jfs_meta_cache_t *item;
+
+  pthread_rwlock_wrlock(&cache_lock);
+  for(item = sglib_hashed_jfs_meta_cache_t_it_init(&it, hashtable);
+      item != NULL; item = sglib_hashed_jfs_meta_cache_t_it_next(&it)) {
+    free(item->path);
+    free(item->value);
+    free(item);
+  }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta__cache_8h_a790d61eb3f110066c1cebdaec9abc462}{
+\index{jfs\_\-meta\_\-cache.h@{jfs\_\-meta\_\-cache.h}!jfs\_\-meta\_\-cache\_\-get\_\-value@{jfs\_\-meta\_\-cache\_\-get\_\-value}}
+\index{jfs\_\-meta\_\-cache\_\-get\_\-value@{jfs\_\-meta\_\-cache\_\-get\_\-value}!jfs_meta_cache.h@{jfs\_\-meta\_\-cache.h}}
+\subsubsection[{jfs\_\-meta\_\-cache\_\-get\_\-value}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-cache\_\-get\_\-value (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{int}]{ keyid, }
+\item[{char $\ast$$\ast$}]{ value}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta__cache_8h_a790d61eb3f110066c1cebdaec9abc462}
+Get metadata stored in the metadata cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em keyid}]The metadata tag id. \item[{\em value}]The value returned. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_meta_cache_t  check;
+  jfs_meta_cache_t *result;
+
+  char *val;
+
+  size_t val_len;
+  size_t path_len;
+
+  check.keyid = keyid;
+
+  path_len = strlen(path) + 1;
+  check.path = malloc(sizeof(*check.path) * path_len);
+  if(!check.path) {
+    return -ENOMEM;
+  }
+  strncpy(check.path, path, path_len);
+
+  pthread_rwlock_rdlock(&cache_lock);
+  result = sglib_hashed_jfs_meta_cache_t_find_member(hashtable, &check);
+  free(check.path);
+  
+  if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+    
+        return -ENOATTR;
+  }
+
+  val_len = strlen(result->value) + 1;
+  val = malloc(sizeof(*val) * val_len);
+  if(!val) {
+    free(val);
+    pthread_rwlock_unlock(&cache_lock);
+
+    return -ENOMEM;
+  }
+  strncpy(val, result->value, val_len);
+  pthread_rwlock_unlock(&cache_lock);
+
+  *value = val;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta__cache_8h_a42588d575100eb7dd34e507785ab9de1}{
+\index{jfs\_\-meta\_\-cache.h@{jfs\_\-meta\_\-cache.h}!jfs\_\-meta\_\-cache\_\-init@{jfs\_\-meta\_\-cache\_\-init}}
+\index{jfs\_\-meta\_\-cache\_\-init@{jfs\_\-meta\_\-cache\_\-init}!jfs_meta_cache.h@{jfs\_\-meta\_\-cache.h}}
+\subsubsection[{jfs\_\-meta\_\-cache\_\-init}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-meta\_\-cache\_\-init (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta__cache_8h_a42588d575100eb7dd34e507785ab9de1}
+Initialize the \hyperlink{structjfs__meta__cache}{jfs\_\-meta\_\-cache}.
+
+Called when joinFS gets mounted. \hypertarget{jfs__meta__cache_8h_ad2b30d6bdd1ad0d4cafa668ad49c5d91}{
+\index{jfs\_\-meta\_\-cache.h@{jfs\_\-meta\_\-cache.h}!jfs\_\-meta\_\-cache\_\-remove@{jfs\_\-meta\_\-cache\_\-remove}}
+\index{jfs\_\-meta\_\-cache\_\-remove@{jfs\_\-meta\_\-cache\_\-remove}!jfs_meta_cache.h@{jfs\_\-meta\_\-cache.h}}
+\subsubsection[{jfs\_\-meta\_\-cache\_\-remove}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-cache\_\-remove (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{int}]{ keyid}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta__cache_8h_ad2b30d6bdd1ad0d4cafa668ad49c5d91}
+Remove an item the metadata cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em keyid}]The metadata tag id. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_meta_cache_t check;
+  jfs_meta_cache_t *elem;
+
+  size_t path_len;
+
+  int rc;
+  
+  check.keyid = keyid;
+
+  path_len = strlen(path) + 1;
+  check.path = malloc(sizeof(*check.path) * path_len);
+  if(!check.path) {
+    return -ENOMEM;
+  }
+  strncpy(check.path, path, path_len);
+
+  pthread_rwlock_wrlock(&cache_lock);
+  rc = sglib_hashed_jfs_meta_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
+  free(check.path);
+
+  if(rc) {
+    free(elem->path);
+        free(elem->value);
+    free(elem);
+  }
+  
+  return 0;
+}
+\end{DoxyCode}
+
+

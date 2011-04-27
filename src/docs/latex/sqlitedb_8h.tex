@@ -1,0 +1,700 @@
+\hypertarget{sqlitedb_8h}{
+\section{include/sqlitedb.h File Reference}
+\label{sqlitedb_8h}\index{include/sqlitedb.h@{include/sqlitedb.h}}
+}
+{\ttfamily \#include \char`\"{}jfs\_\-list.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-db\_\-ops.h\char`\"{}}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+{\ttfamily \#include $<$sqlite3.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{sqlitedb_8h_ace9a8b90e63d388ebf3359222115ad08}{JFS\_\-SQL\_\-SUCCESS}~0
+\item 
+\#define \hyperlink{sqlitedb_8h_a4bd5c326c4689480e03aaa1abe8998d4}{JFS\_\-SQL\_\-ERROR}~-\/100
+\item 
+\#define \hyperlink{sqlitedb_8h_a9ccee6c437dc56db306d8fae6d218e33}{JFS\_\-SQL\_\-NOMEM}~-\/700
+\item 
+\#define \hyperlink{sqlitedb_8h_a9d4b1e0208c88770b54958fbf3eb6bd6}{JFS\_\-SQL\_\-FULL}~-\/1300
+\item 
+\#define \hyperlink{sqlitedb_8h_a1b36896182a36f265ca14639252997a2}{JFS\_\-SQL\_\-EMPTY}~-\/1600
+\item 
+\#define \hyperlink{sqlitedb_8h_a0f2f7375ebd3a9a301b68c5e0515a6e7}{JFS\_\-SQL\_\-TOOBIG}~-\/1800
+\item 
+\#define \hyperlink{sqlitedb_8h_a97c8278e87ba7b7e737d2ca8e5f10fc4}{JFS\_\-SQL\_\-CONSTRAINT}~-\/1900
+\item 
+\#define \hyperlink{sqlitedb_8h_a175547da0f52a92e88b7fc79ed09958e}{JFS\_\-SQL\_\-CANTOPEN}~-\/1400
+\item 
+\#define \hyperlink{sqlitedb_8h_afa4151369987d483f224adb9063d77b1}{JFS\_\-SQL\_\-BUSY}~-\/500
+\item 
+\#define \hyperlink{sqlitedb_8h_a204d4095fff88b2bfaaf0dd5e018383c}{JFS\_\-QUERY\_\-INC}~512
+\item 
+\#define \hyperlink{sqlitedb_8h_a6f60d3e27eda4301cf116550466cb3f8}{JFS\_\-QUERY\_\-MAX}~1000000
+\item 
+\#define \hyperlink{sqlitedb_8h_ab846dbf924821f1754f93adafd17ecca}{JFS\_\-SQL\_\-RC\_\-SCALE}~100
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{sqlitedb_8h_a2c77cf3cb2689b5a086263388bce10e7}{jfs\_\-init\_\-db} (void)
+\item 
+int \hyperlink{sqlitedb_8h_a60f9daa8e0dc8e1e9c6f049bb57b2d7f}{jfs\_\-db\_\-op\_\-create} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$$\ast$op, enum \hyperlink{jfs__db__ops_8h_af6bdc4da6fffc70bba9b64b165cac5bc}{jfs\_\-db\_\-ops} jfs\_\-op, const char $\ast$format,...)
+\item 
+int \hyperlink{sqlitedb_8h_a7a8183f9b61d42fde1250922d3c331d7}{jfs\_\-do\_\-db\_\-op\_\-create} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$$\ast$op, enum \hyperlink{jfs__db__ops_8h_af6bdc4da6fffc70bba9b64b165cac5bc}{jfs\_\-db\_\-ops} jfs\_\-op, char $\ast$query)
+\item 
+int \hyperlink{sqlitedb_8h_a65564330a9d98e22a67d93b5054aef7c}{jfs\_\-db\_\-op\_\-create\_\-multi\_\-op} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$$\ast$op, int num\_\-queries,...)
+\item 
+int \hyperlink{sqlitedb_8h_a0da60119555700c95f51a9af6d8ec216}{jfs\_\-db\_\-op\_\-create\_\-query} (char $\ast$$\ast$query, const char $\ast$format,...)
+\item 
+void \hyperlink{sqlitedb_8h_aa1a66cc0a21d35122bafcc275b5da001}{jfs\_\-db\_\-op\_\-destroy} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\item 
+int \hyperlink{sqlitedb_8h_acc43669219cf582d794fc6bc2d357d35}{jfs\_\-db\_\-op\_\-wait} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\item 
+int \hyperlink{sqlitedb_8h_a3240de0370b0fa9c9df486647478a5f0}{jfs\_\-open\_\-db} (sqlite3 $\ast$$\ast$db, int sqlite\_\-attr)
+\item 
+void \hyperlink{sqlitedb_8h_a7016b36512228c1ce3d0b990eee03d28}{jfs\_\-close\_\-db} (sqlite3 $\ast$db)
+\item 
+int \hyperlink{sqlitedb_8h_ac74d766885d9f073fccad92e27ac50bf}{jfs\_\-query} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{sqlitedb_8h_a204d4095fff88b2bfaaf0dd5e018383c}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-QUERY\_\-INC@{JFS\_\-QUERY\_\-INC}}
+\index{JFS\_\-QUERY\_\-INC@{JFS\_\-QUERY\_\-INC}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-QUERY\_\-INC}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-QUERY\_\-INC~512}}
+\label{sqlitedb_8h_a204d4095fff88b2bfaaf0dd5e018383c}
+\hypertarget{sqlitedb_8h_a6f60d3e27eda4301cf116550466cb3f8}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-QUERY\_\-MAX@{JFS\_\-QUERY\_\-MAX}}
+\index{JFS\_\-QUERY\_\-MAX@{JFS\_\-QUERY\_\-MAX}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-QUERY\_\-MAX}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-QUERY\_\-MAX~1000000}}
+\label{sqlitedb_8h_a6f60d3e27eda4301cf116550466cb3f8}
+\hypertarget{sqlitedb_8h_afa4151369987d483f224adb9063d77b1}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-BUSY@{JFS\_\-SQL\_\-BUSY}}
+\index{JFS\_\-SQL\_\-BUSY@{JFS\_\-SQL\_\-BUSY}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-BUSY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-BUSY~-\/500}}
+\label{sqlitedb_8h_afa4151369987d483f224adb9063d77b1}
+\hypertarget{sqlitedb_8h_a175547da0f52a92e88b7fc79ed09958e}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-CANTOPEN@{JFS\_\-SQL\_\-CANTOPEN}}
+\index{JFS\_\-SQL\_\-CANTOPEN@{JFS\_\-SQL\_\-CANTOPEN}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-CANTOPEN}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-CANTOPEN~-\/1400}}
+\label{sqlitedb_8h_a175547da0f52a92e88b7fc79ed09958e}
+\hypertarget{sqlitedb_8h_a97c8278e87ba7b7e737d2ca8e5f10fc4}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-CONSTRAINT@{JFS\_\-SQL\_\-CONSTRAINT}}
+\index{JFS\_\-SQL\_\-CONSTRAINT@{JFS\_\-SQL\_\-CONSTRAINT}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-CONSTRAINT}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-CONSTRAINT~-\/1900}}
+\label{sqlitedb_8h_a97c8278e87ba7b7e737d2ca8e5f10fc4}
+\hypertarget{sqlitedb_8h_a1b36896182a36f265ca14639252997a2}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-EMPTY@{JFS\_\-SQL\_\-EMPTY}}
+\index{JFS\_\-SQL\_\-EMPTY@{JFS\_\-SQL\_\-EMPTY}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-EMPTY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-EMPTY~-\/1600}}
+\label{sqlitedb_8h_a1b36896182a36f265ca14639252997a2}
+\hypertarget{sqlitedb_8h_a4bd5c326c4689480e03aaa1abe8998d4}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-ERROR@{JFS\_\-SQL\_\-ERROR}}
+\index{JFS\_\-SQL\_\-ERROR@{JFS\_\-SQL\_\-ERROR}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-ERROR}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-ERROR~-\/100}}
+\label{sqlitedb_8h_a4bd5c326c4689480e03aaa1abe8998d4}
+\hypertarget{sqlitedb_8h_a9d4b1e0208c88770b54958fbf3eb6bd6}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-FULL@{JFS\_\-SQL\_\-FULL}}
+\index{JFS\_\-SQL\_\-FULL@{JFS\_\-SQL\_\-FULL}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-FULL}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-FULL~-\/1300}}
+\label{sqlitedb_8h_a9d4b1e0208c88770b54958fbf3eb6bd6}
+\hypertarget{sqlitedb_8h_a9ccee6c437dc56db306d8fae6d218e33}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-NOMEM@{JFS\_\-SQL\_\-NOMEM}}
+\index{JFS\_\-SQL\_\-NOMEM@{JFS\_\-SQL\_\-NOMEM}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-NOMEM}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-NOMEM~-\/700}}
+\label{sqlitedb_8h_a9ccee6c437dc56db306d8fae6d218e33}
+\hypertarget{sqlitedb_8h_ab846dbf924821f1754f93adafd17ecca}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-RC\_\-SCALE@{JFS\_\-SQL\_\-RC\_\-SCALE}}
+\index{JFS\_\-SQL\_\-RC\_\-SCALE@{JFS\_\-SQL\_\-RC\_\-SCALE}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-RC\_\-SCALE}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-RC\_\-SCALE~100}}
+\label{sqlitedb_8h_ab846dbf924821f1754f93adafd17ecca}
+\hypertarget{sqlitedb_8h_ace9a8b90e63d388ebf3359222115ad08}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-SUCCESS@{JFS\_\-SQL\_\-SUCCESS}}
+\index{JFS\_\-SQL\_\-SUCCESS@{JFS\_\-SQL\_\-SUCCESS}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-SUCCESS}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-SUCCESS~0}}
+\label{sqlitedb_8h_ace9a8b90e63d388ebf3359222115ad08}
+\hypertarget{sqlitedb_8h_a0f2f7375ebd3a9a301b68c5e0515a6e7}{
+\index{sqlitedb.h@{sqlitedb.h}!JFS\_\-SQL\_\-TOOBIG@{JFS\_\-SQL\_\-TOOBIG}}
+\index{JFS\_\-SQL\_\-TOOBIG@{JFS\_\-SQL\_\-TOOBIG}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{JFS\_\-SQL\_\-TOOBIG}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-SQL\_\-TOOBIG~-\/1800}}
+\label{sqlitedb_8h_a0f2f7375ebd3a9a301b68c5e0515a6e7}
+
+
+\subsection{Function Documentation}
+\hypertarget{sqlitedb_8h_a7016b36512228c1ce3d0b990eee03d28}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-close\_\-db@{jfs\_\-close\_\-db}}
+\index{jfs\_\-close\_\-db@{jfs\_\-close\_\-db}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-close\_\-db}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-close\_\-db (
+\begin{DoxyParamCaption}
+\item[{sqlite3 $\ast$}]{ db}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a7016b36512228c1ce3d0b990eee03d28}
+Close a database connection. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db}]The new database handle. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  sqlite3_close(db);
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_a60f9daa8e0dc8e1e9c6f049bb57b2d7f}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-db\_\-op\_\-create@{jfs\_\-db\_\-op\_\-create}}
+\index{jfs\_\-db\_\-op\_\-create@{jfs\_\-db\_\-op\_\-create}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-db\_\-op\_\-create}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-db\_\-op\_\-create (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$$\ast$}]{ op, }
+\item[{enum {\bf jfs\_\-db\_\-ops}}]{ jfs\_\-op, }
+\item[{const char $\ast$}]{ format, }
+\item[{}]{ ...}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a60f9daa8e0dc8e1e9c6f049bb57b2d7f}
+Creates a database operation. 
+\begin{DoxyParams}{Parameters}
+\item[{\em op}]The returned database operation. \item[{\em jfs\_\-op}]The type of database operation. \item[{\em format}]The query format string. \item[{\em ...}]The format variables. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+  
+  va_list args;
+
+  char *query;
+
+  int query_size;
+  int rc;
+
+  rc = 0;
+  query = NULL;
+  query_size = JFS_QUERY_INC;
+
+  db_op = malloc(sizeof(*db_op));
+  if(!db_op) {
+    return -ENOMEM;
+  }
+  
+  query = malloc(sizeof(*query) * query_size);
+  if(!query) {
+    free(db_op);
+    
+    return -ENOMEM;
+  }
+  
+  while(1) {
+    va_start(args, format);
+    rc = vsnprintf(query, query_size, format, args);
+    va_end(args);
+    
+    if(rc > -1 && rc < query_size) {
+      break;
+    }
+    else if(rc > -1) {
+      query_size = rc + 1;
+    }
+    else {
+      if(errno == EILSEQ) {
+        free(db_op);
+        
+        return -errno;
+      }
+      
+      query_size += JFS_QUERY_INC;
+    }
+    
+    free(query);
+    query = malloc(sizeof(*query) * query_size);
+    if(!query) {
+      free(db_op);
+      
+      return -ENOMEM;
+    }
+  }
+  
+  db_op->op = jfs_op;
+  db_op->query = query;
+  db_op->multi_query = NULL;
+  db_op->db = NULL;
+  db_op->stmt = NULL;
+  db_op->result = NULL;
+  db_op->done = 0;
+  db_op->rc = 0;
+
+  pthread_cond_init(&db_op->cond, NULL);
+  pthread_mutex_init(&db_op->mut, NULL);
+
+  *op = db_op;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_a65564330a9d98e22a67d93b5054aef7c}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-db\_\-op\_\-create\_\-multi\_\-op@{jfs\_\-db\_\-op\_\-create\_\-multi\_\-op}}
+\index{jfs\_\-db\_\-op\_\-create\_\-multi\_\-op@{jfs\_\-db\_\-op\_\-create\_\-multi\_\-op}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-db\_\-op\_\-create\_\-multi\_\-op}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-db\_\-op\_\-create\_\-multi\_\-op (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$$\ast$}]{ op, }
+\item[{int}]{ num\_\-queries, }
+\item[{}]{ ...}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a65564330a9d98e22a67d93b5054aef7c}
+Create a multi-\/write transaction operation. 
+\begin{DoxyParams}{Parameters}
+\item[{\em op}]The returned database operation. \item[{\em jfs\_\-op}]The type of database operation. \item[{\em num\_\-queries}]The number of queries. \item[{\em ...}]The format queries. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+
+  char *query;
+
+  va_list args;
+
+  int i;
+
+  db_op = malloc(sizeof(*db_op));
+  if(!db_op) {
+    return -ENOMEM;
+  }
+
+  db_op->multi_query = malloc(sizeof(*db_op->multi_query) * num_queries);
+  if(!db_op->multi_query) {
+    free(db_op);
+    return -ENOMEM;
+  }
+
+  va_start(args, num_queries);
+  for(i = 0; i < num_queries; ++i) {
+    query = va_arg(args, char *);
+    if(!query) {
+      free(db_op);
+      return -EINVAL;
+    }
+
+    db_op->multi_query[i] = query;
+  }
+
+  db_op->op = jfs_multi_write_op;
+  db_op->query = NULL;
+  db_op->db = NULL;
+  db_op->stmt = NULL;
+  db_op->result = NULL;
+  db_op->num_queries = num_queries;
+  db_op->done = 0;
+  db_op->rc = 0;
+
+  pthread_cond_init(&db_op->cond, NULL);
+  pthread_mutex_init(&db_op->mut, NULL);
+
+  *op = db_op;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_a0da60119555700c95f51a9af6d8ec216}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-db\_\-op\_\-create\_\-query@{jfs\_\-db\_\-op\_\-create\_\-query}}
+\index{jfs\_\-db\_\-op\_\-create\_\-query@{jfs\_\-db\_\-op\_\-create\_\-query}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-db\_\-op\_\-create\_\-query}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-db\_\-op\_\-create\_\-query (
+\begin{DoxyParamCaption}
+\item[{char $\ast$$\ast$}]{ query, }
+\item[{const char $\ast$}]{ format, }
+\item[{}]{ ...}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a0da60119555700c95f51a9af6d8ec216}
+Create a db query using a format string. 
+\begin{DoxyParams}{Parameters}
+\item[{\em query}]The returned query. \item[{\em format}]The query format string. \item[{\em ...}]The format variables. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  va_list args;
+
+  char *new_query;
+
+  int query_size;
+  int rc;
+
+  rc = 0;
+  new_query = NULL;
+  query_size = JFS_QUERY_INC;
+  
+  new_query = malloc(sizeof(*new_query) * query_size);
+  if(!new_query) {
+    return -ENOMEM;
+  }
+
+  while(1) {
+    va_start(args, format);
+    rc = vsnprintf(new_query, query_size, format, args);
+    va_end(args);
+    
+    if(rc > -1 && rc < query_size) {
+      break;
+    }
+    else if(rc > -1) {
+      query_size = rc + 1;
+    }
+    else {
+      if(errno == EILSEQ) {
+        free(new_query);
+
+        return -errno;
+      }
+      
+      query_size += JFS_QUERY_INC;
+    }
+    
+    free(new_query);
+    new_query = malloc(sizeof(*new_query) * query_size);
+    if(!query) {
+      return -ENOMEM;
+    }
+  }
+
+  *query = new_query;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_aa1a66cc0a21d35122bafcc275b5da001}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-db\_\-op\_\-destroy@{jfs\_\-db\_\-op\_\-destroy}}
+\index{jfs\_\-db\_\-op\_\-destroy@{jfs\_\-db\_\-op\_\-destroy}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-db\_\-op\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-db\_\-op\_\-destroy (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_aa1a66cc0a21d35122bafcc275b5da001}
+Destroy a database operation. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  int i;
+
+  if(!db_op->rc) {
+        switch(db_op->op) {
+    case(jfs_datapath_cache_op):
+      free(db_op->result->datapath);
+      free(db_op->result);
+      break;
+        case(jfs_key_cache_op):
+          free(db_op->result);
+          break;
+        case(jfs_meta_cache_op):
+          free(db_op->result->value);
+          free(db_op->result);
+          break;
+        case(jfs_listattr_op):
+          jfs_list_destroy(db_op->result, jfs_listattr_op);
+          break;
+        case(jfs_dynamic_file_op):
+          free(db_op->result);
+          break;
+        default:
+          break;
+        }
+  }
+
+  if(db_op->op == jfs_multi_write_op) {
+    for(i = 0; i < db_op->num_queries; ++i) {
+      free(db_op->multi_query[i]);
+    }
+    free(db_op->multi_query);
+  }
+  else {
+    free(db_op->query);
+  }
+
+  free(db_op);
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_acc43669219cf582d794fc6bc2d357d35}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-db\_\-op\_\-wait@{jfs\_\-db\_\-op\_\-wait}}
+\index{jfs\_\-db\_\-op\_\-wait@{jfs\_\-db\_\-op\_\-wait}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-db\_\-op\_\-wait}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-db\_\-op\_\-wait (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_acc43669219cf582d794fc6bc2d357d35}
+Performs a database operation that blocks while waiting for the query result. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  pthread_mutex_lock(&db_op->mut);
+  while(!db_op->done) {
+        pthread_cond_wait(&db_op->cond, &db_op->mut);
+  }
+  pthread_mutex_unlock(&db_op->mut);
+
+  return db_op->rc;
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_a7a8183f9b61d42fde1250922d3c331d7}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-do\_\-db\_\-op\_\-create@{jfs\_\-do\_\-db\_\-op\_\-create}}
+\index{jfs\_\-do\_\-db\_\-op\_\-create@{jfs\_\-do\_\-db\_\-op\_\-create}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-do\_\-db\_\-op\_\-create}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-do\_\-db\_\-op\_\-create (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$$\ast$}]{ op, }
+\item[{enum {\bf jfs\_\-db\_\-ops}}]{ jfs\_\-op, }
+\item[{char $\ast$}]{ query}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a7a8183f9b61d42fde1250922d3c331d7}
+Create a database op with pre-\/created query. 
+\begin{DoxyParams}{Parameters}
+\item[{\em op}]The returned database operation. \item[{\em jfs\_\-op}]The type of database operation. \item[{\em query}]The query to be performed. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+
+  db_op = malloc(sizeof(*db_op));
+  if(!db_op) {
+        free(query);
+        return -ENOMEM;
+  }
+
+  db_op->op = jfs_op;
+  db_op->query = query;
+  db_op->multi_query = NULL;
+  db_op->db = NULL;
+  db_op->stmt = NULL;
+  db_op->result = NULL;
+  db_op->num_queries = 0;
+  db_op->done = 0;
+  db_op->rc = 0;
+
+  pthread_cond_init(&db_op->cond, NULL);
+  pthread_mutex_init(&db_op->mut, NULL);
+
+  *op = db_op;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_a2c77cf3cb2689b5a086263388bce10e7}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-init\_\-db@{jfs\_\-init\_\-db}}
+\index{jfs\_\-init\_\-db@{jfs\_\-init\_\-db}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-init\_\-db}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-init\_\-db (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a2c77cf3cb2689b5a086263388bce10e7}
+Initialize the SQL database. 
+
+
+\begin{DoxyCode}
+{
+  int rc;
+
+  /* start sqlite in multithreaded mode */
+  rc = sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+  if(rc != SQLITE_OK) {
+        log_error("Failed to configure multithreading for SQLITE.\n");
+    log_destroy();
+
+        exit(EXIT_FAILURE);
+  }
+
+  rc = sqlite3_initialize();
+  if(rc != SQLITE_OK) {
+        log_error("Failed to initialize SQLite.\n");
+    log_destroy();
+
+        exit(EXIT_FAILURE);
+  }
+
+  log_msg("SQLite started.\n");
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_a3240de0370b0fa9c9df486647478a5f0}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-open\_\-db@{jfs\_\-open\_\-db}}
+\index{jfs\_\-open\_\-db@{jfs\_\-open\_\-db}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-open\_\-db}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-open\_\-db (
+\begin{DoxyParamCaption}
+\item[{sqlite3 $\ast$$\ast$}]{ db, }
+\item[{int}]{ sqlite\_\-attr}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_a3240de0370b0fa9c9df486647478a5f0}
+Create a database connection handle. The handle can not be shared accross threads. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db}]The new database handle. \item[{\em sqlite\_\-attr}]Sqlite attributes. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  sqlite3 *new_db;
+
+  int rc;
+  
+  rc = sqlite3_open_v2(joinfs_context.dbpath, &new_db, sqlite_attr, NULL);
+  if(rc) {
+    log_error("Failed to open database file at: %s\n", joinfs_context.dbpath);
+    if(new_db) {
+      sqlite3_close(new_db);
+    }
+    
+    return 0;
+  }
+  
+  rc = sqlite3_exec(new_db, "PRAGMA journal_mode=truncate;", NULL, NULL, NULL);
+  if(rc) {
+    sqlite3_close(new_db);
+
+    return rc;
+  }
+  
+  rc = sqlite3_exec(new_db, "PRAGMA synchronous=OFF;", NULL, NULL, NULL);
+  if(rc) {
+    sqlite3_close(new_db);
+
+    return rc;
+  }
+
+  rc = sqlite3_exec(new_db, "PRAGMA temp_store=MEMORY;", NULL, NULL, NULL);
+  if(rc) {
+    sqlite3_close(new_db);
+
+    return rc;
+  }
+
+  *db = new_db;
+  
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{sqlitedb_8h_ac74d766885d9f073fccad92e27ac50bf}{
+\index{sqlitedb.h@{sqlitedb.h}!jfs\_\-query@{jfs\_\-query}}
+\index{jfs\_\-query@{jfs\_\-query}!sqlitedb.h@{sqlitedb.h}}
+\subsubsection[{jfs\_\-query}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-query (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{sqlitedb_8h_ac74d766885d9f073fccad92e27ac50bf}
+Performs a query using the \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} struct. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  sqlite3_stmt *stmt;
+  
+  int rc;
+  int i;
+
+  if(db_op->op == jfs_multi_write_op) {
+    rc = sqlite3_exec(db_op->db, "BEGIN TRANSACTION;", NULL, NULL, NULL);
+    if(rc) {
+      return rc;
+    }
+
+    for(i = 0; i < db_op->num_queries; ++i) {
+      rc = setup_stmt(db_op->db, &stmt, db_op->multi_query[i]);
+      if(rc) {
+        return rc;
+      }
+
+      db_op->stmt = stmt;
+      rc = jfs_db_result(db_op);
+      if(rc) {
+        sqlite3_exec(db_op->db, "ROLLBACK TRANSACTION;", NULL, NULL, NULL);
+        return rc;
+      }
+    }
+
+    rc = sqlite3_exec(db_op->db, "COMMIT TRANSACTION;", NULL, NULL, NULL);
+    if(rc) {
+      return rc;
+    }
+  }
+  else {
+    rc = setup_stmt(db_op->db, &stmt, db_op->query);
+    if(rc) {
+      return rc;
+    }
+    
+    db_op->stmt = stmt;
+    rc = jfs_db_result(db_op);
+    if(rc) {
+      return rc;
+    }
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+

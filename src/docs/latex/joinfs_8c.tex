@@ -1,0 +1,212 @@
+\hypertarget{joinfs_8c}{
+\section{joinfs.c File Reference}
+\label{joinfs_8c}\index{joinfs.c@{joinfs.c}}
+}
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-dir.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-file.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-meta.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-security.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-datapath\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-key\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-meta\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-dynamic\_\-paths.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}thr\_\-pool.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}joinfs.h\char`\"{}}\par
+{\ttfamily \#include $<$fuse.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$unistd.h$>$}\par
+{\ttfamily \#include $<$ulockmgr.h$>$}\par
+{\ttfamily \#include $<$fcntl.h$>$}\par
+{\ttfamily \#include $<$dirent.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$sys/time.h$>$}\par
+{\ttfamily \#include $<$sys/xattr.h$>$}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{joinfs_8c_a77f2c7d8b448c4ea7f76dcfea42d5c77}{JFS\_\-THREAD\_\-MIN}~12
+\item 
+\#define \hyperlink{joinfs_8c_a6d43f7b8bc15b2a65cd1f0d94216a8d3}{JFS\_\-THREAD\_\-MAX}~256
+\item 
+\#define \hyperlink{joinfs_8c_ab8f907ef2f491b65aab75d1b84d96ed0}{JFS\_\-THREAD\_\-LINGER}~512
+\item 
+\#define \hyperlink{joinfs_8c_a0919197af2e154da2c05727b6d87cbda}{FUSE\_\-USE\_\-VERSION}~27
+\item 
+\#define \hyperlink{joinfs_8c_a0c1f2998d51f14ee5b74fd69be80f3f6}{ABS\_\-PATH\_\-INC}~512
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{joinfs_8c_a1f39055826c997d1dae4bd363a6ad997}{jfs\_\-read\_\-pool\_\-queue} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\item 
+int \hyperlink{joinfs_8c_a118589c0beee4871c5b486222778b1ea}{jfs\_\-write\_\-pool\_\-queue} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\item 
+int \hyperlink{joinfs_8c_a0ddf1224851353fc92bfbff6f499fa97}{main} (int argc, char $\ast$argv\mbox{[}$\,$\mbox{]})
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__context}{jfs\_\-context} \hyperlink{joinfs_8c_a9c3757198d119d8a1974aa01ac4c86b2}{joinfs\_\-context}
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{joinfs_8c_a0c1f2998d51f14ee5b74fd69be80f3f6}{
+\index{joinfs.c@{joinfs.c}!ABS\_\-PATH\_\-INC@{ABS\_\-PATH\_\-INC}}
+\index{ABS\_\-PATH\_\-INC@{ABS\_\-PATH\_\-INC}!joinfs.c@{joinfs.c}}
+\subsubsection[{ABS\_\-PATH\_\-INC}]{\setlength{\rightskip}{0pt plus 5cm}\#define ABS\_\-PATH\_\-INC~512}}
+\label{joinfs_8c_a0c1f2998d51f14ee5b74fd69be80f3f6}
+\hypertarget{joinfs_8c_a0919197af2e154da2c05727b6d87cbda}{
+\index{joinfs.c@{joinfs.c}!FUSE\_\-USE\_\-VERSION@{FUSE\_\-USE\_\-VERSION}}
+\index{FUSE\_\-USE\_\-VERSION@{FUSE\_\-USE\_\-VERSION}!joinfs.c@{joinfs.c}}
+\subsubsection[{FUSE\_\-USE\_\-VERSION}]{\setlength{\rightskip}{0pt plus 5cm}\#define FUSE\_\-USE\_\-VERSION~27}}
+\label{joinfs_8c_a0919197af2e154da2c05727b6d87cbda}
+\hypertarget{joinfs_8c_ab8f907ef2f491b65aab75d1b84d96ed0}{
+\index{joinfs.c@{joinfs.c}!JFS\_\-THREAD\_\-LINGER@{JFS\_\-THREAD\_\-LINGER}}
+\index{JFS\_\-THREAD\_\-LINGER@{JFS\_\-THREAD\_\-LINGER}!joinfs.c@{joinfs.c}}
+\subsubsection[{JFS\_\-THREAD\_\-LINGER}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-THREAD\_\-LINGER~512}}
+\label{joinfs_8c_ab8f907ef2f491b65aab75d1b84d96ed0}
+\hypertarget{joinfs_8c_a6d43f7b8bc15b2a65cd1f0d94216a8d3}{
+\index{joinfs.c@{joinfs.c}!JFS\_\-THREAD\_\-MAX@{JFS\_\-THREAD\_\-MAX}}
+\index{JFS\_\-THREAD\_\-MAX@{JFS\_\-THREAD\_\-MAX}!joinfs.c@{joinfs.c}}
+\subsubsection[{JFS\_\-THREAD\_\-MAX}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-THREAD\_\-MAX~256}}
+\label{joinfs_8c_a6d43f7b8bc15b2a65cd1f0d94216a8d3}
+\hypertarget{joinfs_8c_a77f2c7d8b448c4ea7f76dcfea42d5c77}{
+\index{joinfs.c@{joinfs.c}!JFS\_\-THREAD\_\-MIN@{JFS\_\-THREAD\_\-MIN}}
+\index{JFS\_\-THREAD\_\-MIN@{JFS\_\-THREAD\_\-MIN}!joinfs.c@{joinfs.c}}
+\subsubsection[{JFS\_\-THREAD\_\-MIN}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-THREAD\_\-MIN~12}}
+\label{joinfs_8c_a77f2c7d8b448c4ea7f76dcfea42d5c77}
+
+
+\subsection{Function Documentation}
+\hypertarget{joinfs_8c_a1f39055826c997d1dae4bd363a6ad997}{
+\index{joinfs.c@{joinfs.c}!jfs\_\-read\_\-pool\_\-queue@{jfs\_\-read\_\-pool\_\-queue}}
+\index{jfs\_\-read\_\-pool\_\-queue@{jfs\_\-read\_\-pool\_\-queue}!joinfs.c@{joinfs.c}}
+\subsubsection[{jfs\_\-read\_\-pool\_\-queue}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-read\_\-pool\_\-queue (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{joinfs_8c_a1f39055826c997d1dae4bd363a6ad997}
+Queue a database read operation.
+
+The caller should call jfs\_\-db\_\-op\_\-wait to wait for the queued result to finish. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  return jfs_pool_queue(jfs_read_pool, db_op);
+}
+\end{DoxyCode}
+
+
+\hypertarget{joinfs_8c_a118589c0beee4871c5b486222778b1ea}{
+\index{joinfs.c@{joinfs.c}!jfs\_\-write\_\-pool\_\-queue@{jfs\_\-write\_\-pool\_\-queue}}
+\index{jfs\_\-write\_\-pool\_\-queue@{jfs\_\-write\_\-pool\_\-queue}!joinfs.c@{joinfs.c}}
+\subsubsection[{jfs\_\-write\_\-pool\_\-queue}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-write\_\-pool\_\-queue (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{joinfs_8c_a118589c0beee4871c5b486222778b1ea}
+Queue a database write operation.
+
+The caller should call jfs\_\-db\_\-op\_\-wait to wait for the queued result to finish. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  return jfs_pool_queue(jfs_write_pool, db_op);
+}
+\end{DoxyCode}
+
+
+\hypertarget{joinfs_8c_a0ddf1224851353fc92bfbff6f499fa97}{
+\index{joinfs.c@{joinfs.c}!main@{main}}
+\index{main@{main}!joinfs.c@{joinfs.c}}
+\subsubsection[{main}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{int}]{ argc, }
+\item[{char $\ast$}]{ argv\mbox{[}$\,$\mbox{]}}
+\end{DoxyParamCaption}
+)}}
+\label{joinfs_8c_a0ddf1224851353fc92bfbff6f499fa97}
+
+
+
+\begin{DoxyCode}
+{
+  size_t length;
+
+  int i;
+  int rc;
+  
+  for(i = 1; (i < argc) && (argv[i][0] == '-'); i++);
+
+  if((argc - i) < 4) {
+        printf("format: joinfs querypath mountpath logpath dbpath\n");
+    exit(EXIT_FAILURE);
+  }
+
+  joinfs_context.querypath = realpath(argv[i], NULL);
+  joinfs_context.querypath_len = strlen(joinfs_context.querypath);
+  
+  joinfs_context.mountpath = realpath(argv[i + 1], NULL);
+  joinfs_context.mountpath_len = strlen(joinfs_context.mountpath);
+
+  length = strlen(argv[i + 2]) + 1;
+  joinfs_context.logpath = malloc(sizeof(*joinfs_context.logpath) * length);
+  if(!joinfs_context.logpath) {
+    printf("joinFS failed to start because the system is out of memory.\n");
+    exit(EXIT_FAILURE);
+  }
+  strncpy(joinfs_context.logpath, argv[i + 2], length);
+
+  length = strlen(argv[i + 3]) + 1;
+  joinfs_context.dbpath = malloc(sizeof(*joinfs_context.dbpath) * length);
+  if(!joinfs_context.dbpath) {
+    printf("joinFS failed to start because the system is out of memory.\n");
+    exit(EXIT_FAILURE);
+  }
+  strncpy(joinfs_context.dbpath, argv[i + 3], length);
+  
+  argc = 2;
+  argv[1] = joinfs_context.mountpath;
+  
+  printf("Starting joinFS, mounted at: %s\n", argv[1]);
+  rc = fuse_main(argc, argv, &jfs_oper, NULL);;
+
+  if(rc) {
+    printf("joinFS start up failed. FUSE error code=%d.\n", rc);
+  }
+
+  return rc;
+}
+\end{DoxyCode}
+
+
+
+
+\subsection{Variable Documentation}
+\hypertarget{joinfs_8c_a9c3757198d119d8a1974aa01ac4c86b2}{
+\index{joinfs.c@{joinfs.c}!joinfs\_\-context@{joinfs\_\-context}}
+\index{joinfs\_\-context@{joinfs\_\-context}!joinfs.c@{joinfs.c}}
+\subsubsection[{joinfs\_\-context}]{\setlength{\rightskip}{0pt plus 5cm}struct {\bf jfs\_\-context} {\bf joinfs\_\-context}}}
+\label{joinfs_8c_a9c3757198d119d8a1974aa01ac4c86b2}

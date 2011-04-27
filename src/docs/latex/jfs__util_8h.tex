@@ -1,0 +1,654 @@
+\hypertarget{jfs__util_8h}{
+\section{include/jfs\_\-util.h File Reference}
+\label{jfs__util_8h}\index{include/jfs\_\-util.h@{include/jfs\_\-util.h}}
+}
+{\ttfamily \#include $<$sys/types.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__util_8h_a18458aba511c424d741a6b4fe7666c34}{jfs\_\-util\_\-get\_\-inode} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__util_8h_aad6c9eed9ccc3bfd34d6e22e471c55fa}{jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode} (const char $\ast$path, int $\ast$inode, mode\_\-t $\ast$mode)
+\item 
+int \hyperlink{jfs__util_8h_aac294c4ffa645588203d104f6a4e69df}{jfs\_\-util\_\-is\_\-realpath} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__util_8h_a8c735f533c10b49cd868de3099b7141a}{jfs\_\-util\_\-is\_\-path\_\-dynamic} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__util_8h_a5d3a58300e9bd818ab34c3ce3e6a2dd1}{jfs\_\-util\_\-get\_\-datapath} (const char $\ast$path, char $\ast$$\ast$datapath)
+\item 
+int \hyperlink{jfs__util_8h_aad1c00280205436e8bd06b492f7d91b7}{jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode} (const char $\ast$path, char $\ast$$\ast$datapath, int $\ast$datainode)
+\item 
+int \hyperlink{jfs__util_8h_a74e234023a196e62c4ddbb6c074c4031}{jfs\_\-util\_\-get\_\-datainode} (const char $\ast$path)
+\item 
+char $\ast$ \hyperlink{jfs__util_8h_a696c312ae217ba3d64f11b5325521884}{jfs\_\-util\_\-get\_\-filename} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__util_8h_aabb2f2475b70cdfb64fd051948c38ce7}{jfs\_\-util\_\-get\_\-subpath} (const char $\ast$path, char $\ast$$\ast$subpath)
+\item 
+int \hyperlink{jfs__util_8h_a7ae87ea9ca6f9198082da78320b13be1}{jfs\_\-util\_\-change\_\-filename} (const char $\ast$path, const char $\ast$filename, char $\ast$$\ast$newpath)
+\item 
+int \hyperlink{jfs__util_8h_a975532d1ddd72a6e847daf6828bf9a35}{jfs\_\-util\_\-get\_\-keyid} (const char $\ast$key)
+\item 
+int \hyperlink{jfs__util_8h_a5a88c12a1baa5a35a9168c4dab731667}{jfs\_\-util\_\-strip\_\-last\_\-path\_\-item} (char $\ast$path)
+\item 
+char $\ast$ \hyperlink{jfs__util_8h_afe017ee065a1b7255a7db44f76cb199e}{jfs\_\-util\_\-get\_\-last\_\-path\_\-item} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__util_8h_af8c321b3a6829372c683b8f124d5ce7e}{jfs\_\-util\_\-resolve\_\-new\_\-path} (const char $\ast$path, char $\ast$$\ast$new\_\-path)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__util_8h_a7ae87ea9ca6f9198082da78320b13be1}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-change\_\-filename@{jfs\_\-util\_\-change\_\-filename}}
+\index{jfs\_\-util\_\-change\_\-filename@{jfs\_\-util\_\-change\_\-filename}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-change\_\-filename}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-change\_\-filename (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ filename, }
+\item[{char $\ast$$\ast$}]{ newpath}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a7ae87ea9ca6f9198082da78320b13be1}
+Get the full path for a new filename. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em filename}]The file name. \item[{\em newpath}]The resulting path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *subpath;
+  char *npath;
+  size_t npath_len;
+  int rc;
+
+  rc = jfs_util_get_subpath(path, &subpath);
+  if(rc) {
+    return rc;
+  }
+
+  npath_len = strlen(subpath) + strlen(filename) + 1;
+  npath = malloc(sizeof(*npath) * npath_len);
+  if(!npath) {
+    free(subpath);
+    return -ENOMEM;
+  }
+
+  snprintf(npath, npath_len, "%s%s", subpath, filename);
+  free(subpath);
+
+  *newpath = npath;
+
+  return 0;
+} 
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_a74e234023a196e62c4ddbb6c074c4031}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-datainode@{jfs\_\-util\_\-get\_\-datainode}}
+\index{jfs\_\-util\_\-get\_\-datainode@{jfs\_\-util\_\-get\_\-datainode}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-datainode}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-datainode (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a74e234023a196e62c4ddbb6c074c4031}
+Retrieve the datainode associated with a path. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The inode number or a negative error code. 
+\end{DoxyReturn}
+\hypertarget{jfs__util_8h_a5d3a58300e9bd818ab34c3ce3e6a2dd1}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-datapath@{jfs\_\-util\_\-get\_\-datapath}}
+\index{jfs\_\-util\_\-get\_\-datapath@{jfs\_\-util\_\-get\_\-datapath}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-datapath}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-datapath (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$$\ast$}]{ datapath}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a5d3a58300e9bd818ab34c3ce3e6a2dd1}
+Get the datapath associated with a path. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em datapath}]The data path returned. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Errror code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *filename;
+  char *r_path;
+  char *subpath;
+  char *d_path;
+
+  size_t realpath_len;
+  
+  int jfs_id;
+  int rc;
+
+  jfs_id = 0;
+  if(!jfs_util_is_realpath(path)) {
+        rc = jfs_dynamic_path_resolution(path, &d_path, &jfs_id);
+
+    //check if it is stored in a .jfs_sub_query folder
+        if(rc) {
+      rc = jfs_util_get_subpath(path, &subpath);
+      if(rc) {
+        return rc;
+      }
+      
+      rc = jfs_dynamic_path_resolution(subpath, &d_path, &jfs_id);
+      free(subpath);
+
+      if(rc) {
+        return rc;
+      }
+
+      filename = jfs_util_get_filename(path);
+      realpath_len = strlen(d_path) + strlen(filename) + 2; //null and '/'
+
+      r_path = malloc(sizeof(*r_path) * realpath_len);
+      if(!r_path) {
+        free(d_path);
+        
+        return -ENOMEM;
+      }
+      snprintf(r_path, realpath_len, "%s/%s", d_path, filename);
+      free(d_path);
+      
+      //does it actually exist?
+      if(!jfs_util_is_realpath(r_path)) {
+        free(r_path);
+        
+        return -ENOENT;
+      }
+
+      //cache it for next time
+      rc = jfs_dynamic_hierarchy_add_file(path, r_path, jfs_id);
+      if(rc) {
+        free(r_path);
+        
+        return rc;
+      }
+      
+      if(datapath) {
+        *datapath = r_path;
+      }
+      else {
+        free(r_path);
+      }
+
+      return 0;
+    }
+    else {
+      *datapath = d_path;
+    }
+
+    return 0;
+  }
+  
+  realpath_len = strlen(path) + 1;
+  r_path = malloc(sizeof(*r_path) * realpath_len);
+  if(!r_path) {
+    return -ENOMEM;
+  }
+  strncpy(r_path, path, realpath_len);
+  
+  *datapath = r_path;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_aad1c00280205436e8bd06b492f7d91b7}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode@{jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode}}
+\index{jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode@{jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-datapath\_\-and\_\-datainode (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$$\ast$}]{ datapath, }
+\item[{int $\ast$}]{ datainode}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_aad1c00280205436e8bd06b492f7d91b7}
+Get both the datapath and datainode associated with a file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em datapath}]The data path returned. \item[{\em datainode}]The data inode returned. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Errror code or 0. 
+\end{DoxyReturn}
+\hypertarget{jfs__util_8h_a696c312ae217ba3d64f11b5325521884}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-filename@{jfs\_\-util\_\-get\_\-filename}}
+\index{jfs\_\-util\_\-get\_\-filename@{jfs\_\-util\_\-get\_\-filename}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-filename}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ jfs\_\-util\_\-get\_\-filename (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a696c312ae217ba3d64f11b5325521884}
+Returns a pointer to the filename portion of a path. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+NULL if there is no filename, otherwise a pointer. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *filename;
+  
+  filename = strrchr(path, '/') + 1;
+
+  return filename;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_a18458aba511c424d741a6b4fe7666c34}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-inode@{jfs\_\-util\_\-get\_\-inode}}
+\index{jfs\_\-util\_\-get\_\-inode@{jfs\_\-util\_\-get\_\-inode}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-inode}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-inode (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a18458aba511c424d741a6b4fe7666c34}
+Get the inode number associated with a path. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The inode number or a negative error code. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct stat buf;
+  int rc;
+
+  rc = lstat(path, &buf);
+  if(rc < 0) {
+        return -errno;
+  }
+
+  return buf.st_ino;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_aad6c9eed9ccc3bfd34d6e22e471c55fa}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode@{jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode}}
+\index{jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode@{jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-inode\_\-and\_\-mode (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{int $\ast$}]{ inode, }
+\item[{mode\_\-t $\ast$}]{ mode}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_aad6c9eed9ccc3bfd34d6e22e471c55fa}
+Returns both the inode and mode for the path. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em inode}]The inode number returned. \item[{\em mode}]The file mode returned. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct stat buf;
+  
+  int rc;
+
+  rc = lstat(path, &buf);
+  if(rc < 0) {
+    return -errno;
+  }
+
+  *inode = buf.st_ino;
+  *mode = buf.st_mode;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_a975532d1ddd72a6e847daf6828bf9a35}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-keyid@{jfs\_\-util\_\-get\_\-keyid}}
+\index{jfs\_\-util\_\-get\_\-keyid@{jfs\_\-util\_\-get\_\-keyid}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-keyid}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-keyid (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ key}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a975532d1ddd72a6e847daf6828bf9a35}
+Returns the id for the specified metadata tag. 
+\begin{DoxyParams}{Parameters}
+\item[{\em key}]The metadata tag name. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Negative error code or the metadata tag id. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+  
+  int keyid;
+  int rc;
+
+  //hit the cache first
+  keyid = jfs_key_cache_get_keyid(key);
+  if(keyid > 0) {
+    return keyid;
+  }
+
+  //cache miss, insert, but ignore if it exists
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "INSERT OR IGNORE INTO keys VALUES(NULL, \"%s\");",
+                        key);
+  if(rc) {
+        return rc;
+  }
+  
+  jfs_write_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+        jfs_db_op_destroy(db_op);
+        return rc;
+  }
+  jfs_db_op_destroy(db_op);
+
+  //go out to the database for the keyid
+  rc = jfs_db_op_create(&db_op, jfs_key_cache_op,
+                        "SELECT keyid FROM keys WHERE keytext=\"%s\";",
+                        key);
+  if(rc) {
+        return rc;
+  }
+  
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+        jfs_db_op_destroy(db_op);
+        return rc;
+  }
+
+  //this should never happen
+  if(db_op->result == NULL) {
+        return -EINVAL;
+  }
+
+  keyid = db_op->result->keyid;
+  jfs_db_op_destroy(db_op);
+
+  jfs_key_cache_add(keyid, key);
+
+  return keyid;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_afe017ee065a1b7255a7db44f76cb199e}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-last\_\-path\_\-item@{jfs\_\-util\_\-get\_\-last\_\-path\_\-item}}
+\index{jfs\_\-util\_\-get\_\-last\_\-path\_\-item@{jfs\_\-util\_\-get\_\-last\_\-path\_\-item}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-last\_\-path\_\-item}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ jfs\_\-util\_\-get\_\-last\_\-path\_\-item (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_afe017ee065a1b7255a7db44f76cb199e}
+Returns a pointer to the last path item. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A pointer or NULL. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  return strrchr(path, '/');
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_aabb2f2475b70cdfb64fd051948c38ce7}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-get\_\-subpath@{jfs\_\-util\_\-get\_\-subpath}}
+\index{jfs\_\-util\_\-get\_\-subpath@{jfs\_\-util\_\-get\_\-subpath}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-get\_\-subpath}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-get\_\-subpath (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$$\ast$}]{ subpath}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_aabb2f2475b70cdfb64fd051948c38ce7}
+Allocate and copies the new subpath. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em subpath}]The sub path returned. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *subpath;
+  char *filename;
+  size_t sub_len;
+
+  filename = jfs_util_get_filename(path);
+  if(!filename || *filename == '\0') {
+    return -ENOENT;
+  }
+
+  sub_len = strlen(path) - strlen(filename) + 1;
+  subpath = malloc(sizeof(*subpath) * sub_len);
+  if(!subpath) {
+    return -ENOMEM;
+  }
+  strncpy(subpath, path, sub_len);
+  subpath[sub_len - 1] = '\0';
+
+  *new_path = subpath;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_a8c735f533c10b49cd868de3099b7141a}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-is\_\-path\_\-dynamic@{jfs\_\-util\_\-is\_\-path\_\-dynamic}}
+\index{jfs\_\-util\_\-is\_\-path\_\-dynamic@{jfs\_\-util\_\-is\_\-path\_\-dynamic}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-is\_\-path\_\-dynamic}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-is\_\-path\_\-dynamic (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a8c735f533c10b49cd868de3099b7141a}
+Is the path a dynamic path? 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 if dynamic, 0 if not 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  int jfs_id;
+  int rc;
+
+  datapath = NULL;
+  if(jfs_util_is_realpath(path)) {
+    return 0;
+  }
+
+  rc = jfs_dynamic_path_resolution(path, &datapath, &jfs_id); 
+  if(rc) {
+    return 0;
+  }
+  free(datapath);
+
+  return 1;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_aac294c4ffa645588203d104f6a4e69df}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-is\_\-realpath@{jfs\_\-util\_\-is\_\-realpath}}
+\index{jfs\_\-util\_\-is\_\-realpath@{jfs\_\-util\_\-is\_\-realpath}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-is\_\-realpath}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-is\_\-realpath (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_aac294c4ffa645588203d104f6a4e69df}
+Does the path exist on the file system? 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 if it exists, 0 if it does not. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  int mask;
+
+  mask = F_OK;
+
+  if(!access(path, mask)) {
+    return 1;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_af8c321b3a6829372c683b8f124d5ce7e}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-resolve\_\-new\_\-path@{jfs\_\-util\_\-resolve\_\-new\_\-path}}
+\index{jfs\_\-util\_\-resolve\_\-new\_\-path@{jfs\_\-util\_\-resolve\_\-new\_\-path}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-resolve\_\-new\_\-path}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-resolve\_\-new\_\-path (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$$\ast$}]{ new\_\-path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_af8c321b3a6829372c683b8f124d5ce7e}
+Resolves dynamic paths for new filesystem items. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em new\_\-path}]Returns the resolved new path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *sub_datapath;
+  char *subpath;
+  char *realpath;
+  char *filename;
+
+  size_t realpath_len;
+  
+  int rc;
+  
+  subpath = NULL;
+  sub_datapath = NULL;
+  realpath = NULL;
+  
+  filename = jfs_util_get_filename(path);
+  if(!filename || *filename == '\0') {
+    return -ENOENT;
+  }
+  
+  rc = jfs_util_get_subpath(path, &subpath); 
+  if(rc){
+    return rc;
+  }
+  
+  //if the subpath isn't real, get the sub_datapath
+  if(!jfs_util_is_realpath(subpath)) {
+    rc = jfs_util_get_datapath(subpath, &sub_datapath);
+    free(subpath);
+
+    if(rc) {
+      return rc;
+    }
+    subpath = sub_datapath;
+  }
+
+  realpath_len = strlen(subpath) + strlen(filename) + 1;
+  realpath = malloc(sizeof(*realpath) * realpath_len);
+  if(!realpath) {
+    free(subpath);
+
+    return -ENOMEM;
+  }
+  snprintf(realpath, realpath_len, "%s%s", subpath, filename);
+  free(subpath);
+  
+  *new_path = realpath;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__util_8h_a5a88c12a1baa5a35a9168c4dab731667}{
+\index{jfs\_\-util.h@{jfs\_\-util.h}!jfs\_\-util\_\-strip\_\-last\_\-path\_\-item@{jfs\_\-util\_\-strip\_\-last\_\-path\_\-item}}
+\index{jfs\_\-util\_\-strip\_\-last\_\-path\_\-item@{jfs\_\-util\_\-strip\_\-last\_\-path\_\-item}!jfs_util.h@{jfs\_\-util.h}}
+\subsubsection[{jfs\_\-util\_\-strip\_\-last\_\-path\_\-item}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-util\_\-strip\_\-last\_\-path\_\-item (
+\begin{DoxyParamCaption}
+\item[{char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__util_8h_a5a88c12a1baa5a35a9168c4dab731667}
+Remove the last path item from a path. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *terminator;
+
+  terminator = strrchr(path, '/');
+  if(!terminator) {
+    return -ENOENT;
+  }
+  *terminator = '\0';
+
+  return 0;
+}
+\end{DoxyCode}
+
+

@@ -1,0 +1,123 @@
+\hypertarget{jfs__list_8h}{
+\section{include/jfs\_\-list.h File Reference}
+\label{jfs__list_8h}\index{include/jfs\_\-list.h@{include/jfs\_\-list.h}}
+}
+{\ttfamily \#include \char`\"{}sglib.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-db\_\-ops.h\char`\"{}}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$sys/types.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__list}{jfs\_\-list}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__list_8h_ad1340f3f5542f55eac9c8423139c1540}{JFS\_\-LIST\_\-CMP}(a, b)~(a-\/$>$jfs\_\-id -\/ b-\/$>$jfs\_\-id)
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \hyperlink{structjfs__list}{jfs\_\-list} \hyperlink{jfs__list_8h_a5063614763740f2f339c9a95fb6956bb}{jfs\_\-list\_\-t}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{jfs__list_8h_a3253b1144f83a872aec76fa8c6231ded}{jfs\_\-list\_\-add} (\hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$$\ast$head, \hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$node)
+\item 
+void \hyperlink{jfs__list_8h_a49ceaa0193aab18dff6bb04d9f5dbac9}{jfs\_\-list\_\-destroy} (\hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$head, enum \hyperlink{jfs__db__ops_8h_af6bdc4da6fffc70bba9b64b165cac5bc}{jfs\_\-db\_\-ops} op)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__list_8h_ad1340f3f5542f55eac9c8423139c1540}{
+\index{jfs\_\-list.h@{jfs\_\-list.h}!JFS\_\-LIST\_\-CMP@{JFS\_\-LIST\_\-CMP}}
+\index{JFS\_\-LIST\_\-CMP@{JFS\_\-LIST\_\-CMP}!jfs_list.h@{jfs\_\-list.h}}
+\subsubsection[{JFS\_\-LIST\_\-CMP}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-LIST\_\-CMP(
+\begin{DoxyParamCaption}
+\item[{}]{a, }
+\item[{}]{b}
+\end{DoxyParamCaption}
+)~(a-\/$>$jfs\_\-id -\/ b-\/$>$jfs\_\-id)}}
+\label{jfs__list_8h_ad1340f3f5542f55eac9c8423139c1540}
+
+
+\subsection{Typedef Documentation}
+\hypertarget{jfs__list_8h_a5063614763740f2f339c9a95fb6956bb}{
+\index{jfs\_\-list.h@{jfs\_\-list.h}!jfs\_\-list\_\-t@{jfs\_\-list\_\-t}}
+\index{jfs\_\-list\_\-t@{jfs\_\-list\_\-t}!jfs_list.h@{jfs\_\-list.h}}
+\subsubsection[{jfs\_\-list\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf jfs\_\-list} {\bf jfs\_\-list\_\-t}}}
+\label{jfs__list_8h_a5063614763740f2f339c9a95fb6956bb}
+The \hyperlink{structjfs__list}{jfs\_\-list} node. Used for storing a database result row. 
+
+\subsection{Function Documentation}
+\hypertarget{jfs__list_8h_a3253b1144f83a872aec76fa8c6231ded}{
+\index{jfs\_\-list.h@{jfs\_\-list.h}!jfs\_\-list\_\-add@{jfs\_\-list\_\-add}}
+\index{jfs\_\-list\_\-add@{jfs\_\-list\_\-add}!jfs_list.h@{jfs\_\-list.h}}
+\subsubsection[{jfs\_\-list\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-list\_\-add (
+\begin{DoxyParamCaption}
+\item[{{\bf jfs\_\-list\_\-t} $\ast$$\ast$}]{ head, }
+\item[{{\bf jfs\_\-list\_\-t} $\ast$}]{ node}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__list_8h_a3253b1144f83a872aec76fa8c6231ded}
+Add a node to a jfs list. 
+\begin{DoxyParams}{Parameters}
+\item[{\em head}]The list head. \item[{\em node}]The node to add. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  sglib_jfs_list_t_add(head, node);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__list_8h_a49ceaa0193aab18dff6bb04d9f5dbac9}{
+\index{jfs\_\-list.h@{jfs\_\-list.h}!jfs\_\-list\_\-destroy@{jfs\_\-list\_\-destroy}}
+\index{jfs\_\-list\_\-destroy@{jfs\_\-list\_\-destroy}!jfs_list.h@{jfs\_\-list.h}}
+\subsubsection[{jfs\_\-list\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-list\_\-destroy (
+\begin{DoxyParamCaption}
+\item[{{\bf jfs\_\-list\_\-t} $\ast$}]{ head, }
+\item[{enum {\bf jfs\_\-db\_\-ops}}]{ op}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__list_8h_a49ceaa0193aab18dff6bb04d9f5dbac9}
+Destroy a jfs list 
+\begin{DoxyParams}{Parameters}
+\item[{\em head}]The list head. \item[{\em op}]The type result in the jfs list. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  struct sglib_jfs_list_t_iterator it;
+  jfs_list_t *item;
+  
+  for(item = sglib_jfs_list_t_it_init(&it, head);
+          item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
+        switch(op) {
+        case(jfs_listattr_op):
+          free(item->key);
+          break;
+        case(jfs_readdir_op):
+          if(item->datapath) {
+                free(item->datapath);
+          }
+      if(item->filename) {
+        free(item->filename);
+      }
+        default:
+          break;
+        }
+
+    free(item);
+  }
+}
+\end{DoxyCode}
+
+

@@ -1,0 +1,194 @@
+\hypertarget{jfs__dir__query_8c}{
+\section{jfs\_\-dir\_\-query.c File Reference}
+\label{jfs__dir__query_8c}\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}}
+}
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-meta.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-util.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-dir\_\-query.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-dynamic\_\-dir.h\char`\"{}}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a4d3e245d7611243630627aa0225a79ca}{JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY}~\char`\"{}SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{} AND m.keyid=k.keyid;\char`\"{}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a9ebfd98489fe3ce16b958d5bc145dc4b}{JFS\_\-FOLDER\_\-QUERY}~\char`\"{}SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{} AND m.keyid=k.keyid AND m.jfs\_\-id IN (\%s);\char`\"{}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_adbad10b0450ac5f393c73aef3d4552f1}{JFS\_\-FILE\_\-QUERY}~\char`\"{}SELECT DISTINCT l.jfs\_\-id, l.filename, l.path FROM links AS l, metadata AS m, keys AS k WHERE l.jfs\_\-id=m.jfs\_\-id AND m.keyid=k.keyid AND m.jfs\_\-id IN (\%s);\char`\"{}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a5dc18e49f103b8b2a19939ccfca63790}{JFS\_\-KEY\_\-QUERY}~\char`\"{}SELECT l.jfs\_\-id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs\_\-id=m.jfs\_\-id and m.keyid=k.keyid and k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{}\char`\"{}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a7ffa68ae302ab8b4559b2b19f85bc354}{JFS\_\-PAIR\_\-QUERY}~\char`\"{}SELECT l.jfs\_\-id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs\_\-id=m.jfs\_\-id and m.keyid=k.keyid and k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{} and m.keyvalue=$\backslash$\char`\"{}\%s$\backslash$\char`\"{}\char`\"{}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a27a630704e6ea314e6b874e18658c09b}{JFS\_\-INTERSECT}~\char`\"{} INTERSECT \char`\"{}
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a38fb0ef68cedcacb4d318742ac91fe5b}{JFS\_\-ITEM\_\-ADJUST}~2
+\item 
+\#define \hyperlink{jfs__dir__query_8c_a3b452bd27a0c72304f2475a764aa7c7c}{JFS\_\-PAIR\_\-ADJUST}~4
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__dir__query_8c_abb5830bd56c2f8aa49c6e2e2c6364280}{jfs\_\-dir\_\-query\_\-builder} (const char $\ast$path, const char $\ast$realpath, int $\ast$is\_\-folders, char $\ast$$\ast$query)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__dir__query_8c_adbad10b0450ac5f393c73aef3d4552f1}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-FILE\_\-QUERY@{JFS\_\-FILE\_\-QUERY}}
+\index{JFS\_\-FILE\_\-QUERY@{JFS\_\-FILE\_\-QUERY}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-FILE\_\-QUERY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-FILE\_\-QUERY~\char`\"{}SELECT DISTINCT l.jfs\_\-id, l.filename, l.path FROM links AS l, metadata AS m, keys AS k WHERE l.jfs\_\-id=m.jfs\_\-id AND m.keyid=k.keyid AND m.jfs\_\-id IN (\%s);\char`\"{}}}
+\label{jfs__dir__query_8c_adbad10b0450ac5f393c73aef3d4552f1}
+\hypertarget{jfs__dir__query_8c_a9ebfd98489fe3ce16b958d5bc145dc4b}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-FOLDER\_\-QUERY@{JFS\_\-FOLDER\_\-QUERY}}
+\index{JFS\_\-FOLDER\_\-QUERY@{JFS\_\-FOLDER\_\-QUERY}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-FOLDER\_\-QUERY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-FOLDER\_\-QUERY~\char`\"{}SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{} AND m.keyid=k.keyid AND m.jfs\_\-id IN (\%s);\char`\"{}}}
+\label{jfs__dir__query_8c_a9ebfd98489fe3ce16b958d5bc145dc4b}
+\hypertarget{jfs__dir__query_8c_a4d3e245d7611243630627aa0225a79ca}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY@{JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY}}
+\index{JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY@{JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-FOLDER\_\-SIMPLE\_\-QUERY~\char`\"{}SELECT DISTINCT m.keyvalue FROM keys AS k, metadata AS m WHERE k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{} AND m.keyid=k.keyid;\char`\"{}}}
+\label{jfs__dir__query_8c_a4d3e245d7611243630627aa0225a79ca}
+\hypertarget{jfs__dir__query_8c_a27a630704e6ea314e6b874e18658c09b}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-INTERSECT@{JFS\_\-INTERSECT}}
+\index{JFS\_\-INTERSECT@{JFS\_\-INTERSECT}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-INTERSECT}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-INTERSECT~\char`\"{} INTERSECT \char`\"{}}}
+\label{jfs__dir__query_8c_a27a630704e6ea314e6b874e18658c09b}
+\hypertarget{jfs__dir__query_8c_a38fb0ef68cedcacb4d318742ac91fe5b}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-ITEM\_\-ADJUST@{JFS\_\-ITEM\_\-ADJUST}}
+\index{JFS\_\-ITEM\_\-ADJUST@{JFS\_\-ITEM\_\-ADJUST}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-ITEM\_\-ADJUST}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-ITEM\_\-ADJUST~2}}
+\label{jfs__dir__query_8c_a38fb0ef68cedcacb4d318742ac91fe5b}
+\hypertarget{jfs__dir__query_8c_a5dc18e49f103b8b2a19939ccfca63790}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-KEY\_\-QUERY@{JFS\_\-KEY\_\-QUERY}}
+\index{JFS\_\-KEY\_\-QUERY@{JFS\_\-KEY\_\-QUERY}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-KEY\_\-QUERY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-KEY\_\-QUERY~\char`\"{}SELECT l.jfs\_\-id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs\_\-id=m.jfs\_\-id and m.keyid=k.keyid and k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{}\char`\"{}}}
+\label{jfs__dir__query_8c_a5dc18e49f103b8b2a19939ccfca63790}
+\hypertarget{jfs__dir__query_8c_a3b452bd27a0c72304f2475a764aa7c7c}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-PAIR\_\-ADJUST@{JFS\_\-PAIR\_\-ADJUST}}
+\index{JFS\_\-PAIR\_\-ADJUST@{JFS\_\-PAIR\_\-ADJUST}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-PAIR\_\-ADJUST}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-PAIR\_\-ADJUST~4}}
+\label{jfs__dir__query_8c_a3b452bd27a0c72304f2475a764aa7c7c}
+\hypertarget{jfs__dir__query_8c_a7ffa68ae302ab8b4559b2b19f85bc354}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!JFS\_\-PAIR\_\-QUERY@{JFS\_\-PAIR\_\-QUERY}}
+\index{JFS\_\-PAIR\_\-QUERY@{JFS\_\-PAIR\_\-QUERY}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{JFS\_\-PAIR\_\-QUERY}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-PAIR\_\-QUERY~\char`\"{}SELECT l.jfs\_\-id FROM links AS l, metadata AS m, keys AS k WHERE l.jfs\_\-id=m.jfs\_\-id and m.keyid=k.keyid and k.keytext=$\backslash$\char`\"{}\%s$\backslash$\char`\"{} and m.keyvalue=$\backslash$\char`\"{}\%s$\backslash$\char`\"{}\char`\"{}}}
+\label{jfs__dir__query_8c_a7ffa68ae302ab8b4559b2b19f85bc354}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__dir__query_8c_abb5830bd56c2f8aa49c6e2e2c6364280}{
+\index{jfs\_\-dir\_\-query.c@{jfs\_\-dir\_\-query.c}!jfs\_\-dir\_\-query\_\-builder@{jfs\_\-dir\_\-query\_\-builder}}
+\index{jfs\_\-dir\_\-query\_\-builder@{jfs\_\-dir\_\-query\_\-builder}!jfs_dir_query.c@{jfs\_\-dir\_\-query.c}}
+\subsubsection[{jfs\_\-dir\_\-query\_\-builder}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dir\_\-query\_\-builder (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ realpath, }
+\item[{int $\ast$}]{ is\_\-folders, }
+\item[{char $\ast$$\ast$}]{ query}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dir__query_8c_abb5830bd56c2f8aa49c6e2e2c6364280}
+Builds the dynamic folder query from metadata. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The joinfs directory path. \item[{\em realpath}]The real file system directory path. \item[{\em is\_\-folders}]Return value that specifies whether or not the query results should be folders. \item[{\em query}]The returned SQL query. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *copy_path;
+  char *dir_is_folders;
+  char *dir_key_pairs;
+  char *path_items;
+  char *dir_query;
+
+  size_t path_len;
+
+  int items;
+  int rc;
+  
+  dir_query = NULL;
+  dir_is_folders = NULL;
+  dir_key_pairs = NULL;
+  path_items = NULL;
+
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_KEY_PAIRS, &dir_key_pairs);
+  if(rc) {
+    return rc;
+  }
+  
+  printf("---key_pairs, path:%s, realpath:%s\n", path, realpath);
+
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_IS_FOLDER, &dir_is_folders);
+  if(rc) {
+    rc = 0;
+    *is_folders = 0;
+  }
+  else {
+    if(strcmp(dir_is_folders, JFS_DIR_XATTR_TRUE) == 0) {
+      *is_folders = 1;
+    }
+    else {
+      *is_folders = 0;
+    }
+  }
+
+  printf("---jfs_dir_is_folder\n");
+
+  if(dir_is_folders) {
+    free(dir_is_folders);
+  }
+
+  rc = jfs_meta_do_getxattr(realpath, JFS_DIR_PATH_ITEMS, &path_items);
+  if(rc) {
+    rc = 0;
+    items = 0;
+  }
+  else {
+    items = atoi(path_items);
+  }
+
+  printf("---jfs_dir_path_items\n");
+
+  if(path_items) {
+    free(path_items);
+  }
+
+  //copy the path so we can modify it
+  path_len = strlen(path) + 1;
+  copy_path = malloc(sizeof(*copy_path) * path_len);
+  if(!copy_path) {
+    free(dir_key_pairs);
+
+    return -ENOMEM;
+  }
+  strncpy(copy_path, path, path_len);
+
+  rc = jfs_dir_create_query(items, *is_folders, copy_path, dir_key_pairs, &dir_qu
+      ery);
+  free(dir_key_pairs);
+  free(copy_path);
+
+  if(rc) {
+    if(dir_query) {
+      free(dir_query);
+    }
+
+    return rc;
+  }
+  
+  *query = dir_query;
+
+  return 0;
+}
+\end{DoxyCode}
+
+

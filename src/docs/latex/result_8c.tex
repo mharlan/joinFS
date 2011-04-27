@@ -1,0 +1,84 @@
+\hypertarget{result_8c}{
+\section{result.c File Reference}
+\label{result_8c}\index{result.c@{result.c}}
+}
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-list.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}result.h\char`\"{}}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$sqlite3.h$>$}\par
+{\ttfamily \#include $<$sys/types.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{result_8c_a5f535b7c3a2b56a21f828c4b0498713f}{jfs\_\-db\_\-result} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{result_8c_a5f535b7c3a2b56a21f828c4b0498713f}{
+\index{result.c@{result.c}!jfs\_\-db\_\-result@{jfs\_\-db\_\-result}}
+\index{jfs\_\-db\_\-result@{jfs\_\-db\_\-result}!result.c@{result.c}}
+\subsubsection[{jfs\_\-db\_\-result}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-db\_\-result (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{result_8c_a5f535b7c3a2b56a21f828c4b0498713f}
+Function to return the result of a query. The result will be set based on the \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} enum value. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  int rc;
+  
+  switch(db_op->op) {
+  case(jfs_write_op):
+        rc = jfs_do_write_op(db_op->stmt);
+        break;
+  case(jfs_multi_write_op):
+    rc = jfs_do_write_op(db_op->stmt);
+    break;
+  case(jfs_listattr_op):
+        rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->buffer_size)
+      ;
+        break;
+  case(jfs_key_cache_op):
+        rc = jfs_do_key_cache_op(&db_op->result, db_op->stmt);
+        break;
+  case(jfs_datapath_cache_op):
+    rc = jfs_do_datapath_cache_op(&db_op->result, db_op->stmt);
+    break;
+  case(jfs_dynamic_file_op):
+        rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt);
+        break;
+  case(jfs_meta_cache_op):
+        rc = jfs_do_meta_cache_op(&db_op->result, db_op->stmt);
+        break;
+  case(jfs_readdir_op):
+        rc = jfs_do_readdir_op(&db_op->result, db_op->stmt);
+        break;
+  default:
+        rc = -EOPNOTSUPP;
+  }
+
+  if(rc < 0) {
+    return rc;
+  }
+  else {
+    return rc * -JFS_SQL_RC_SCALE;
+  }
+}
+\end{DoxyCode}
+
+

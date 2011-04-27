@@ -1,0 +1,102 @@
+\hypertarget{result_8h}{
+\section{include/result.h File Reference}
+\label{result_8h}\index{include/result.h@{include/result.h}}
+}
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{result_8h_a3db0668a197527e2c0c67930a3110a93}{JFS\_\-FILENAME\_\-MAX}~1024
+\item 
+\#define \hyperlink{result_8h_aa095f4daee666a7c4cc1847b236f443d}{JFS\_\-KEY\_\-MAX}~1024
+\item 
+\#define \hyperlink{result_8h_a555849b5c6b196895b2975a54b37151d}{JFS\_\-VALUE\_\-MAX}~1024
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{result_8h_a5f535b7c3a2b56a21f828c4b0498713f}{jfs\_\-db\_\-result} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{result_8h_a3db0668a197527e2c0c67930a3110a93}{
+\index{result.h@{result.h}!JFS\_\-FILENAME\_\-MAX@{JFS\_\-FILENAME\_\-MAX}}
+\index{JFS\_\-FILENAME\_\-MAX@{JFS\_\-FILENAME\_\-MAX}!result.h@{result.h}}
+\subsubsection[{JFS\_\-FILENAME\_\-MAX}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-FILENAME\_\-MAX~1024}}
+\label{result_8h_a3db0668a197527e2c0c67930a3110a93}
+\hypertarget{result_8h_aa095f4daee666a7c4cc1847b236f443d}{
+\index{result.h@{result.h}!JFS\_\-KEY\_\-MAX@{JFS\_\-KEY\_\-MAX}}
+\index{JFS\_\-KEY\_\-MAX@{JFS\_\-KEY\_\-MAX}!result.h@{result.h}}
+\subsubsection[{JFS\_\-KEY\_\-MAX}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-KEY\_\-MAX~1024}}
+\label{result_8h_aa095f4daee666a7c4cc1847b236f443d}
+\hypertarget{result_8h_a555849b5c6b196895b2975a54b37151d}{
+\index{result.h@{result.h}!JFS\_\-VALUE\_\-MAX@{JFS\_\-VALUE\_\-MAX}}
+\index{JFS\_\-VALUE\_\-MAX@{JFS\_\-VALUE\_\-MAX}!result.h@{result.h}}
+\subsubsection[{JFS\_\-VALUE\_\-MAX}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-VALUE\_\-MAX~1024}}
+\label{result_8h_a555849b5c6b196895b2975a54b37151d}
+
+
+\subsection{Function Documentation}
+\hypertarget{result_8h_a5f535b7c3a2b56a21f828c4b0498713f}{
+\index{result.h@{result.h}!jfs\_\-db\_\-result@{jfs\_\-db\_\-result}}
+\index{jfs\_\-db\_\-result@{jfs\_\-db\_\-result}!result.h@{result.h}}
+\subsubsection[{jfs\_\-db\_\-result}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-db\_\-result (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{result_8h_a5f535b7c3a2b56a21f828c4b0498713f}
+Function to return the result of a query. The result will be set based on the \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} enum value. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  int rc;
+  
+  switch(db_op->op) {
+  case(jfs_write_op):
+        rc = jfs_do_write_op(db_op->stmt);
+        break;
+  case(jfs_multi_write_op):
+    rc = jfs_do_write_op(db_op->stmt);
+    break;
+  case(jfs_listattr_op):
+        rc = jfs_do_listattr_op(&db_op->result, db_op->stmt, &db_op->buffer_size)
+      ;
+        break;
+  case(jfs_key_cache_op):
+        rc = jfs_do_key_cache_op(&db_op->result, db_op->stmt);
+        break;
+  case(jfs_datapath_cache_op):
+    rc = jfs_do_datapath_cache_op(&db_op->result, db_op->stmt);
+    break;
+  case(jfs_dynamic_file_op):
+        rc = jfs_do_dynamic_file_op(&db_op->result, db_op->stmt);
+        break;
+  case(jfs_meta_cache_op):
+        rc = jfs_do_meta_cache_op(&db_op->result, db_op->stmt);
+        break;
+  case(jfs_readdir_op):
+        rc = jfs_do_readdir_op(&db_op->result, db_op->stmt);
+        break;
+  default:
+        rc = -EOPNOTSUPP;
+  }
+
+  if(rc < 0) {
+    return rc;
+  }
+  else {
+    return rc * -JFS_SQL_RC_SCALE;
+  }
+}
+\end{DoxyCode}
+
+

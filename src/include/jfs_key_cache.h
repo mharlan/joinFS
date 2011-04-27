@@ -20,34 +20,35 @@
 #ifndef JOINFS_JFS_KEY_CACHE_H
 #define JOINFS_JFS_KEY_CACHE_H
 
-/*
- * Initialize the jfs_file_cache.
- *
- * Called when joinFS gets mounted.
+/*!
+ * Initialize the key cache.
  */
 void jfs_key_cache_init();
 
-/*
- * Destroy the jfs_file_cache.
- *
- * Called when joinFS gets dismount.
+/*!
+ * Destroy the key cache.
  */
 void jfs_key_cache_destroy();
 
-/*
- * Get a datainode from the file cache.
- *
- * Returns 0 if not in the cache.
+/*!
+ * Get a kyeid from the key cache.
+ * \param keytext The metadata tag name.
+ * \return Error code or 0.
  */
 int jfs_key_cache_get_keyid(const char *keytext);
 
-/*
- * Add a symlink to the jfs_file_cache.
+/*!
+ * Add a key to the key cache.
+ * \param keyid The joinFS metadata tag id.
+ * \param keytext The joinfs metadata tag name.
+ * \return Error code or 0.
  */
 int jfs_key_cache_add(int keyid, const char *keytext);
 
-/*
- * Remove a symlink reference from the file cache.
+/*!
+ * Remove a key from the key cache.
+ * \param keytext The metadata tag name.
+ * \return Error code or 0.
  */
 int jfs_key_cache_remove(const char *keytext);
 

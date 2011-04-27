@@ -1,0 +1,108 @@
+\hypertarget{structjfs__db__op}{
+\section{jfs\_\-db\_\-op Struct Reference}
+\label{structjfs__db__op}\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}}
+}
+
+
+{\ttfamily \#include $<$sqlitedb.h$>$}
+
+\subsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+sqlite3 $\ast$ \hyperlink{structjfs__db__op_a8547f4c79a291d7c581c64c2eb0e83ba}{db}
+\item 
+sqlite3\_\-stmt $\ast$ \hyperlink{structjfs__db__op_a8adbfebee41154f5fbc3be1256255870}{stmt}
+\item 
+enum \hyperlink{jfs__db__ops_8h_af6bdc4da6fffc70bba9b64b165cac5bc}{jfs\_\-db\_\-ops} \hyperlink{structjfs__db__op_ae69d9d34d24f365b8e77a6a792b32569}{op}
+\item 
+int \hyperlink{structjfs__db__op_a74baf7d5ec3899edcb1047bd9ea35958}{num\_\-queries}
+\item 
+int \hyperlink{structjfs__db__op_a6331deccf4026cf7ba1738c6e28c2f7a}{done}
+\item 
+int \hyperlink{structjfs__db__op_a4364863dc28a00f88281e69331a97874}{rc}
+\item 
+pthread\_\-cond\_\-t \hyperlink{structjfs__db__op_adec1c36c799aec505c76ab0efc41ab5a}{cond}
+\item 
+pthread\_\-mutex\_\-t \hyperlink{structjfs__db__op_a21b64755a11fa95a1739c42b0243ffa0}{mut}
+\item 
+char $\ast$ \hyperlink{structjfs__db__op_acf46a873006bb123d601b6a6914c58a6}{query}
+\item 
+char $\ast$$\ast$ \hyperlink{structjfs__db__op_a2b4f1fe422fb750b7ee7470d186f0110}{multi\_\-query}
+\item 
+\hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$ \hyperlink{structjfs__db__op_afbeb729afc20ba8e671ab03a7a7ee864}{result}
+\item 
+size\_\-t \hyperlink{structjfs__db__op_a641b456e4e88432ddd4b59bdf75d43bd}{buffer\_\-size}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Structure for thread pool database operations.
+
+Errors are stored in rc. 
+
+\subsection{Field Documentation}
+\hypertarget{structjfs__db__op_a641b456e4e88432ddd4b59bdf75d43bd}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!buffer\_\-size@{buffer\_\-size}}
+\index{buffer\_\-size@{buffer\_\-size}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{buffer\_\-size}]{\setlength{\rightskip}{0pt plus 5cm}size\_\-t {\bf jfs\_\-db\_\-op::buffer\_\-size}}}
+\label{structjfs__db__op_a641b456e4e88432ddd4b59bdf75d43bd}
+\hypertarget{structjfs__db__op_adec1c36c799aec505c76ab0efc41ab5a}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!cond@{cond}}
+\index{cond@{cond}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{cond}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-cond\_\-t {\bf jfs\_\-db\_\-op::cond}}}
+\label{structjfs__db__op_adec1c36c799aec505c76ab0efc41ab5a}
+\hypertarget{structjfs__db__op_a8547f4c79a291d7c581c64c2eb0e83ba}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!db@{db}}
+\index{db@{db}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{db}]{\setlength{\rightskip}{0pt plus 5cm}sqlite3$\ast$ {\bf jfs\_\-db\_\-op::db}}}
+\label{structjfs__db__op_a8547f4c79a291d7c581c64c2eb0e83ba}
+\hypertarget{structjfs__db__op_a6331deccf4026cf7ba1738c6e28c2f7a}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!done@{done}}
+\index{done@{done}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{done}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf jfs\_\-db\_\-op::done}}}
+\label{structjfs__db__op_a6331deccf4026cf7ba1738c6e28c2f7a}
+\hypertarget{structjfs__db__op_a2b4f1fe422fb750b7ee7470d186f0110}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!multi\_\-query@{multi\_\-query}}
+\index{multi\_\-query@{multi\_\-query}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{multi\_\-query}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$$\ast$ {\bf jfs\_\-db\_\-op::multi\_\-query}}}
+\label{structjfs__db__op_a2b4f1fe422fb750b7ee7470d186f0110}
+\hypertarget{structjfs__db__op_a21b64755a11fa95a1739c42b0243ffa0}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!mut@{mut}}
+\index{mut@{mut}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{mut}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-mutex\_\-t {\bf jfs\_\-db\_\-op::mut}}}
+\label{structjfs__db__op_a21b64755a11fa95a1739c42b0243ffa0}
+\hypertarget{structjfs__db__op_a74baf7d5ec3899edcb1047bd9ea35958}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!num\_\-queries@{num\_\-queries}}
+\index{num\_\-queries@{num\_\-queries}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{num\_\-queries}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf jfs\_\-db\_\-op::num\_\-queries}}}
+\label{structjfs__db__op_a74baf7d5ec3899edcb1047bd9ea35958}
+\hypertarget{structjfs__db__op_ae69d9d34d24f365b8e77a6a792b32569}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!op@{op}}
+\index{op@{op}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{op}]{\setlength{\rightskip}{0pt plus 5cm}enum {\bf jfs\_\-db\_\-ops} {\bf jfs\_\-db\_\-op::op}}}
+\label{structjfs__db__op_ae69d9d34d24f365b8e77a6a792b32569}
+\hypertarget{structjfs__db__op_acf46a873006bb123d601b6a6914c58a6}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!query@{query}}
+\index{query@{query}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{query}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ {\bf jfs\_\-db\_\-op::query}}}
+\label{structjfs__db__op_acf46a873006bb123d601b6a6914c58a6}
+\hypertarget{structjfs__db__op_a4364863dc28a00f88281e69331a97874}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!rc@{rc}}
+\index{rc@{rc}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{rc}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf jfs\_\-db\_\-op::rc}}}
+\label{structjfs__db__op_a4364863dc28a00f88281e69331a97874}
+\hypertarget{structjfs__db__op_afbeb729afc20ba8e671ab03a7a7ee864}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!result@{result}}
+\index{result@{result}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{result}]{\setlength{\rightskip}{0pt plus 5cm}{\bf jfs\_\-list\_\-t}$\ast$ {\bf jfs\_\-db\_\-op::result}}}
+\label{structjfs__db__op_afbeb729afc20ba8e671ab03a7a7ee864}
+\hypertarget{structjfs__db__op_a8adbfebee41154f5fbc3be1256255870}{
+\index{jfs\_\-db\_\-op@{jfs\_\-db\_\-op}!stmt@{stmt}}
+\index{stmt@{stmt}!jfs_db_op@{jfs\_\-db\_\-op}}
+\subsubsection[{stmt}]{\setlength{\rightskip}{0pt plus 5cm}sqlite3\_\-stmt$\ast$ {\bf jfs\_\-db\_\-op::stmt}}}
+\label{structjfs__db__op_a8adbfebee41154f5fbc3be1256255870}
+
+
+The documentation for this struct was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+include/\hyperlink{sqlitedb_8h}{sqlitedb.h}\end{DoxyCompactItemize}

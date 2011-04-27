@@ -20,11 +20,13 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-/*
-  Builds the dynamic directory query.
-
-  Returns -EBADMSG for a badly formatted query.
-  Also returns -ENOMEM.
+/*!
+ * Builds the dynamic folder query from metadata.
+ * \param path The joinfs directory path.
+ * \param realpath The real file system directory path.
+ * \param is_folders Return value that specifies whether or not the query results should be folders.
+ * \param query The returned SQL query.
+ * \return Error code or 0.
  */
 int jfs_dir_query_builder(const char *path, const char *realpath, int *is_folders, char **query);
 

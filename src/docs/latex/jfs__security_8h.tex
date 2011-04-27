@@ -1,0 +1,141 @@
+\hypertarget{jfs__security_8h}{
+\section{include/jfs\_\-security.h File Reference}
+\label{jfs__security_8h}\index{include/jfs\_\-security.h@{include/jfs\_\-security.h}}
+}
+{\ttfamily \#include $<$sys/types.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__security_8h_ab60719fecede64e27add9f3dbc831bc2}{jfs\_\-security\_\-chmod} (const char $\ast$path, mode\_\-t mode)
+\item 
+int \hyperlink{jfs__security_8h_a004d72a33d27d5a8c2e8c094038b5273}{jfs\_\-security\_\-chown} (const char $\ast$path, uid\_\-t uid, gid\_\-t gid)
+\item 
+int \hyperlink{jfs__security_8h_ab437705300863b5cc79c3f8b4dee93b8}{jfs\_\-security\_\-access} (const char $\ast$path, int mask)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__security_8h_ab437705300863b5cc79c3f8b4dee93b8}{
+\index{jfs\_\-security.h@{jfs\_\-security.h}!jfs\_\-security\_\-access@{jfs\_\-security\_\-access}}
+\index{jfs\_\-security\_\-access@{jfs\_\-security\_\-access}!jfs_security.h@{jfs\_\-security.h}}
+\subsubsection[{jfs\_\-security\_\-access}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-security\_\-access (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{int}]{ mask}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__security_8h_ab437705300863b5cc79c3f8b4dee93b8}
+The file system access function. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em mask}]The access mask. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+        return rc;
+  }
+
+  rc = access(datapath, mask);
+  free(datapath);
+
+  if(rc) {
+        return -errno;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__security_8h_ab60719fecede64e27add9f3dbc831bc2}{
+\index{jfs\_\-security.h@{jfs\_\-security.h}!jfs\_\-security\_\-chmod@{jfs\_\-security\_\-chmod}}
+\index{jfs\_\-security\_\-chmod@{jfs\_\-security\_\-chmod}!jfs_security.h@{jfs\_\-security.h}}
+\subsubsection[{jfs\_\-security\_\-chmod}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-security\_\-chmod (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{mode\_\-t}]{ mode}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__security_8h_ab60719fecede64e27add9f3dbc831bc2}
+The file system chmod function. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em mode}]The file mode. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+        return rc;
+  }
+
+  rc = chmod(datapath, mode);
+  free(datapath);
+
+  if(rc) {
+        return -errno;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__security_8h_a004d72a33d27d5a8c2e8c094038b5273}{
+\index{jfs\_\-security.h@{jfs\_\-security.h}!jfs\_\-security\_\-chown@{jfs\_\-security\_\-chown}}
+\index{jfs\_\-security\_\-chown@{jfs\_\-security\_\-chown}!jfs_security.h@{jfs\_\-security.h}}
+\subsubsection[{jfs\_\-security\_\-chown}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-security\_\-chown (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{uid\_\-t}]{ uid, }
+\item[{gid\_\-t}]{ gid}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__security_8h_a004d72a33d27d5a8c2e8c094038b5273}
+The file system chown function. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The system path. \item[{\em uid}]The user id. \item[{\em gid}]The group id. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+        return rc;
+  }
+
+  rc = lchown(datapath, uid, gid);
+  free(datapath);
+
+  if(rc) {
+        return -errno;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+

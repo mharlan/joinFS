@@ -1,0 +1,125 @@
+\hypertarget{error__log_8h}{
+\section{include/error\_\-log.h File Reference}
+\label{error__log_8h}\index{include/error\_\-log.h@{include/error\_\-log.h}}
+}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{error__log_8h_a2508fad025e49f9746b6c178dce6917e}{log\_\-init} (void)
+\item 
+void \hyperlink{error__log_8h_a2b49b0d464e2555957e97db285122b0e}{log\_\-destroy} (void)
+\item 
+void \hyperlink{error__log_8h_a01de98826735d07d7d41604a2ced9a64}{log\_\-error} (const char $\ast$format,...)
+\item 
+void \hyperlink{error__log_8h_aa1e51106242e3c38ee702b157bc3e3f3}{log\_\-msg} (const char $\ast$format,...)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{error__log_8h_a2b49b0d464e2555957e97db285122b0e}{
+\index{error\_\-log.h@{error\_\-log.h}!log\_\-destroy@{log\_\-destroy}}
+\index{log\_\-destroy@{log\_\-destroy}!error_log.h@{error\_\-log.h}}
+\subsubsection[{log\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void log\_\-destroy (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{error__log_8h_a2b49b0d464e2555957e97db285122b0e}
+Closes the joinFS log file. 
+
+
+\begin{DoxyCode}
+{
+  fclose(log);
+}
+\end{DoxyCode}
+
+
+\hypertarget{error__log_8h_a01de98826735d07d7d41604a2ced9a64}{
+\index{error\_\-log.h@{error\_\-log.h}!log\_\-error@{log\_\-error}}
+\index{log\_\-error@{log\_\-error}!error_log.h@{error\_\-log.h}}
+\subsubsection[{log\_\-error}]{\setlength{\rightskip}{0pt plus 5cm}void log\_\-error (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ format, }
+\item[{}]{ ...}
+\end{DoxyParamCaption}
+)}}
+\label{error__log_8h_a01de98826735d07d7d41604a2ced9a64}
+Log an error message to the log file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em format}]the format string \item[{\em ...}]the variables to format \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  va_list args;
+
+  va_start(args, format);
+
+  pthread_mutex_lock(&log_mutex);
+  fprintf(log, "---ERROR---");
+  vfprintf(log, format, args);
+  pthread_mutex_unlock(&log_mutex);
+
+  va_end(args);
+}
+\end{DoxyCode}
+
+
+\hypertarget{error__log_8h_a2508fad025e49f9746b6c178dce6917e}{
+\index{error\_\-log.h@{error\_\-log.h}!log\_\-init@{log\_\-init}}
+\index{log\_\-init@{log\_\-init}!error_log.h@{error\_\-log.h}}
+\subsubsection[{log\_\-init}]{\setlength{\rightskip}{0pt plus 5cm}void log\_\-init (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{error__log_8h_a2508fad025e49f9746b6c178dce6917e}
+Opens the joinFS log file. 
+
+
+\begin{DoxyCode}
+{
+  log = fopen(joinfs_context.logpath, "w+");
+  if(!log) {
+        printf("---ERROR---Open log file failed, path:%s\n", joinfs_context.
+      logpath);
+    exit(EXIT_FAILURE);
+  }
+}
+\end{DoxyCode}
+
+
+\hypertarget{error__log_8h_aa1e51106242e3c38ee702b157bc3e3f3}{
+\index{error\_\-log.h@{error\_\-log.h}!log\_\-msg@{log\_\-msg}}
+\index{log\_\-msg@{log\_\-msg}!error_log.h@{error\_\-log.h}}
+\subsubsection[{log\_\-msg}]{\setlength{\rightskip}{0pt plus 5cm}void log\_\-msg (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ format, }
+\item[{}]{ ...}
+\end{DoxyParamCaption}
+)}}
+\label{error__log_8h_aa1e51106242e3c38ee702b157bc3e3f3}
+Log a message to the log file. 
+\begin{DoxyParams}{Parameters}
+\item[{\em format}]the format string \item[{\em ...}]the variables to format \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  va_list args;
+
+  va_start(args, format);
+
+  pthread_mutex_lock(&log_mutex);
+  fprintf(log, "----MSG----");
+  vfprintf(log, format, args);
+  pthread_mutex_unlock(&log_mutex);
+
+  va_end(args);
+}
+\end{DoxyCode}
+
+

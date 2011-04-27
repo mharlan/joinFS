@@ -1,0 +1,207 @@
+\hypertarget{jfs__pool__test_8c}{
+\section{tests/jfs\_\-pool\_\-test.c File Reference}
+\label{jfs__pool__test_8c}\index{tests/jfs\_\-pool\_\-test.c@{tests/jfs\_\-pool\_\-test.c}}
+}
+{\ttfamily \#include \char`\"{}thr\_\-pool.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-list.h\char`\"{}}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+{\ttfamily \#include $<$sqlite3.h$>$}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__pool__test_8c_a85c439d7c508333242d12c0fb9cd242b}{TEST\_\-SIZE}~1000
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void $\ast$ \hyperlink{jfs__pool__test_8c_a8b5d82021972129d8c6737a1f98416dd}{read\_\-thrd\_\-func} (void $\ast$arg)
+\item 
+void $\ast$ \hyperlink{jfs__pool__test_8c_a73c1785de2aaf7f1b7db3777d43dd3de}{write\_\-thrd\_\-func} (void $\ast$arg)
+\item 
+int \hyperlink{jfs__pool__test_8c_a840291bc02cba5474a4cb46a9b9566fe}{main} (void)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__pool__test_8c_a85c439d7c508333242d12c0fb9cd242b}{
+\index{jfs\_\-pool\_\-test.c@{jfs\_\-pool\_\-test.c}!TEST\_\-SIZE@{TEST\_\-SIZE}}
+\index{TEST\_\-SIZE@{TEST\_\-SIZE}!jfs_pool_test.c@{jfs\_\-pool\_\-test.c}}
+\subsubsection[{TEST\_\-SIZE}]{\setlength{\rightskip}{0pt plus 5cm}\#define TEST\_\-SIZE~1000}}
+\label{jfs__pool__test_8c_a85c439d7c508333242d12c0fb9cd242b}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__pool__test_8c_a840291bc02cba5474a4cb46a9b9566fe}{
+\index{jfs\_\-pool\_\-test.c@{jfs\_\-pool\_\-test.c}!main@{main}}
+\index{main@{main}!jfs_pool_test.c@{jfs\_\-pool\_\-test.c}}
+\subsubsection[{main}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__pool__test_8c_a840291bc02cba5474a4cb46a9b9566fe}
+
+
+
+\begin{DoxyCode}
+{
+  struct sched_param param;
+  pthread_attr_t wattr;
+
+  pthread_t         pid;
+  int               i;
+
+  log_init();
+  log_error("START OF LOG FOR JFS_POOL_TEST\n");
+  printf("JFS_POOL_TEST: START\n");
+
+  printf("Starting sqlite in multithreaded mode.\n");
+  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+  sqlite3_initialize();
+
+  i = sqlite3_threadsafe();
+  if(!i) {
+        printf("SQLITE is not in thread safe mode. Abort.\n");
+        exit(EXIT_FAILURE);
+  }
+  else {
+        printf("SQLITE is THREAD SAFE.\n");
+  }
+
+  read_pool = jfs_pool_create(20, 40, 60, NULL, SQLITE_OPEN_READONLY);
+
+  printf("Setting higher thrad priority for writes.\n");
+
+  pthread_attr_init(&wattr);
+  pthread_attr_setschedpolicy(&wattr, SCHED_RR);
+  pthread_attr_getschedparam(&wattr, &param);
+  param.sched_priority = 1;
+  pthread_attr_setschedparam(&wattr, &param);
+
+  write_pool = jfs_pool_create(1, 1, 60, &wattr, SQLITE_OPEN_READWRITE);
+
+  printf("Read pool created.\n");
+
+  for(i = 1; i < TEST_SIZE; i++) {
+    printf("Dispatching job #%d\n", i);
+    pthread_create(&pid, NULL, read_thrd_func, (void *)i);
+        if((i > 30) && ((i % 10) == 1)) {
+          pthread_create(&pid, NULL, write_thrd_func, (void *)i);
+        }
+  }
+
+  jfs_pool_wait(read_pool);
+  jfs_pool_destroy(read_pool);
+
+  printf("Read pool destroyed.\n");
+
+  jfs_pool_wait(write_pool);
+  jfs_pool_destroy(write_pool);
+
+  printf("Write pool destroyed.\n");
+
+  sqlite3_shutdown();
+  log_destroy();
+
+  printf("Pool and log destroyed.\n");
+ 
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__pool__test_8c_a8b5d82021972129d8c6737a1f98416dd}{
+\index{jfs\_\-pool\_\-test.c@{jfs\_\-pool\_\-test.c}!read\_\-thrd\_\-func@{read\_\-thrd\_\-func}}
+\index{read\_\-thrd\_\-func@{read\_\-thrd\_\-func}!jfs_pool_test.c@{jfs\_\-pool\_\-test.c}}
+\subsubsection[{read\_\-thrd\_\-func}]{\setlength{\rightskip}{0pt plus 5cm}void $\ast$ read\_\-thrd\_\-func (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{ arg}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__pool__test_8c_a8b5d82021972129d8c6737a1f98416dd}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+  int rc;
+  int q_val = (int)arg;
+  
+  rc = jfs_db_op_create(&db_op, jfs_key_cache_op,
+                        "SELECT id FROM test_table WHERE name=\"%d\";",
+                        (q_val % 30) + 1);
+  if(rc) {
+        return rc;
+  }
+  
+  printf("--READ--Query set:%s\n", db_op->query);
+  printf("--READ--Performing job #%d and sleeping.\n", q_val);
+
+  jfs_pool_queue(read_pool, db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+        printf("Read query failed for job %d, rc=%d\n", q_val, rc);
+  }
+  else {
+        printf("--READ--Job #%d Waking Up\n", q_val);
+        printf("--READ--Result inode:%d\n", db_op->result->keyid);
+  }
+  jfs_db_op_destroy(db_op);
+
+  pthread_exit(0);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__pool__test_8c_a73c1785de2aaf7f1b7db3777d43dd3de}{
+\index{jfs\_\-pool\_\-test.c@{jfs\_\-pool\_\-test.c}!write\_\-thrd\_\-func@{write\_\-thrd\_\-func}}
+\index{write\_\-thrd\_\-func@{write\_\-thrd\_\-func}!jfs_pool_test.c@{jfs\_\-pool\_\-test.c}}
+\subsubsection[{write\_\-thrd\_\-func}]{\setlength{\rightskip}{0pt plus 5cm}void $\ast$ write\_\-thrd\_\-func (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{ arg}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__pool__test_8c_a73c1785de2aaf7f1b7db3777d43dd3de}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+  int rc;
+  int q_val = (int)arg;
+  
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "INSERT OR ROLLBACK INTO test_table VALUES(%d,\"%d\");",
+                        q_val, q_val);
+  if(rc) {
+        return rc;
+  }
+  
+  printf("--WRITE--Query set:%s\n", db_op->query);
+  printf("--WRITE--Performing job #-%d and sleeping.\n", q_val);
+
+  jfs_pool_queue(write_pool, db_op);
+  rc = jfs_db_op_wait(db_op);
+  
+  printf("--WRITE--Job #-%d Waking Up\n", q_val);
+  if(rc) {
+        printf("Write query failed for job %d, rc=%d.\n", q_val, rc);
+  }
+  else {
+        printf("Write was successful.\n");
+  }
+  jfs_db_op_destroy(db_op);
+
+  pthread_exit(0);
+}
+\end{DoxyCode}
+
+

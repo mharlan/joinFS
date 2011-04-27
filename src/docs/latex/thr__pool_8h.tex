@@ -1,0 +1,283 @@
+\hypertarget{thr__pool_8h}{
+\section{include/thr\_\-pool.h File Reference}
+\label{thr__pool_8h}\index{include/thr\_\-pool.h@{include/thr\_\-pool.h}}
+}
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef unsigned int \hyperlink{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}{uint\_\-t}
+\item 
+typedef struct \hyperlink{structthr__pool}{thr\_\-pool} \hyperlink{thr__pool_8h_a20e9093369f7f9ff7511da068aadca83}{thr\_\-pool\_\-t}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$ \hyperlink{thr__pool_8h_a9794386cdbf43ccd797caa0efe03efc6}{jfs\_\-pool\_\-create} (\hyperlink{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}{uint\_\-t} min\_\-threads, \hyperlink{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}{uint\_\-t} max\_\-threads, \hyperlink{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}{uint\_\-t} linger, pthread\_\-attr\_\-t $\ast$attr, int sqlite\_\-attr)
+\item 
+int \hyperlink{thr__pool_8h_a50a33a87c802a7a80cfdc41cfc86f30c}{jfs\_\-pool\_\-queue} (\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$pool, struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\item 
+void \hyperlink{thr__pool_8h_a4fbd5ceca90368ae3fa422648015c55f}{jfs\_\-pool\_\-wait} (\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$pool)
+\item 
+void \hyperlink{thr__pool_8h_a9ba84127c49b25aaa2464ed62bd7e2f2}{jfs\_\-pool\_\-destroy} (\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$pool)
+\end{DoxyCompactItemize}
+
+
+\subsection{Typedef Documentation}
+\hypertarget{thr__pool_8h_a20e9093369f7f9ff7511da068aadca83}{
+\index{thr\_\-pool.h@{thr\_\-pool.h}!thr\_\-pool\_\-t@{thr\_\-pool\_\-t}}
+\index{thr\_\-pool\_\-t@{thr\_\-pool\_\-t}!thr_pool.h@{thr\_\-pool.h}}
+\subsubsection[{thr\_\-pool\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf thr\_\-pool} {\bf thr\_\-pool\_\-t}}}
+\label{thr__pool_8h_a20e9093369f7f9ff7511da068aadca83}
+The thr\_\-pool\_\-t type is opaque to the client. It is created by thr\_\-pool\_\-create() and must be passed unmodified to the remainder of the interfaces. \hypertarget{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}{
+\index{thr\_\-pool.h@{thr\_\-pool.h}!uint\_\-t@{uint\_\-t}}
+\index{uint\_\-t@{uint\_\-t}!thr_pool.h@{thr\_\-pool.h}}
+\subsubsection[{uint\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef unsigned int {\bf uint\_\-t}}}
+\label{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}
+
+
+\subsection{Function Documentation}
+\hypertarget{thr__pool_8h_a9794386cdbf43ccd797caa0efe03efc6}{
+\index{thr\_\-pool.h@{thr\_\-pool.h}!jfs\_\-pool\_\-create@{jfs\_\-pool\_\-create}}
+\index{jfs\_\-pool\_\-create@{jfs\_\-pool\_\-create}!thr_pool.h@{thr\_\-pool.h}}
+\subsubsection[{jfs\_\-pool\_\-create}]{\setlength{\rightskip}{0pt plus 5cm}{\bf thr\_\-pool\_\-t}$\ast$ jfs\_\-pool\_\-create (
+\begin{DoxyParamCaption}
+\item[{{\bf uint\_\-t}}]{ min\_\-threads, }
+\item[{{\bf uint\_\-t}}]{ max\_\-threads, }
+\item[{{\bf uint\_\-t}}]{ linger, }
+\item[{pthread\_\-attr\_\-t $\ast$}]{ attr, }
+\item[{int}]{ sqlite\_\-attr}
+\end{DoxyParamCaption}
+)}}
+\label{thr__pool_8h_a9794386cdbf43ccd797caa0efe03efc6}
+Create a thread pool. 
+\begin{DoxyParams}{Parameters}
+\item[{\em min\_\-threads}]The minimum number of threads kept in the pool, always available to perform work requests. \item[{\em max\_\-threads}]The maximum number of threads that can be in the pool, performing work requests. \item[{\em linger}]The number of seconds excess idle worker threads (greater than min\_\-threads) linger before exiting. \item[{\em attr}]Attributes of all worker threads (can be NULL). Can be destroyed after calling thr\_\-pool\_\-create(). \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+On error, thr\_\-pool\_\-create() returns NULL with errno set to the error code. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+        thr_pool_t      *pool;
+
+        (void) sigfillset(&fillset);
+
+        if(min_threads > max_threads || max_threads < 1) {
+      errno = EINVAL;
+      return NULL;
+        }
+
+        if((pool = malloc(sizeof (*pool))) == NULL) {
+      errno = ENOMEM;
+      return NULL;
+        }
+    
+        (void) pthread_mutex_init(&pool->pool_mutex, NULL);
+        (void) pthread_cond_init(&pool->pool_busycv, NULL);
+        (void) pthread_cond_init(&pool->pool_workcv, NULL);
+        (void) pthread_cond_init(&pool->pool_waitcv, NULL);
+        pool->pool_active = NULL;
+        pool->pool_head = NULL;
+        pool->pool_tail = NULL;
+        pool->pool_flags = 0;
+        pool->pool_linger = linger;
+        pool->pool_minimum = min_threads;
+        pool->pool_maximum = max_threads;
+        pool->pool_nthreads = 0;
+        pool->pool_idle = 0;
+        pool->sqlite_attr = sqlite_attr;
+
+        /*
+         * We cannot just copy the attribute pointer.
+         * We need to initialize a new pthread_attr_t structure using
+         * the values from the caller-supplied attribute structure.
+         * If the attribute pointer is NULL, we need to initialize
+         * the new pthread_attr_t structure with default values.
+         */
+        clone_attributes(&pool->pool_attr, attr);
+
+        /* insert into the global list of all thread pools */
+        (void) pthread_mutex_lock(&thr_pool_lock);
+        if(thr_pools == NULL) {
+      pool->pool_forw = pool;
+      pool->pool_back = pool;
+      thr_pools = pool;
+        } 
+    else {
+      thr_pools->pool_back->pool_forw = pool;
+      pool->pool_forw = thr_pools;
+      pool->pool_back = thr_pools->pool_back;
+      thr_pools->pool_back = pool;
+        }
+        (void) pthread_mutex_unlock(&thr_pool_lock);
+    
+        return pool;
+}
+\end{DoxyCode}
+
+
+\hypertarget{thr__pool_8h_a9ba84127c49b25aaa2464ed62bd7e2f2}{
+\index{thr\_\-pool.h@{thr\_\-pool.h}!jfs\_\-pool\_\-destroy@{jfs\_\-pool\_\-destroy}}
+\index{jfs\_\-pool\_\-destroy@{jfs\_\-pool\_\-destroy}!thr_pool.h@{thr\_\-pool.h}}
+\subsubsection[{jfs\_\-pool\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-pool\_\-destroy (
+\begin{DoxyParamCaption}
+\item[{{\bf thr\_\-pool\_\-t} $\ast$}]{ pool}
+\end{DoxyParamCaption}
+)}}
+\label{thr__pool_8h_a9ba84127c49b25aaa2464ed62bd7e2f2}
+Cancel all queued jobs and destroy the pool. 
+\begin{DoxyParams}{Parameters}
+\item[{\em pool}]The thread pool. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  active_t *activep;
+  job_t *job;
+  
+  (void) pthread_mutex_lock(&pool->pool_mutex);
+  pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock, 
+                       (void *)&pool->pool_mutex);
+  
+  /* mark the pool as being destroyed; wakeup idle workers */
+  pool->pool_flags |= POOL_DESTROY;
+  (void) pthread_cond_broadcast(&pool->pool_workcv);
+  
+  /* cancel all active workers */
+  for(activep = pool->pool_active;
+      activep != NULL;
+      activep = activep->active_next) {
+    (void) pthread_cancel(activep->active_tid);
+  }
+  
+  /* wait for all active workers to finish */
+  while(pool->pool_active != NULL) {
+    pool->pool_flags |= POOL_WAIT;
+    (void) pthread_cond_wait(&pool->pool_waitcv, &pool->pool_mutex);
+  }
+  
+  /* the last worker to terminate will wake us up */
+  while(pool->pool_nthreads != 0) {
+    (void) pthread_cond_wait(&pool->pool_busycv, &pool->pool_mutex);
+  }
+  pthread_cleanup_pop(1);       /* pthread_mutex_unlock(&pool->pool_mutex); */
+  
+  /*
+   * Unlink the pool from the global list of all pools.
+   */
+  (void) pthread_mutex_lock(&thr_pool_lock);
+  if(thr_pools == pool) {
+    thr_pools = pool->pool_forw;
+  }
+  if(thr_pools == pool) {
+    thr_pools = NULL;
+  }
+  else {
+    pool->pool_back->pool_forw = pool->pool_forw;
+    pool->pool_forw->pool_back = pool->pool_back;
+  }
+  (void) pthread_mutex_unlock(&thr_pool_lock);
+
+  /*
+   * There should be no pending jobs, but just in case...
+   */
+  for(job = pool->pool_head; job != NULL; job = pool->pool_head) {
+    pool->pool_head = job->job_next;
+    free(job);
+  }
+  (void) pthread_attr_destroy(&pool->pool_attr);
+  free(pool);
+}
+\end{DoxyCode}
+
+
+\hypertarget{thr__pool_8h_a50a33a87c802a7a80cfdc41cfc86f30c}{
+\index{thr\_\-pool.h@{thr\_\-pool.h}!jfs\_\-pool\_\-queue@{jfs\_\-pool\_\-queue}}
+\index{jfs\_\-pool\_\-queue@{jfs\_\-pool\_\-queue}!thr_pool.h@{thr\_\-pool.h}}
+\subsubsection[{jfs\_\-pool\_\-queue}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-pool\_\-queue (
+\begin{DoxyParamCaption}
+\item[{{\bf thr\_\-pool\_\-t} $\ast$}]{ pool, }
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{thr__pool_8h_a50a33a87c802a7a80cfdc41cfc86f30c}
+Enqueue a work request to the thread pool job queue. If there are idle worker threads, awaken one to perform the job. Else if the maximum number of workers has not been reached, create a new worker thread to perform the job. Else just return after adding the job to the queue; an existing worker thread will perform the job when it finishes the job it is currently performing.
+
+The job is performed as if a new detached thread were created for it: pthread\_\-create(NULL, attr, void $\ast$($\ast$func)(void $\ast$), void $\ast$arg); 
+\begin{DoxyParams}{Parameters}
+\item[{\em pool}]The thread pool. \item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+On error, thr\_\-pool\_\-queue() returns -\/1 with errno set to the error code. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+        job_t *job;
+
+        if((job = malloc(sizeof (*job))) == NULL) {
+      errno = ENOMEM;
+      return (-1);
+        }
+        job->job_next = NULL;
+        job->db_op = db_op;
+    
+        (void) pthread_mutex_lock(&pool->pool_mutex);
+
+        if(pool->pool_head == NULL) {
+      pool->pool_head = job;
+    }
+        else {
+      pool->pool_tail->job_next = job;
+    }
+        pool->pool_tail = job;
+    
+        if(pool->pool_idle > 0) {
+      (void) pthread_cond_signal(&pool->pool_workcv);
+    }
+        else if(pool->pool_nthreads < pool->pool_maximum &&
+            create_worker(pool) == 0) {
+      pool->pool_nthreads++;
+    }
+    
+        (void) pthread_mutex_unlock(&pool->pool_mutex);
+        return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{thr__pool_8h_a4fbd5ceca90368ae3fa422648015c55f}{
+\index{thr\_\-pool.h@{thr\_\-pool.h}!jfs\_\-pool\_\-wait@{jfs\_\-pool\_\-wait}}
+\index{jfs\_\-pool\_\-wait@{jfs\_\-pool\_\-wait}!thr_pool.h@{thr\_\-pool.h}}
+\subsubsection[{jfs\_\-pool\_\-wait}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-pool\_\-wait (
+\begin{DoxyParamCaption}
+\item[{{\bf thr\_\-pool\_\-t} $\ast$}]{ pool}
+\end{DoxyParamCaption}
+)}}
+\label{thr__pool_8h_a4fbd5ceca90368ae3fa422648015c55f}
+Wait for all queued jobs to complete. 
+\begin{DoxyParams}{Parameters}
+\item[{\em pool}]The thread pool. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  (void) pthread_mutex_lock(&pool->pool_mutex);
+  pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock, 
+                       (void *)&pool->pool_mutex);
+  while(pool->pool_head != NULL || pool->pool_active != NULL) {
+    pool->pool_flags |= POOL_WAIT;
+    (void) pthread_cond_wait(&pool->pool_waitcv, &pool->pool_mutex);
+  }
+  pthread_cleanup_pop(1);       /* pthread_mutex_unlock(&pool->pool_mutex); */
+}
+\end{DoxyCode}
+
+

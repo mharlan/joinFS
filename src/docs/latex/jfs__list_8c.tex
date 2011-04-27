@@ -1,0 +1,84 @@
+\hypertarget{jfs__list_8c}{
+\section{jfs\_\-list.c File Reference}
+\label{jfs__list_8c}\index{jfs\_\-list.c@{jfs\_\-list.c}}
+}
+{\ttfamily \#include \char`\"{}sglib.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-list.h\char`\"{}}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{jfs__list_8c_a3253b1144f83a872aec76fa8c6231ded}{jfs\_\-list\_\-add} (\hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$$\ast$head, \hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$node)
+\item 
+void \hyperlink{jfs__list_8c_a49ceaa0193aab18dff6bb04d9f5dbac9}{jfs\_\-list\_\-destroy} (\hyperlink{structjfs__list}{jfs\_\-list\_\-t} $\ast$head, enum \hyperlink{jfs__db__ops_8h_af6bdc4da6fffc70bba9b64b165cac5bc}{jfs\_\-db\_\-ops} op)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__list_8c_a3253b1144f83a872aec76fa8c6231ded}{
+\index{jfs\_\-list.c@{jfs\_\-list.c}!jfs\_\-list\_\-add@{jfs\_\-list\_\-add}}
+\index{jfs\_\-list\_\-add@{jfs\_\-list\_\-add}!jfs_list.c@{jfs\_\-list.c}}
+\subsubsection[{jfs\_\-list\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-list\_\-add (
+\begin{DoxyParamCaption}
+\item[{{\bf jfs\_\-list\_\-t} $\ast$$\ast$}]{ head, }
+\item[{{\bf jfs\_\-list\_\-t} $\ast$}]{ node}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__list_8c_a3253b1144f83a872aec76fa8c6231ded}
+Add a node to a jfs list. 
+\begin{DoxyParams}{Parameters}
+\item[{\em head}]The list head. \item[{\em node}]The node to add. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  sglib_jfs_list_t_add(head, node);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__list_8c_a49ceaa0193aab18dff6bb04d9f5dbac9}{
+\index{jfs\_\-list.c@{jfs\_\-list.c}!jfs\_\-list\_\-destroy@{jfs\_\-list\_\-destroy}}
+\index{jfs\_\-list\_\-destroy@{jfs\_\-list\_\-destroy}!jfs_list.c@{jfs\_\-list.c}}
+\subsubsection[{jfs\_\-list\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-list\_\-destroy (
+\begin{DoxyParamCaption}
+\item[{{\bf jfs\_\-list\_\-t} $\ast$}]{ head, }
+\item[{enum {\bf jfs\_\-db\_\-ops}}]{ op}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__list_8c_a49ceaa0193aab18dff6bb04d9f5dbac9}
+Destroy a jfs list 
+\begin{DoxyParams}{Parameters}
+\item[{\em head}]The list head. \item[{\em op}]The type result in the jfs list. \end{DoxyParams}
+
+
+
+\begin{DoxyCode}
+{
+  struct sglib_jfs_list_t_iterator it;
+  jfs_list_t *item;
+  
+  for(item = sglib_jfs_list_t_it_init(&it, head);
+          item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
+        switch(op) {
+        case(jfs_listattr_op):
+          free(item->key);
+          break;
+        case(jfs_readdir_op):
+          if(item->datapath) {
+                free(item->datapath);
+          }
+      if(item->filename) {
+        free(item->filename);
+      }
+        default:
+          break;
+        }
+
+    free(item);
+  }
+}
+\end{DoxyCode}
+
+

@@ -1,0 +1,246 @@
+\hypertarget{jfs__dir_8h}{
+\section{include/jfs\_\-dir.h File Reference}
+\label{jfs__dir_8h}\index{include/jfs\_\-dir.h@{include/jfs\_\-dir.h}}
+}
+{\ttfamily \#include $<$fuse.h$>$}\par
+{\ttfamily \#include $<$dirent.h$>$}\par
+{\ttfamily \#include $<$sys/types.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__dir_8h_a2e253ff2eed44396dc82f923a45022a3}{jfs\_\-dir\_\-mkdir} (const char $\ast$path, mode\_\-t mode)
+\item 
+int \hyperlink{jfs__dir_8h_a990169c8fa85864e8c0c9f8c412483f1}{jfs\_\-dir\_\-rmdir} (const char $\ast$path)
+\item 
+int \hyperlink{jfs__dir_8h_af3d591e1bc275494d2de0509449bdef6}{jfs\_\-dir\_\-opendir} (const char $\ast$path, DIR $\ast$$\ast$d)
+\item 
+int \hyperlink{jfs__dir_8h_abab69174d28e919e162fb2eee33f52c6}{jfs\_\-dir\_\-readdir} (const char $\ast$path, DIR $\ast$dp, void $\ast$buf, fuse\_\-fill\_\-dir\_\-t filler)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__dir_8h_a2e253ff2eed44396dc82f923a45022a3}{
+\index{jfs\_\-dir.h@{jfs\_\-dir.h}!jfs\_\-dir\_\-mkdir@{jfs\_\-dir\_\-mkdir}}
+\index{jfs\_\-dir\_\-mkdir@{jfs\_\-dir\_\-mkdir}!jfs_dir.h@{jfs\_\-dir.h}}
+\subsubsection[{jfs\_\-dir\_\-mkdir}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dir\_\-mkdir (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{mode\_\-t}]{ mode}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dir_8h_a2e253ff2eed44396dc82f923a45022a3}
+Makes a joinFS directory. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The directory path. \item[{\em mode}]The mode the directory is created in. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *realpath;
+
+  int rc;
+
+  rc = jfs_util_resolve_new_path(path, &realpath);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_dir_do_mkdir(realpath, mode);
+  free(realpath);
+
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dir_8h_af3d591e1bc275494d2de0509449bdef6}{
+\index{jfs\_\-dir.h@{jfs\_\-dir.h}!jfs\_\-dir\_\-opendir@{jfs\_\-dir\_\-opendir}}
+\index{jfs\_\-dir\_\-opendir@{jfs\_\-dir\_\-opendir}!jfs_dir.h@{jfs\_\-dir.h}}
+\subsubsection[{jfs\_\-dir\_\-opendir}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dir\_\-opendir (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{DIR $\ast$$\ast$}]{ d}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dir_8h_af3d591e1bc275494d2de0509449bdef6}
+Open a joinFS directory. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The new directory path. \item[{\em d}]A pointer to the opened directory entry. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *datapath;
+  DIR *dp;
+
+  int rc;
+
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+
+  dp = opendir(datapath);
+  free(datapath);
+
+  if(!dp) {
+    return -errno;
+  }
+  *d = dp;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dir_8h_abab69174d28e919e162fb2eee33f52c6}{
+\index{jfs\_\-dir.h@{jfs\_\-dir.h}!jfs\_\-dir\_\-readdir@{jfs\_\-dir\_\-readdir}}
+\index{jfs\_\-dir\_\-readdir@{jfs\_\-dir\_\-readdir}!jfs_dir.h@{jfs\_\-dir.h}}
+\subsubsection[{jfs\_\-dir\_\-readdir}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dir\_\-readdir (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{DIR $\ast$}]{ dp, }
+\item[{void $\ast$}]{ buf, }
+\item[{fuse\_\-fill\_\-dir\_\-t}]{ filler}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dir_8h_abab69174d28e919e162fb2eee33f52c6}
+Read the contents of a joinFS directory. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The directory path. \item[{\em dp}]The directory entry. \item[{\em buf}]The readdir buffer. \item[{\em filler}]The fuse directory filling function. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct stat st;
+  struct dirent *de;
+ 
+  char *datapath;
+  
+  int rc;
+
+  printf("---jfs_dir_readdir, path:%s\n", path);
+  
+  while((de = readdir(dp)) != NULL) {
+    memset(&st, 0, sizeof(st));
+    st.st_ino = de->d_ino;
+    st.st_mode = de->d_type << 12;
+    
+    if(filler(buf, de->d_name, &st, 0) != 0) {
+      printf("filler fails\n");
+      return -errno;
+    }
+  }
+  
+  rc = jfs_util_get_datapath(path, &datapath);
+  if(rc) {
+    return rc;
+  }
+
+  if(jfs_dir_is_dynamic(datapath)) {
+    rc = jfs_dir_db_filler(path, datapath, buf, filler);
+    if(rc) {
+      free(datapath);
+
+      return rc;
+    }
+  }
+  else {
+    printf("is not dynamic\n");
+  }
+  free(datapath);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__dir_8h_a990169c8fa85864e8c0c9f8c412483f1}{
+\index{jfs\_\-dir.h@{jfs\_\-dir.h}!jfs\_\-dir\_\-rmdir@{jfs\_\-dir\_\-rmdir}}
+\index{jfs\_\-dir\_\-rmdir@{jfs\_\-dir\_\-rmdir}!jfs_dir.h@{jfs\_\-dir.h}}
+\subsubsection[{jfs\_\-dir\_\-rmdir}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-dir\_\-rmdir (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__dir_8h_a990169c8fa85864e8c0c9f8c412483f1}
+Remove a joinFS directory. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The directory path. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+ 
+  char *file_query;
+  char *metadata_query;
+  
+  int rc;
+
+  //can't remove dynamic directories!!
+  if(!jfs_util_is_realpath(path)) {
+    return -EPERM;
+  }
+
+  rc = jfs_db_op_create_query(&metadata_query,
+                              "DELETE FROM metadata WHERE jfs_id=(SELECT jfs_id F
+      ROM links WHERE path=\"%s\");",
+                              path);
+  if(rc) {
+    return rc;
+  }
+
+  rc = jfs_db_op_create_query(&file_query, 
+                              "DELETE FROM links WHERE path=\"%s\";",
+                              path);
+  if(rc) {
+    free(metadata_query);
+        return rc;
+  }
+
+  rc = jfs_db_op_create_multi_op(&db_op, 2, metadata_query, file_query);
+  if(rc) {
+    free(file_query);
+    free(metadata_query);
+    return rc;
+  }
+
+  jfs_write_pool_queue(db_op);
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+  
+  if(rc) {
+    return rc;
+  }
+
+  rc = rmdir(path);
+  if(rc) {
+        return -errno;
+  }
+
+  return rc;
+}
+\end{DoxyCode}
+
+

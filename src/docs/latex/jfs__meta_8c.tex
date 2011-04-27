@@ -1,0 +1,388 @@
+\hypertarget{jfs__meta_8c}{
+\section{jfs\_\-meta.c File Reference}
+\label{jfs__meta_8c}\index{jfs\_\-meta.c@{jfs\_\-meta.c}}
+}
+{\ttfamily \#include \char`\"{}error\_\-log.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-list.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-util.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-meta.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-meta\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}jfs\_\-key\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}joinfs.h\char`\"{}}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$sys/types.h$>$}\par
+{\ttfamily \#include $<$attr/xattr.h$>$}\par
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__meta_8c_ae1a7c587eee902f15bb1368f47249439}{jfs\_\-meta\_\-setxattr} (const char $\ast$path, const char $\ast$key, const char $\ast$value, size\_\-t size, int flags)
+\item 
+int \hyperlink{jfs__meta_8c_a2f522537d68662c683a1a8566b09f9a3}{jfs\_\-meta\_\-getxattr} (const char $\ast$path, const char $\ast$key, void $\ast$value, size\_\-t buffer\_\-size)
+\item 
+int \hyperlink{jfs__meta_8c_aff781bff11bdd3f13fd6a86c45a611f5}{jfs\_\-meta\_\-do\_\-getxattr} (const char $\ast$path, const char $\ast$key, char $\ast$$\ast$value)
+\item 
+int \hyperlink{jfs__meta_8c_aecb3dd0a631848513e62baf5a65e7d62}{jfs\_\-meta\_\-listxattr} (const char $\ast$path, char $\ast$list, size\_\-t buffer\_\-size)
+\item 
+int \hyperlink{jfs__meta_8c_ab8289ba357c4bb4bbd57c55b0c9cb762}{jfs\_\-meta\_\-removexattr} (const char $\ast$path, const char $\ast$key)
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__meta_8c_aff781bff11bdd3f13fd6a86c45a611f5}{
+\index{jfs\_\-meta.c@{jfs\_\-meta.c}!jfs\_\-meta\_\-do\_\-getxattr@{jfs\_\-meta\_\-do\_\-getxattr}}
+\index{jfs\_\-meta\_\-do\_\-getxattr@{jfs\_\-meta\_\-do\_\-getxattr}!jfs_meta.c@{jfs\_\-meta.c}}
+\subsubsection[{jfs\_\-meta\_\-do\_\-getxattr}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-do\_\-getxattr (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ key, }
+\item[{char $\ast$$\ast$}]{ value}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta_8c_aff781bff11bdd3f13fd6a86c45a611f5}
+Skips processing that jfs\_\-meta\_\-getxattr does. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em key}]The metadata tag. \item[{\em value}]The metadata value. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A negative error code or the size of the value returned. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+  
+  char *cache_value;
+  
+  size_t size;
+  
+  int keyid;
+  int rc;
+
+  keyid = jfs_util_get_keyid(key);
+  if(keyid < 1) {
+    return keyid;
+  }
+  
+  //try the cache first
+  rc = jfs_meta_cache_get_value(path, keyid, &cache_value);
+  if(!rc) {
+    *value = cache_value;
+    return 0;    
+  }
+  
+  //cache miss, go out to the db
+  rc = jfs_db_op_create(&db_op, jfs_meta_cache_op,
+                        "SELECT keyvalue FROM metadata WHERE jfs_id=(SELECT jfs_i
+      d FROM links WHERE path=\"%s\") and keyid=%d;",
+                        path, keyid);
+  if(rc) {
+        return rc;
+  }
+  
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+        jfs_db_op_destroy(db_op);
+    
+        return rc;
+  }
+
+  if(db_op->result == NULL) {
+    db_op->rc = 1;
+    jfs_db_op_destroy(db_op);
+
+        return -ENOATTR;
+  }
+  
+  size = strlen(db_op->result->value) + 1;
+  cache_value = malloc(sizeof(*cache_value) * size);
+  if(!cache_value) {
+    jfs_db_op_destroy(db_op);
+
+    return -ENOMEM;
+  }
+  strncpy(cache_value, db_op->result->value, size);
+  jfs_db_op_destroy(db_op);
+
+  rc = jfs_meta_cache_add(path, keyid, cache_value);
+  if(rc) {
+    free(cache_value);
+
+    return rc;
+  }
+  *value = cache_value;
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta_8c_a2f522537d68662c683a1a8566b09f9a3}{
+\index{jfs\_\-meta.c@{jfs\_\-meta.c}!jfs\_\-meta\_\-getxattr@{jfs\_\-meta\_\-getxattr}}
+\index{jfs\_\-meta\_\-getxattr@{jfs\_\-meta\_\-getxattr}!jfs_meta.c@{jfs\_\-meta.c}}
+\subsubsection[{jfs\_\-meta\_\-getxattr}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-getxattr (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ key, }
+\item[{void $\ast$}]{ value, }
+\item[{size\_\-t}]{ size}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta_8c_a2f522537d68662c683a1a8566b09f9a3}
+Get the metadata value tied to a file system item by a metadat tag. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em key}]The metadata tag. \item[{\em value}]The metadata value. \item[{\em size}]The metadata value size. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A negative error code or the size of the value returned. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  char *cache_value;
+  size_t size;
+  int rc;
+  
+  rc = jfs_meta_do_getxattr(path, key, &cache_value);
+  if(rc) {
+    return rc;
+  }
+
+  size = strlen(cache_value) + 1;
+  if(buffer_size >= size) {
+    strncpy(value, cache_value, size);
+  }
+  free(cache_value);
+
+  return size;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta_8c_aecb3dd0a631848513e62baf5a65e7d62}{
+\index{jfs\_\-meta.c@{jfs\_\-meta.c}!jfs\_\-meta\_\-listxattr@{jfs\_\-meta\_\-listxattr}}
+\index{jfs\_\-meta\_\-listxattr@{jfs\_\-meta\_\-listxattr}!jfs_meta.c@{jfs\_\-meta.c}}
+\subsubsection[{jfs\_\-meta\_\-listxattr}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-listxattr (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{char $\ast$}]{ list, }
+\item[{size\_\-t}]{ size}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta_8c_aecb3dd0a631848513e62baf5a65e7d62}
+A list of all metadata tags tied to a file system item. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em list}]The metadata tag list. \item[{\em size}]The metadata value size. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A negative error code or the size of the list returned. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct sglib_jfs_list_t_iterator it;
+  struct jfs_db_op *db_op;
+  
+  jfs_list_t *item;
+
+  size_t list_size;
+  size_t attr_size;
+
+  char *list_pos;
+  int rc;
+  
+  rc = jfs_db_op_create(&db_op, jfs_listattr_op,
+                        "SELECT k.keyid, k.keytext FROM keys AS k, metadata AS m 
+      WHERE k.keyid=m.keyid and m.jfs_id=(SELECT jfs_id FROM links WHERE path=\"%s\");"
+      ,
+                        path);
+  if(rc) {
+        return rc;
+  }
+  
+  jfs_read_pool_queue(db_op);
+
+  rc = jfs_db_op_wait(db_op);
+  if(rc) {
+        jfs_db_op_destroy(db_op);
+        return rc;
+  }
+
+  if(db_op->result == NULL) {
+        return 0;
+  }
+
+  list_size = db_op->buffer_size;
+  if(buffer_size < list_size) {
+        jfs_db_op_destroy(db_op);
+        return list_size;
+  }
+
+  list_pos = list;
+  for(item = sglib_jfs_list_t_it_init(&it, db_op->result); 
+          item != NULL; item = sglib_jfs_list_t_it_next(&it)) {
+        attr_size = strlen(item->key) + 1;
+        strncpy(list_pos, item->key, attr_size);
+
+        list_pos += attr_size;
+
+    jfs_key_cache_add(item->keyid, item->key);
+        
+        free(item->key);
+        free(item);
+  }
+  
+  return list_size;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta_8c_ab8289ba357c4bb4bbd57c55b0c9cb762}{
+\index{jfs\_\-meta.c@{jfs\_\-meta.c}!jfs\_\-meta\_\-removexattr@{jfs\_\-meta\_\-removexattr}}
+\index{jfs\_\-meta\_\-removexattr@{jfs\_\-meta\_\-removexattr}!jfs_meta.c@{jfs\_\-meta.c}}
+\subsubsection[{jfs\_\-meta\_\-removexattr}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-removexattr (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ key}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta_8c_ab8289ba357c4bb4bbd57c55b0c9cb762}
+Remove a metadata tag and value from a file system item. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em key}]The metadata tag. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+
+  int keyid;
+  int rc;
+  
+  keyid = jfs_util_get_keyid(key);
+  if(keyid < 1) {
+    return keyid;
+  }
+  
+  rc = jfs_db_op_create(&db_op, jfs_write_op,
+                        "DELETE FROM metadata WHERE jfs_id=(SELECT jfs_id FROM li
+      nks WHERE path=\"%s\") and keyid=%d;",
+                        path, keyid);
+  if(rc) {
+        return rc;
+  }
+  
+  jfs_write_pool_queue(db_op);
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+
+  if(rc) {
+        return rc;
+  }
+
+  rc = jfs_meta_cache_remove(path, keyid);
+  if(rc) {
+    return rc;
+  }
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__meta_8c_ae1a7c587eee902f15bb1368f47249439}{
+\index{jfs\_\-meta.c@{jfs\_\-meta.c}!jfs\_\-meta\_\-setxattr@{jfs\_\-meta\_\-setxattr}}
+\index{jfs\_\-meta\_\-setxattr@{jfs\_\-meta\_\-setxattr}!jfs_meta.c@{jfs\_\-meta.c}}
+\subsubsection[{jfs\_\-meta\_\-setxattr}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-meta\_\-setxattr (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ path, }
+\item[{const char $\ast$}]{ key, }
+\item[{const char $\ast$}]{ value, }
+\item[{size\_\-t}]{ size, }
+\item[{int}]{ flags}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta_8c_ae1a7c587eee902f15bb1368f47249439}
+Add a metadata tag and value to a file system item. 
+\begin{DoxyParams}{Parameters}
+\item[{\em path}]The file system path. \item[{\em key}]The metadata tag. \item[{\em value}]The metadata value. \item[{\em size}]The metadata value size. \item[{\em flags}]Metadata flags. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  struct jfs_db_op *db_op;
+  char *safe_value;
+  
+  int keyid;
+  int rc;
+  
+  safe_value = malloc(sizeof(*safe_value) * (size + 1));
+  if(!safe_value) {
+        return -ENOMEM;
+  }
+  memcpy(safe_value, value, size);
+  safe_value[size] = '\0';
+  
+  keyid = jfs_util_get_keyid(key);
+  if(keyid < 1) {
+    free(safe_value);
+        return keyid;
+  }
+  
+  if(flags == XATTR_CREATE) {
+        rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "INSERT OR ROLLBACK INTO metadata VALUES((SELECT jfs_id
+       FROM links WHERE path=\"%s\"),%d,\"%s\");",
+                          path, keyid, safe_value);
+  }
+  else if(flags == XATTR_REPLACE) {
+        rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "REPLACE INTO metadata VALUES((SELECT jfs_id FROM links
+       WHERE path=\"%s\"),%d,\"%s\");",
+                          path, keyid, safe_value);
+  }
+  else {
+        rc = jfs_db_op_create(&db_op, jfs_write_op,
+                          "INSERT OR REPLACE INTO metadata VALUES((SELECT jfs_id 
+      FROM links WHERE path=\"%s\"),%d,\"%s\");",
+                          path, keyid, safe_value);
+  }
+  
+  if(rc) {
+    free(safe_value);
+    return rc;
+  }
+  
+  jfs_write_pool_queue(db_op);
+  rc = jfs_db_op_wait(db_op);
+  jfs_db_op_destroy(db_op);
+
+  if(rc) {
+    free(safe_value);
+        return rc;
+  }
+  
+  rc = jfs_meta_cache_add(path, keyid, safe_value);
+  free(safe_value);
+
+  return rc;
+}
+\end{DoxyCode}
+
+

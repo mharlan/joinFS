@@ -1,0 +1,90 @@
+\hypertarget{joinfs_8h}{
+\section{include/joinfs.h File Reference}
+\label{joinfs_8h}\index{include/joinfs.h@{include/joinfs.h}}
+}
+{\ttfamily \#include \char`\"{}sqlitedb.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}thr\_\-pool.h\char`\"{}}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$limits.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__context}{jfs\_\-context}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{joinfs_8h_a1f39055826c997d1dae4bd363a6ad997}{jfs\_\-read\_\-pool\_\-queue} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\item 
+int \hyperlink{joinfs_8h_a118589c0beee4871c5b486222778b1ea}{jfs\_\-write\_\-pool\_\-queue} (struct \hyperlink{structjfs__db__op}{jfs\_\-db\_\-op} $\ast$db\_\-op)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__context}{jfs\_\-context} \hyperlink{joinfs_8h_a9c3757198d119d8a1974aa01ac4c86b2}{joinfs\_\-context}
+\end{DoxyCompactItemize}
+
+
+\subsection{Function Documentation}
+\hypertarget{joinfs_8h_a1f39055826c997d1dae4bd363a6ad997}{
+\index{joinfs.h@{joinfs.h}!jfs\_\-read\_\-pool\_\-queue@{jfs\_\-read\_\-pool\_\-queue}}
+\index{jfs\_\-read\_\-pool\_\-queue@{jfs\_\-read\_\-pool\_\-queue}!joinfs.h@{joinfs.h}}
+\subsubsection[{jfs\_\-read\_\-pool\_\-queue}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-read\_\-pool\_\-queue (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{joinfs_8h_a1f39055826c997d1dae4bd363a6ad997}
+Queue a database read operation.
+
+The caller should call jfs\_\-db\_\-op\_\-wait to wait for the queued result to finish. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  return jfs_pool_queue(jfs_read_pool, db_op);
+}
+\end{DoxyCode}
+
+
+\hypertarget{joinfs_8h_a118589c0beee4871c5b486222778b1ea}{
+\index{joinfs.h@{joinfs.h}!jfs\_\-write\_\-pool\_\-queue@{jfs\_\-write\_\-pool\_\-queue}}
+\index{jfs\_\-write\_\-pool\_\-queue@{jfs\_\-write\_\-pool\_\-queue}!joinfs.h@{joinfs.h}}
+\subsubsection[{jfs\_\-write\_\-pool\_\-queue}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-write\_\-pool\_\-queue (
+\begin{DoxyParamCaption}
+\item[{struct {\bf jfs\_\-db\_\-op} $\ast$}]{ db\_\-op}
+\end{DoxyParamCaption}
+)}}
+\label{joinfs_8h_a118589c0beee4871c5b486222778b1ea}
+Queue a database write operation.
+
+The caller should call jfs\_\-db\_\-op\_\-wait to wait for the queued result to finish. 
+\begin{DoxyParams}{Parameters}
+\item[{\em db\_\-op}]The database operation. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  return jfs_pool_queue(jfs_write_pool, db_op);
+}
+\end{DoxyCode}
+
+
+
+
+\subsection{Variable Documentation}
+\hypertarget{joinfs_8h_a9c3757198d119d8a1974aa01ac4c86b2}{
+\index{joinfs.h@{joinfs.h}!joinfs\_\-context@{joinfs\_\-context}}
+\index{joinfs\_\-context@{joinfs\_\-context}!joinfs.h@{joinfs.h}}
+\subsubsection[{joinfs\_\-context}]{\setlength{\rightskip}{0pt plus 5cm}struct {\bf jfs\_\-context} {\bf joinfs\_\-context}}}
+\label{joinfs_8h_a9c3757198d119d8a1974aa01ac4c86b2}

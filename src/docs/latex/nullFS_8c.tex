@@ -1,0 +1,68 @@
+\hypertarget{nullFS_8c}{
+\section{nullFS/nullFS.c File Reference}
+\label{nullFS_8c}\index{nullFS/nullFS.c@{nullFS/nullFS.c}}
+}
+{\ttfamily \#include $<$fuse.h$>$}\par
+{\ttfamily \#include $<$ulockmgr.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$unistd.h$>$}\par
+{\ttfamily \#include $<$fcntl.h$>$}\par
+{\ttfamily \#include $<$dirent.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$sys/time.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structxmp__dirp}{xmp\_\-dirp}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{nullFS_8c_a0919197af2e154da2c05727b6d87cbda}{FUSE\_\-USE\_\-VERSION}~26
+\item 
+\#define \hyperlink{nullFS_8c_a369266c24eacffb87046522897a570d5}{\_\-GNU\_\-SOURCE}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{nullFS_8c_a0ddf1224851353fc92bfbff6f499fa97}{main} (int argc, char $\ast$argv\mbox{[}$\,$\mbox{]})
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{nullFS_8c_a369266c24eacffb87046522897a570d5}{
+\index{nullFS.c@{nullFS.c}!\_\-GNU\_\-SOURCE@{\_\-GNU\_\-SOURCE}}
+\index{\_\-GNU\_\-SOURCE@{\_\-GNU\_\-SOURCE}!nullFS.c@{nullFS.c}}
+\subsubsection[{\_\-GNU\_\-SOURCE}]{\setlength{\rightskip}{0pt plus 5cm}\#define \_\-GNU\_\-SOURCE}}
+\label{nullFS_8c_a369266c24eacffb87046522897a570d5}
+\hypertarget{nullFS_8c_a0919197af2e154da2c05727b6d87cbda}{
+\index{nullFS.c@{nullFS.c}!FUSE\_\-USE\_\-VERSION@{FUSE\_\-USE\_\-VERSION}}
+\index{FUSE\_\-USE\_\-VERSION@{FUSE\_\-USE\_\-VERSION}!nullFS.c@{nullFS.c}}
+\subsubsection[{FUSE\_\-USE\_\-VERSION}]{\setlength{\rightskip}{0pt plus 5cm}\#define FUSE\_\-USE\_\-VERSION~26}}
+\label{nullFS_8c_a0919197af2e154da2c05727b6d87cbda}
+
+
+\subsection{Function Documentation}
+\hypertarget{nullFS_8c_a0ddf1224851353fc92bfbff6f499fa97}{
+\index{nullFS.c@{nullFS.c}!main@{main}}
+\index{main@{main}!nullFS.c@{nullFS.c}}
+\subsubsection[{main}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{int}]{ argc, }
+\item[{char $\ast$}]{ argv\mbox{[}$\,$\mbox{]}}
+\end{DoxyParamCaption}
+)}}
+\label{nullFS_8c_a0ddf1224851353fc92bfbff6f499fa97}
+
+
+
+\begin{DoxyCode}
+{
+        umask(0);
+        return fuse_main(argc, argv, &xmp_oper, NULL);
+}
+\end{DoxyCode}
+
+

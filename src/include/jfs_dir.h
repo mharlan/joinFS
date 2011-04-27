@@ -1,3 +1,6 @@
+#ifndef _JOINFS_JFS_DIR_H
+#define _JOINFS_JFS_DIR_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -21,10 +24,37 @@
 #include <dirent.h>
 #include <sys/types.h>
 
+/*!
+ * Makes a joinFS directory.
+ * \param path The directory path.
+ * \param mode The mode the directory is created in.
+ * \return Error code or 0.
+ */
 int jfs_dir_mkdir(const char *path, mode_t mode);
 
+/*!
+ * Remove a joinFS directory.
+ * \param path The directory path.
+ * \return Error code or 0.
+ */
 int jfs_dir_rmdir(const char *path);
 
+/*!
+ * Open a joinFS directory.
+ * \param path The new directory path.
+ * \param d A pointer to the opened directory entry.
+ * \return Error code or 0.
+ */
 int jfs_dir_opendir(const char *path, DIR **d);
 
+/*!
+ * Read the contents of a joinFS directory.
+ * \param path The directory path.
+ * \param dp The directory entry.
+ * \param buf The readdir buffer.
+ * \param filler The fuse directory filling function.
+ * \return Error code or 0.
+ */
 int jfs_dir_readdir(const char *path, DIR *dp, void *buf, fuse_fill_dir_t filler);
+
+#endif

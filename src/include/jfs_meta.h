@@ -22,16 +22,53 @@
 
 #include <sys/types.h>
 
+/*!
+ * Add a metadata tag and value to a file system item.
+ * \param path The file system path.
+ * \param key The metadata tag.
+ * \param value The metadata value.
+ * \param size The metadata value size.
+ * \param flags Metadata flags.
+ * \return Error code or 0.
+ */
 int jfs_meta_setxattr(const char *path, const char *key, const char *value,
 					  size_t size, int flags);
 
+/*!
+ * Get the metadata value tied to a file system item by a metadat tag.
+ * \param path The file system path.
+ * \param key The metadata tag.
+ * \param value The metadata value.
+ * \param size The metadata value size.
+ * \return A negative error code or the size of the value returned.
+ */
 int jfs_meta_getxattr(const char *path, const char *key, void *value,
 					  size_t size);
 
+/*!
+ * Skips processing that jfs_meta_getxattr does.
+ * \param path The file system path.
+ * \param key The metadata tag.
+ * \param value The metadata value.
+ * \return A negative error code or the size of the value returned.
+ */
 int jfs_meta_do_getxattr(const char *path, const char *key, char **value);
 
+/*!
+ * A list of all metadata tags tied to a file system item.
+ * \param path The file system path.
+ * \param list The metadata tag list.
+ * \param size The metadata value size.
+ * \return A negative error code or the size of the list returned.
+ */
 int jfs_meta_listxattr(const char *path, char *list, size_t size);
 
+/*!
+ * Remove a metadata tag and value from a file system item.
+ * \param path The file system path.
+ * \param key The metadata tag.
+ * \return Error code or 0.
+ */
 int jfs_meta_removexattr(const char *path, const char *key);
 
 #endif

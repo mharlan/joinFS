@@ -1,0 +1,272 @@
+\hypertarget{jfs__key__cache_8c}{
+\section{jfs\_\-key\_\-cache.c File Reference}
+\label{jfs__key__cache_8c}\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}}
+}
+{\ttfamily \#include \char`\"{}jfs\_\-key\_\-cache.h\char`\"{}}\par
+{\ttfamily \#include \char`\"{}sglib.h\char`\"{}}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$string.h$>$}\par
+{\ttfamily \#include $<$sys/types.h$>$}\par
+{\ttfamily \#include $<$attr/xattr.h$>$}\par
+{\ttfamily \#include $<$pthread.h$>$}\par
+\subsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structjfs__key__cache}{jfs\_\-key\_\-cache}
+\end{DoxyCompactItemize}
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__key__cache_8c_a2bddcf98b96f7c2bbf1d2e2e7b8de9a2}{JFS\_\-KEY\_\-CACHE\_\-SIZE}~1000
+\item 
+\#define \hyperlink{jfs__key__cache_8c_acf168cd323d74c97c73837496c41469c}{JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP}(e1, e2)~(strcmp(e1-\/$>$keytext, e2-\/$>$keytext))
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \hyperlink{structjfs__key__cache}{jfs\_\-key\_\-cache} \hyperlink{jfs__key__cache_8c_a6b4c8d995625f96c815f176e043f9e27}{jfs\_\-key\_\-cache\_\-t}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{jfs__key__cache_8c_a7e84614159dc43e1395e218f8350a310}{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES} (SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(\hyperlink{structjfs__key__cache}{jfs\_\-key\_\-cache\_\-t}, SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(JFS\_\-KEY\_\-CACHE\_\-SIZE, jfs\_\-key\_\-cache\_\-t\_\-hash)
+\item 
+void \hyperlink{jfs__key__cache_8c_a5b12c2ae9f29a8acacf2e0dcd496aaaa}{jfs\_\-key\_\-cache\_\-destroy} ()
+\item 
+int \hyperlink{jfs__key__cache_8c_a4bdb979b0b01df2c7d1f9368e1da3744}{jfs\_\-key\_\-cache\_\-get\_\-keyid} (const char $\ast$keytext)
+\item 
+int \hyperlink{jfs__key__cache_8c_aeb4a413a91b3b9d5826e1baf712cddba}{jfs\_\-key\_\-cache\_\-add} (int keyid, const char $\ast$keytext)
+\item 
+int \hyperlink{jfs__key__cache_8c_a3e6f478aa8120a979d9e797a612b873a}{jfs\_\-key\_\-cache\_\-remove} (const char $\ast$keytext)
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__key__cache_8c_a2bddcf98b96f7c2bbf1d2e2e7b8de9a2}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!JFS\_\-KEY\_\-CACHE\_\-SIZE@{JFS\_\-KEY\_\-CACHE\_\-SIZE}}
+\index{JFS\_\-KEY\_\-CACHE\_\-SIZE@{JFS\_\-KEY\_\-CACHE\_\-SIZE}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{JFS\_\-KEY\_\-CACHE\_\-SIZE}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-KEY\_\-CACHE\_\-SIZE~1000}}
+\label{jfs__key__cache_8c_a2bddcf98b96f7c2bbf1d2e2e7b8de9a2}
+\hypertarget{jfs__key__cache_8c_acf168cd323d74c97c73837496c41469c}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP@{JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP}}
+\index{JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP@{JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP}]{\setlength{\rightskip}{0pt plus 5cm}\#define JFS\_\-KEY\_\-CACHE\_\-T\_\-CMP(
+\begin{DoxyParamCaption}
+\item[{}]{e1, }
+\item[{}]{e2}
+\end{DoxyParamCaption}
+)~(strcmp(e1-\/$>$keytext, e2-\/$>$keytext))}}
+\label{jfs__key__cache_8c_acf168cd323d74c97c73837496c41469c}
+
+
+\subsection{Typedef Documentation}
+\hypertarget{jfs__key__cache_8c_a6b4c8d995625f96c815f176e043f9e27}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!jfs\_\-key\_\-cache\_\-t@{jfs\_\-key\_\-cache\_\-t}}
+\index{jfs\_\-key\_\-cache\_\-t@{jfs\_\-key\_\-cache\_\-t}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{jfs\_\-key\_\-cache\_\-t}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf jfs\_\-key\_\-cache} {\bf jfs\_\-key\_\-cache\_\-t}}}
+\label{jfs__key__cache_8c_a6b4c8d995625f96c815f176e043f9e27}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__key__cache_8c_aeb4a413a91b3b9d5826e1baf712cddba}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!jfs\_\-key\_\-cache\_\-add@{jfs\_\-key\_\-cache\_\-add}}
+\index{jfs\_\-key\_\-cache\_\-add@{jfs\_\-key\_\-cache\_\-add}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{jfs\_\-key\_\-cache\_\-add}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-key\_\-cache\_\-add (
+\begin{DoxyParamCaption}
+\item[{int}]{ keyid, }
+\item[{const char $\ast$}]{ keytext}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__key__cache_8c_aeb4a413a91b3b9d5826e1baf712cddba}
+Add a key to the key cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em keyid}]The joinFS metadata tag id. \item[{\em keytext}]The joinfs metadata tag name. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_key_cache_t *item;
+  size_t key_len;
+  
+  item = malloc(sizeof(*item));
+  if(!item) {
+    return -ENOMEM;
+  }
+  item->keyid = keyid;
+
+  key_len = strlen(keytext) + 1;
+  item->keytext = malloc(sizeof(*item->keytext) * key_len);
+  if(!item->keytext) {
+    free(item);
+    return -ENOMEM;
+  }
+  strncpy(item->keytext, keytext, key_len);
+
+  pthread_rwlock_wrlock(&cache_lock);
+  sglib_hashed_jfs_key_cache_t_add(hashtable, item);
+  pthread_rwlock_unlock(&cache_lock);
+
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__key__cache_8c_a5b12c2ae9f29a8acacf2e0dcd496aaaa}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!jfs\_\-key\_\-cache\_\-destroy@{jfs\_\-key\_\-cache\_\-destroy}}
+\index{jfs\_\-key\_\-cache\_\-destroy@{jfs\_\-key\_\-cache\_\-destroy}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{jfs\_\-key\_\-cache\_\-destroy}]{\setlength{\rightskip}{0pt plus 5cm}void jfs\_\-key\_\-cache\_\-destroy (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__key__cache_8c_a5b12c2ae9f29a8acacf2e0dcd496aaaa}
+Destroy the key cache. 
+
+
+\begin{DoxyCode}
+{
+  struct sglib_hashed_jfs_key_cache_t_iterator it;
+  jfs_key_cache_t *item;
+
+  pthread_rwlock_wrlock(&cache_lock);
+  for(item = sglib_hashed_jfs_key_cache_t_it_init(&it, hashtable);
+      item != NULL; item = sglib_hashed_jfs_key_cache_t_it_next(&it)) {
+    free(item->keytext);
+    free(item);
+  }
+
+  pthread_rwlock_unlock(&cache_lock);
+  pthread_rwlock_destroy(&cache_lock);
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__key__cache_8c_a4bdb979b0b01df2c7d1f9368e1da3744}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!jfs\_\-key\_\-cache\_\-get\_\-keyid@{jfs\_\-key\_\-cache\_\-get\_\-keyid}}
+\index{jfs\_\-key\_\-cache\_\-get\_\-keyid@{jfs\_\-key\_\-cache\_\-get\_\-keyid}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{jfs\_\-key\_\-cache\_\-get\_\-keyid}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-key\_\-cache\_\-get\_\-keyid (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ keytext}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__key__cache_8c_a4bdb979b0b01df2c7d1f9368e1da3744}
+Get a kyeid from the key cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em keytext}]The metadata tag name. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_key_cache_t  check;
+  jfs_key_cache_t *result;
+
+  size_t key_len;
+
+  int keyid;
+
+  key_len = strlen(keytext) + 1;
+  check.keytext = malloc(sizeof(*check.keytext) * key_len);
+  if(!check.keytext) {
+    return -ENOMEM;
+  }
+  strncpy(check.keytext, keytext, key_len);
+
+  pthread_rwlock_rdlock(&cache_lock);
+  result = sglib_hashed_jfs_key_cache_t_find_member(hashtable, &check);
+  free(check.keytext);
+
+  if(!result) {
+    pthread_rwlock_unlock(&cache_lock);
+
+    return -ENOATTR;
+  }
+  keyid = result->keyid;
+  pthread_rwlock_unlock(&cache_lock);
+
+  return keyid;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__key__cache_8c_a3e6f478aa8120a979d9e797a612b873a}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!jfs\_\-key\_\-cache\_\-remove@{jfs\_\-key\_\-cache\_\-remove}}
+\index{jfs\_\-key\_\-cache\_\-remove@{jfs\_\-key\_\-cache\_\-remove}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{jfs\_\-key\_\-cache\_\-remove}]{\setlength{\rightskip}{0pt plus 5cm}int jfs\_\-key\_\-cache\_\-remove (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ keytext}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__key__cache_8c_a3e6f478aa8120a979d9e797a612b873a}
+Remove a key from the key cache. 
+\begin{DoxyParams}{Parameters}
+\item[{\em keytext}]The metadata tag name. \end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Error code or 0. 
+\end{DoxyReturn}
+
+
+
+\begin{DoxyCode}
+{
+  jfs_key_cache_t check;
+  jfs_key_cache_t *elem;
+  
+  size_t key_len;
+
+  int rc;
+
+  key_len = strlen(keytext) + 1;
+  check.keytext = malloc(sizeof(*check.keytext) * key_len);
+  if(!check.keytext) {
+    return -ENOMEM;
+  }
+  strncpy(check.keytext, keytext, key_len);
+
+  pthread_rwlock_wrlock(&cache_lock);
+  rc = sglib_hashed_jfs_key_cache_t_delete_if_member(hashtable, &check, &elem);
+  pthread_rwlock_unlock(&cache_lock);
+
+  free(check.keytext);
+
+  if(rc) {
+    free(elem->keytext);
+    free(elem);
+  }
+  
+  return 0;
+}
+\end{DoxyCode}
+
+
+\hypertarget{jfs__key__cache_8c_a7e84614159dc43e1395e218f8350a310}{
+\index{jfs\_\-key\_\-cache.c@{jfs\_\-key\_\-cache.c}!SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}!jfs_key_cache.c@{jfs\_\-key\_\-cache.c}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES (
+\begin{DoxyParamCaption}
+\item[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(}]{ jfs\_\-key\_\-cache\_\-t, }
+\item[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(}]{ JFS\_\-KEY\_\-CACHE\_\-SIZE, }
+\item[{jfs\_\-key\_\-cache\_\-t\_\-hash}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__key__cache_8c_a7e84614159dc43e1395e218f8350a310}
+
+
+
+\begin{DoxyCode}
+{
+  pthread_rwlock_init(&cache_lock, NULL);
+  sglib_hashed_jfs_key_cache_t_init(hashtable);
+}
+\end{DoxyCode}
+
+

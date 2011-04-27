@@ -1,3 +1,6 @@
+#ifndef JOINFS_ERROR_LOG_H
+#define JOINFS_ERROR_LOG_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -17,12 +20,28 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_ERROR_LOG_H
-#define JOINFS_ERROR_LOG_H
-
+/*!
+ * Opens the joinFS log file.
+ */
 void log_init(void);
+
+/*!
+ * Closes the joinFS log file.
+ */
 void log_destroy(void);
+
+/*!
+ * Log an error message to the log file.
+ * \param format the format string
+ * \param ... the variables to format
+ */
 void log_error(const char *format, ...);
+
+/*!
+ * Log a message to the log file.
+ * \param format the format string
+ * \param ... the variables to format
+ */
 void log_msg(const char *format, ...);
 
 #endif

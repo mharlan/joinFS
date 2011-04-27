@@ -1,0 +1,134 @@
+\hypertarget{structthr__pool}{
+\section{thr\_\-pool Struct Reference}
+\label{structthr__pool}\index{thr\_\-pool@{thr\_\-pool}}
+}
+\subsection*{Data Fields}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$ \hyperlink{structthr__pool_a05fe5ead5a8e193468e6110d8b9ddee8}{pool\_\-forw}
+\item 
+\hyperlink{structthr__pool}{thr\_\-pool\_\-t} $\ast$ \hyperlink{structthr__pool_aa5d3015bfd8e1a18ccb9bc5017d40135}{pool\_\-back}
+\item 
+pthread\_\-mutex\_\-t \hyperlink{structthr__pool_ac79efd45606cb0611634b02e85fbc334}{pool\_\-mutex}
+\item 
+pthread\_\-cond\_\-t \hyperlink{structthr__pool_aedcb82844d345ef36cff542809203824}{pool\_\-busycv}
+\item 
+pthread\_\-cond\_\-t \hyperlink{structthr__pool_ad6d898706dd4c525dc6227e5f89f7ddf}{pool\_\-workcv}
+\item 
+pthread\_\-cond\_\-t \hyperlink{structthr__pool_a49cb54e317337da95c19ead99fd0289f}{pool\_\-waitcv}
+\item 
+\hyperlink{structactive}{active\_\-t} $\ast$ \hyperlink{structthr__pool_a22cb592fd33f720c56b20a726deb5d2a}{pool\_\-active}
+\item 
+\hyperlink{structjob}{job\_\-t} $\ast$ \hyperlink{structthr__pool_a4080e65fa1cd1011a9037223de630b31}{pool\_\-head}
+\item 
+\hyperlink{structjob}{job\_\-t} $\ast$ \hyperlink{structthr__pool_a736e49f5e6628b0288595c6dc73a3202}{pool\_\-tail}
+\item 
+pthread\_\-attr\_\-t \hyperlink{structthr__pool_ad0681ae3f8bda7f85b669bf7940777ef}{pool\_\-attr}
+\item 
+int \hyperlink{structthr__pool_af8063de86663bedc6827513d88e8b848}{pool\_\-flags}
+\item 
+\hyperlink{thr__pool_8h_a12a1e9b3ce141648783a82445d02b58d}{uint\_\-t} \hyperlink{structthr__pool_a9d3ae71becdd8ad534d012603dc07645}{pool\_\-linger}
+\item 
+int \hyperlink{structthr__pool_ab6687bfd1308009028b86f337cf21573}{pool\_\-minimum}
+\item 
+int \hyperlink{structthr__pool_a9161c1f5dd18fe7d6e482363c65614ce}{pool\_\-maximum}
+\item 
+int \hyperlink{structthr__pool_a6304d8a2606cef0f561765808aa0b68d}{pool\_\-nthreads}
+\item 
+int \hyperlink{structthr__pool_a3b04e8be2ae1ef51809a8bda0c838c5c}{pool\_\-idle}
+\item 
+int \hyperlink{structthr__pool_a07889f76b9822774b2a2a50c91701d71}{sqlite\_\-attr}
+\end{DoxyCompactItemize}
+
+
+\subsection{Field Documentation}
+\hypertarget{structthr__pool_a22cb592fd33f720c56b20a726deb5d2a}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-active@{pool\_\-active}}
+\index{pool\_\-active@{pool\_\-active}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-active}]{\setlength{\rightskip}{0pt plus 5cm}{\bf active\_\-t}$\ast$ {\bf thr\_\-pool::pool\_\-active}}}
+\label{structthr__pool_a22cb592fd33f720c56b20a726deb5d2a}
+\hypertarget{structthr__pool_ad0681ae3f8bda7f85b669bf7940777ef}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-attr@{pool\_\-attr}}
+\index{pool\_\-attr@{pool\_\-attr}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-attr}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-attr\_\-t {\bf thr\_\-pool::pool\_\-attr}}}
+\label{structthr__pool_ad0681ae3f8bda7f85b669bf7940777ef}
+\hypertarget{structthr__pool_aa5d3015bfd8e1a18ccb9bc5017d40135}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-back@{pool\_\-back}}
+\index{pool\_\-back@{pool\_\-back}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-back}]{\setlength{\rightskip}{0pt plus 5cm}{\bf thr\_\-pool\_\-t}$\ast$ {\bf thr\_\-pool::pool\_\-back}}}
+\label{structthr__pool_aa5d3015bfd8e1a18ccb9bc5017d40135}
+\hypertarget{structthr__pool_aedcb82844d345ef36cff542809203824}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-busycv@{pool\_\-busycv}}
+\index{pool\_\-busycv@{pool\_\-busycv}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-busycv}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-cond\_\-t {\bf thr\_\-pool::pool\_\-busycv}}}
+\label{structthr__pool_aedcb82844d345ef36cff542809203824}
+\hypertarget{structthr__pool_af8063de86663bedc6827513d88e8b848}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-flags@{pool\_\-flags}}
+\index{pool\_\-flags@{pool\_\-flags}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-flags}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf thr\_\-pool::pool\_\-flags}}}
+\label{structthr__pool_af8063de86663bedc6827513d88e8b848}
+\hypertarget{structthr__pool_a05fe5ead5a8e193468e6110d8b9ddee8}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-forw@{pool\_\-forw}}
+\index{pool\_\-forw@{pool\_\-forw}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-forw}]{\setlength{\rightskip}{0pt plus 5cm}{\bf thr\_\-pool\_\-t}$\ast$ {\bf thr\_\-pool::pool\_\-forw}}}
+\label{structthr__pool_a05fe5ead5a8e193468e6110d8b9ddee8}
+\hypertarget{structthr__pool_a4080e65fa1cd1011a9037223de630b31}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-head@{pool\_\-head}}
+\index{pool\_\-head@{pool\_\-head}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-head}]{\setlength{\rightskip}{0pt plus 5cm}{\bf job\_\-t}$\ast$ {\bf thr\_\-pool::pool\_\-head}}}
+\label{structthr__pool_a4080e65fa1cd1011a9037223de630b31}
+\hypertarget{structthr__pool_a3b04e8be2ae1ef51809a8bda0c838c5c}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-idle@{pool\_\-idle}}
+\index{pool\_\-idle@{pool\_\-idle}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-idle}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf thr\_\-pool::pool\_\-idle}}}
+\label{structthr__pool_a3b04e8be2ae1ef51809a8bda0c838c5c}
+\hypertarget{structthr__pool_a9d3ae71becdd8ad534d012603dc07645}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-linger@{pool\_\-linger}}
+\index{pool\_\-linger@{pool\_\-linger}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-linger}]{\setlength{\rightskip}{0pt plus 5cm}{\bf uint\_\-t} {\bf thr\_\-pool::pool\_\-linger}}}
+\label{structthr__pool_a9d3ae71becdd8ad534d012603dc07645}
+\hypertarget{structthr__pool_a9161c1f5dd18fe7d6e482363c65614ce}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-maximum@{pool\_\-maximum}}
+\index{pool\_\-maximum@{pool\_\-maximum}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-maximum}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf thr\_\-pool::pool\_\-maximum}}}
+\label{structthr__pool_a9161c1f5dd18fe7d6e482363c65614ce}
+\hypertarget{structthr__pool_ab6687bfd1308009028b86f337cf21573}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-minimum@{pool\_\-minimum}}
+\index{pool\_\-minimum@{pool\_\-minimum}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-minimum}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf thr\_\-pool::pool\_\-minimum}}}
+\label{structthr__pool_ab6687bfd1308009028b86f337cf21573}
+\hypertarget{structthr__pool_ac79efd45606cb0611634b02e85fbc334}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-mutex@{pool\_\-mutex}}
+\index{pool\_\-mutex@{pool\_\-mutex}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-mutex}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-mutex\_\-t {\bf thr\_\-pool::pool\_\-mutex}}}
+\label{structthr__pool_ac79efd45606cb0611634b02e85fbc334}
+\hypertarget{structthr__pool_a6304d8a2606cef0f561765808aa0b68d}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-nthreads@{pool\_\-nthreads}}
+\index{pool\_\-nthreads@{pool\_\-nthreads}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-nthreads}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf thr\_\-pool::pool\_\-nthreads}}}
+\label{structthr__pool_a6304d8a2606cef0f561765808aa0b68d}
+\hypertarget{structthr__pool_a736e49f5e6628b0288595c6dc73a3202}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-tail@{pool\_\-tail}}
+\index{pool\_\-tail@{pool\_\-tail}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-tail}]{\setlength{\rightskip}{0pt plus 5cm}{\bf job\_\-t}$\ast$ {\bf thr\_\-pool::pool\_\-tail}}}
+\label{structthr__pool_a736e49f5e6628b0288595c6dc73a3202}
+\hypertarget{structthr__pool_a49cb54e317337da95c19ead99fd0289f}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-waitcv@{pool\_\-waitcv}}
+\index{pool\_\-waitcv@{pool\_\-waitcv}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-waitcv}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-cond\_\-t {\bf thr\_\-pool::pool\_\-waitcv}}}
+\label{structthr__pool_a49cb54e317337da95c19ead99fd0289f}
+\hypertarget{structthr__pool_ad6d898706dd4c525dc6227e5f89f7ddf}{
+\index{thr\_\-pool@{thr\_\-pool}!pool\_\-workcv@{pool\_\-workcv}}
+\index{pool\_\-workcv@{pool\_\-workcv}!thr_pool@{thr\_\-pool}}
+\subsubsection[{pool\_\-workcv}]{\setlength{\rightskip}{0pt plus 5cm}pthread\_\-cond\_\-t {\bf thr\_\-pool::pool\_\-workcv}}}
+\label{structthr__pool_ad6d898706dd4c525dc6227e5f89f7ddf}
+\hypertarget{structthr__pool_a07889f76b9822774b2a2a50c91701d71}{
+\index{thr\_\-pool@{thr\_\-pool}!sqlite\_\-attr@{sqlite\_\-attr}}
+\index{sqlite\_\-attr@{sqlite\_\-attr}!thr_pool@{thr\_\-pool}}
+\subsubsection[{sqlite\_\-attr}]{\setlength{\rightskip}{0pt plus 5cm}int {\bf thr\_\-pool::sqlite\_\-attr}}}
+\label{structthr__pool_a07889f76b9822774b2a2a50c91701d71}
+
+
+The documentation for this struct was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+\hyperlink{thr__pool_8c}{thr\_\-pool.c}\end{DoxyCompactItemize}

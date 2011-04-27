@@ -1,0 +1,153 @@
+\hypertarget{jfs__meta__test_8c}{
+\section{tests/jfs\_\-meta\_\-test.c File Reference}
+\label{jfs__meta__test_8c}\index{tests/jfs\_\-meta\_\-test.c@{tests/jfs\_\-meta\_\-test.c}}
+}
+{\ttfamily \#include $<$stdlib.h$>$}\par
+{\ttfamily \#include $<$stdio.h$>$}\par
+{\ttfamily \#include $<$errno.h$>$}\par
+{\ttfamily \#include $<$sys/stat.h$>$}\par
+{\ttfamily \#include $<$attr/xattr.h$>$}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{jfs__meta__test_8c_a52ef6b15780afbf93eaa7ae136cf44ae}{LIST\_\-MAX}~1024
+\item 
+\#define \hyperlink{jfs__meta__test_8c_a67e802d43408bfc73c063c8a4233576d}{TEST\_\-FILE}~\char`\"{}/home/joinfs/git/joinFS/demo/mount/test.mp3\char`\"{}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{jfs__meta__test_8c_ae66f6b31b5ad750f1fe042a706a4e3d4}{main} ()
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{jfs__meta__test_8c_a52ef6b15780afbf93eaa7ae136cf44ae}{
+\index{jfs\_\-meta\_\-test.c@{jfs\_\-meta\_\-test.c}!LIST\_\-MAX@{LIST\_\-MAX}}
+\index{LIST\_\-MAX@{LIST\_\-MAX}!jfs_meta_test.c@{jfs\_\-meta\_\-test.c}}
+\subsubsection[{LIST\_\-MAX}]{\setlength{\rightskip}{0pt plus 5cm}\#define LIST\_\-MAX~1024}}
+\label{jfs__meta__test_8c_a52ef6b15780afbf93eaa7ae136cf44ae}
+\hypertarget{jfs__meta__test_8c_a67e802d43408bfc73c063c8a4233576d}{
+\index{jfs\_\-meta\_\-test.c@{jfs\_\-meta\_\-test.c}!TEST\_\-FILE@{TEST\_\-FILE}}
+\index{TEST\_\-FILE@{TEST\_\-FILE}!jfs_meta_test.c@{jfs\_\-meta\_\-test.c}}
+\subsubsection[{TEST\_\-FILE}]{\setlength{\rightskip}{0pt plus 5cm}\#define TEST\_\-FILE~\char`\"{}/home/joinfs/git/joinFS/demo/mount/test.mp3\char`\"{}}}
+\label{jfs__meta__test_8c_a67e802d43408bfc73c063c8a4233576d}
+
+
+\subsection{Function Documentation}
+\hypertarget{jfs__meta__test_8c_ae66f6b31b5ad750f1fe042a706a4e3d4}{
+\index{jfs\_\-meta\_\-test.c@{jfs\_\-meta\_\-test.c}!main@{main}}
+\index{main@{main}!jfs_meta_test.c@{jfs\_\-meta\_\-test.c}}
+\subsubsection[{main}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{void}]{}
+\end{DoxyParamCaption}
+)}}
+\label{jfs__meta__test_8c_ae66f6b31b5ad750f1fe042a706a4e3d4}
+
+
+
+\begin{DoxyCode}
+{
+  struct stat buf;
+  char *buffer;
+  size_t buff_size;
+  int rc;
+  size_t i;
+  
+  buffer = malloc(sizeof(*buffer) * LIST_MAX);
+  if(!buffer) {
+        printf("Failed to allocate memory for buffer.\n");
+        return -1;
+  }
+
+  printf("--TESTING GETATTR FOR FILE:%s\n", TEST_FILE);
+  rc = stat(TEST_FILE, &buf);
+  if(rc) {
+        printf("--ERROR CODE:%d, returned, getattr test failed.\n", -errno);
+  }
+
+  rc = setxattr(TEST_FILE, "attr1", "hello", 5, XATTR_CREATE);
+  if(rc) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = setxattr(TEST_FILE, "attr2", "world", 5, XATTR_CREATE);
+  if(rc) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = setxattr(TEST_FILE, "media codec", "mpeg 3", 6, XATTR_CREATE);
+  if(rc) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = setxattr(TEST_FILE, "artist", "Grizzly Bear", 12, XATTR_CREATE);
+  if(rc) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+
+  buff_size = listxattr(TEST_FILE, buffer, LIST_MAX);
+  if(buff_size > LIST_MAX) {
+        free(buffer);
+        buffer = malloc(sizeof(*buffer) * buff_size);
+        buff_size = listxattr(TEST_FILE, buffer, buff_size);
+  }
+  else if(buff_size == 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  else {
+        printf("Listxattr result for path:%s\nBuffer Size:%d\n", TEST_FILE, buff_
+      size);
+        for(i = 0; i < buff_size; ++i) {
+          if(buffer[i] == '\0') {
+                printf("\\0");
+          }
+          else printf("%c", buffer[i]);
+        }
+        printf("\n");
+  }
+        
+  rc = getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  if(rc < 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  printf("attr1:%s\n", buffer);
+  rc = getxattr(TEST_FILE, "attr2", buffer, buff_size);
+  if(rc < 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  printf("attr2:%s\n", buffer);
+  rc = getxattr(TEST_FILE, "media codec", buffer, buff_size);
+  if(rc < 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  printf("media codec:%s\n", buffer);
+  rc = getxattr(TEST_FILE, "artist", buffer, buff_size);
+  if(rc < 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  printf("artist:%s\n", buffer);
+
+  rc = setxattr(TEST_FILE, "attr1", "nandos is tasty", 15, XATTR_REPLACE);
+  if(rc) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  if(rc < 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  printf("New attr1:%s\n", buffer);
+
+  rc = setxattr(TEST_FILE, "attr1", "shouldn't see this", 18, XATTR_CREATE);
+  if(rc) {
+        printf("--(SUCCESS!)ERROR CODE:%d, returned\n", -errno);
+  }
+  rc = getxattr(TEST_FILE, "attr1", buffer, buff_size);
+  if(rc < 0) {
+        printf("--ERROR CODE:%d, returned\n", -errno);
+  }
+  printf("attr1 again:%s\n", buffer);
+
+  return 0;
+}
+\end{DoxyCode}
+
+

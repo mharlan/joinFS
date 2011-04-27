@@ -1,0 +1,2496 @@
+\hypertarget{sglib_8h}{
+\section{include/sglib.h File Reference}
+\label{sglib_8h}\index{include/sglib.h@{include/sglib.h}}
+}
+{\ttfamily \#include $<$assert.h$>$}\par
+\subsection*{Defines}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{sglib_8h_a953a633a9e124eba916299fbd74dbb2e}{SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT}(type, a, max, comparator)
+\item 
+\#define \hyperlink{sglib_8h_a14f6ba9968436b51057f5daee0ca6f02}{SGLIB\_\-ARRAY\_\-HEAP\_\-SORT}(type, a, max, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_aad88c3a356bb559f5892dc3522a70e5c}{SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN}(type, a, ind, max, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_af74a67c2b4f7e159cc88e3e1bfa05388}{SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT}(type, a, max, comparator)
+\item 
+\#define \hyperlink{sglib_8h_a5aa93980506b9d607186def431a3de1e}{SGLIB\_\-ARRAY\_\-QUICK\_\-SORT}(type, a, max, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_aefb13ccb9a430a73a77022d44728ef02}{SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH}(type, a, start\_\-index, end\_\-index, key, comparator, found, result\_\-index)
+\item 
+\#define \hyperlink{sglib_8h_a0441fcf931c1313a1720c36082fd9bd7}{SGLIB\_\-QUEUE\_\-INIT}(type, a, i, j)~\{ i = j = 0; \}
+\item 
+\#define \hyperlink{sglib_8h_aa81398404b3f381aa2e085a2af6ecf82}{SGLIB\_\-QUEUE\_\-IS\_\-EMPTY}(type, a, i, j)~((i)==(j))
+\item 
+\#define \hyperlink{sglib_8h_a25f3f52c289eaab83d0189f97478b18a}{SGLIB\_\-QUEUE\_\-IS\_\-FULL}(type, a, i, j, dim)~((i)==((j)+1)\%(dim))
+\item 
+\#define \hyperlink{sglib_8h_a096c8241b87e77bd92b6d5af580d133e}{SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT}(type, a, i, j)~(a\mbox{[}i\mbox{]})
+\item 
+\#define \hyperlink{sglib_8h_a9dd61a7d0d6a2cc3b1dff94dcc217b54}{SGLIB\_\-QUEUE\_\-ADD\_\-NEXT}(type, a, i, j, dim)
+\item 
+\#define \hyperlink{sglib_8h_a90feb4404f82991be1aa8e41b37c6109}{SGLIB\_\-QUEUE\_\-ADD}(type, a, elem, i, j, dim)
+\item 
+\#define \hyperlink{sglib_8h_a8bdf7433a96bb09883ca94a7d4aca04a}{SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST}(type, a, i, j, dim)
+\item 
+\#define \hyperlink{sglib_8h_aafe5558c8b3b346649171182ea9c74c6}{SGLIB\_\-QUEUE\_\-DELETE}(type, a, i, j, dim)
+\item 
+\#define \hyperlink{sglib_8h_aad18911507497915980a3ea68adb05ca}{SGLIB\_\-HEAP\_\-INIT}(type, a, i)~\{ i = 0; \}
+\item 
+\#define \hyperlink{sglib_8h_a672833f0d0ffff52239d3d3b394b7757}{SGLIB\_\-HEAP\_\-IS\_\-EMPTY}(type, a, i)~((i)==0)
+\item 
+\#define \hyperlink{sglib_8h_aae85af330774c295bc2a8401bdae7c11}{SGLIB\_\-HEAP\_\-IS\_\-FULL}(type, a, i, dim)~((i)==(dim))
+\item 
+\#define \hyperlink{sglib_8h_a9990ea8c1254a5d265c3b4f41b329947}{SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT}(type, a, i)~(a\mbox{[}0\mbox{]})
+\item 
+\#define \hyperlink{sglib_8h_ae3fcd58623595b1734a0003344925f22}{SGLIB\_\-HEAP\_\-ADD\_\-NEXT}(type, a, i, dim, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_aa4e1253e2eeaa66a9529fa363d8080c1}{SGLIB\_\-HEAP\_\-ADD}(type, a, elem, i, dim, comparator)
+\item 
+\#define \hyperlink{sglib_8h_a0d4c82038a880cd0917d4b24f58fc4a5}{SGLIB\_\-HEAP\_\-DELETE\_\-FIRST}(type, a, i, dim, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_a15341e93a1cdf3b433a9670f8941ce10}{SGLIB\_\-HEAP\_\-DELETE}(type, a, i, dim, comparator)
+\item 
+\#define \hyperlink{sglib_8h_aaae9b5fe80577dcd406614655405391a}{SGLIB\_\-HASH\_\-TAB\_\-INIT}(type, table, dim)
+\item 
+\#define \hyperlink{sglib_8h_a4b79311593c7f5c33e58347aed91e8f1}{SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}(type, table, dim, elem, hash\_\-function, comparator, member)
+\item 
+\#define \hyperlink{sglib_8h_a575df2ec1b27780223f07b59b96dd526}{SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER}(type, table, dim, elem, hash\_\-function, comparator, resultIndex, resultMember)
+\item 
+\#define \hyperlink{sglib_8h_a2ec0586733a2de9db8aad88f5b1a793c}{SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER}(type, table, dim, elem, hash\_\-function, resultIndex)
+\item 
+\#define \hyperlink{sglib_8h_a13882695a6ee8bbc293dff621d0b9759}{SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS}(type, table, dim, iteratedIndex, iteratedVariable, command)
+\item 
+\#define \hyperlink{sglib_8h_a13470d68a246673359f700d5048c1f63}{SGLIB\_\-LIST\_\-ADD}(type, list, elem, next)
+\item 
+\#define \hyperlink{sglib_8h_a32bf818aaad42da8f5fb53c0ae245ea7}{SGLIB\_\-LIST\_\-CONCAT}(type, first, second, next)
+\item 
+\#define \hyperlink{sglib_8h_a9ff1d5aeeb8056f9e7fd43cf33b8e6f3}{SGLIB\_\-LIST\_\-DELETE}(type, list, elem, next)
+\item 
+\#define \hyperlink{sglib_8h_a28873343d9a9ba74708870c487d3cf21}{SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}(type, list, elem, comparator, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a658ad3b2c43c1a68ee89d046cc50616a}{SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}(type, list, elem, comparator, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a682c41735c3c5e97cd476048e15315dc}{SGLIB\_\-LIST\_\-IS\_\-MEMBER}(type, list, elem, next, result)
+\item 
+\#define \hyperlink{sglib_8h_a6cfff147d2292fe0296e0222b926c87f}{SGLIB\_\-LIST\_\-FIND\_\-MEMBER}(type, list, elem, comparator, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a07db852f66b8188dbf03f16acce25da6}{SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}(type, list, iteratedVariable, next, command)
+\item 
+\#define \hyperlink{sglib_8h_a570290fcd5df667989fe62422cd619e9}{SGLIB\_\-LIST\_\-LEN}(type, list, next, result)
+\item 
+\#define \hyperlink{sglib_8h_a21beac59d30883b2b32fe9f9992275a8}{SGLIB\_\-LIST\_\-REVERSE}(type, list, next)
+\item 
+\#define \hyperlink{sglib_8h_a9f05583c9e09433760fa41f18550d593}{SGLIB\_\-LIST\_\-SORT}(type, list, comparator, next)
+\item 
+\#define \hyperlink{sglib_8h_ac3d8f1a4b44c4733195cb85dc3e8ff0d}{SGLIB\_\-SORTED\_\-LIST\_\-ADD}(type, list, elem, comparator, next)
+\item 
+\#define \hyperlink{sglib_8h_abbeee3ca1881e9df523e5d9e8b97709e}{SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}(type, list, elem, comparator, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a2158071cf487499d7b03e046f26ae05c}{SGLIB\_\-SORTED\_\-LIST\_\-DELETE}(type, list, elem, next)
+\item 
+\#define \hyperlink{sglib_8h_a96d801fbaa32bfed4a3258ee3a561ed3}{SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}(type, list, elem, comparator, next, member)
+\item 
+\#define \hyperlink{sglib_8h_aec044e933c83d0a27a5282ed17b8df39}{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER}(type, list, elem, comparator, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a6ffcf54f53fe89dd2edeac9f18431798}{SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER}(type, list, elem, comparator, next, result)
+\item 
+\#define \hyperlink{sglib_8h_a2b84471ef55d31058fcb1865e6356340}{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE}(type, list, elem, comparator, next, comparator\_\-result, member\_\-ptr)
+\item 
+\#define \hyperlink{sglib_8h_a5aa716a9bd9252dcf048641e794cf9ad}{SGLIB\_\-SORTED\_\-LIST\_\-LEN}(type, list, next, result)
+\item 
+\#define \hyperlink{sglib_8h_ae3afd184f726440638d65608205e5f2c}{SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}(type, list, iteratedVariable, next, command)
+\item 
+\#define \hyperlink{sglib_8h_a0d3ecac02a89a855fe857557710fa73a}{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON}(type, list, elem, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a7c0ee161cbc61e5e0f482e6dfc3f8e2e}{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER}(type, place, elem, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a3d2217ac905e801f3b97569ed7dddc4d}{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE}(type, place, elem, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_aaeaf4929250279a39e52ddeb07736b3f}{SGLIB\_\-DL\_\-LIST\_\-ADD}(type, list, elem, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a76db4e94c3d976395084b8631bdbc829}{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}(type, list, elem, comparator, previous, next, member, the\_\-add\_\-operation)
+\item 
+\#define \hyperlink{sglib_8h_a500a61603bdc830b52ede2894cf241c9}{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER}(type, list, elem, comparator, previous, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a7cb4c4fafc699699a2d408f26ad3c431}{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER}(type, list, elem, comparator, previous, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a6ee3c838dad7f88ea776f4383d4a2d86}{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}(type, list, elem, comparator, previous, next, member)
+\item 
+\#define \hyperlink{sglib_8h_adb07d1602ea8ab3358e2d58c8b7aeef4}{SGLIB\_\-DL\_\-LIST\_\-CONCAT}(type, first, second, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_accff5b5538ec1687ca95b0b1b0ac77f7}{SGLIB\_\-DL\_\-LIST\_\-DELETE}(type, list, elem, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a87c589aef6eb57daa331e649f45c631f}{SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}(type, list, elem, comparator, previous, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a52d8f2864bcf828ef2a4553938edecba}{SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER}(type, list, elem, previous, next, result)
+\item 
+\#define \hyperlink{sglib_8h_a07e358c310d2827835d70039f5c7b4d6}{SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER}(type, list, elem, comparator, previous, next, member)
+\item 
+\#define \hyperlink{sglib_8h_a4efe7b2f21e55775da88edf0625685e9}{SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}(type, list, iteratedVariable, previous, next, command)
+\item 
+\#define \hyperlink{sglib_8h_ace392dc2a8867af17c5f6ed1cd0114c0}{SGLIB\_\-DL\_\-LIST\_\-SORT}(type, list, comparator, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a7c1047a14a18bdc442abd11ae0e456ac}{SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST}(type, list, previous, next, result)
+\item 
+\#define \hyperlink{sglib_8h_ac78cc10117a3a40c27ddc1a4eef5c0f8}{SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST}(type, list, previous, next, result)
+\item 
+\#define \hyperlink{sglib_8h_a84ef609d360c6b1f504a6891e4bedb54}{SGLIB\_\-DL\_\-LIST\_\-LEN}(type, list, previous, next, result)
+\item 
+\#define \hyperlink{sglib_8h_a23554fa453cc5fd66e13be64b3497ddf}{SGLIB\_\-DL\_\-LIST\_\-REVERSE}(type, list, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a51f24487c1df4980eac3f85c3c2f4c13}{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST}(type, list, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a794995fcebcd3b19265c9c08d88d0ab1}{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}(type, tree, iteratedVariable, order, left, right, command)
+\item 
+\#define \hyperlink{sglib_8h_a7c72c18b0df38006f47af45efcdc6006}{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}(type, tree, \_\-current\_\-element\_\-, left, right, command)
+\item 
+\#define \hyperlink{sglib_8h_aec801d7bc87443cee7d683f2e9901d73}{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER}(type, tree, \_\-current\_\-element\_\-, left, right, command)
+\item 
+\#define \hyperlink{sglib_8h_ad2194ce552812c5a27649b31db67ee5c}{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER}(type, tree, \_\-current\_\-element\_\-, left, right, command)
+\item 
+\#define \hyperlink{sglib_8h_a2d70b02cb51f3e23fedc322ddb2fda15}{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER}(type, tree, elem, left, right, comparator, res)
+\item 
+\#define \hyperlink{sglib_8h_a4fd420b923edccba76ab8979399fc016}{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES}(type, comparator)
+\item 
+\#define \hyperlink{sglib_8h_a8544b7afca8e35b958142c380bbddff3}{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS}(type, comparator)
+\item 
+\#define \hyperlink{sglib_8h_a393bab863f0a562d5eddb29894c6e086}{SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES}(queue\_\-type, elem\_\-type, afield, ifield, jfield, dim)
+\item 
+\#define \hyperlink{sglib_8h_a896d701c138f43db0e6c3f2378c7b19c}{SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS}(queue\_\-type, elem\_\-type, afield, ifield, jfield, dim)
+\item 
+\#define \hyperlink{sglib_8h_aa127809a74ad030875ece0e412663722}{SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES}(heap\_\-type, elem\_\-type, afield, ifield, dim, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_a27d37a41f06bbf14c0d3361064fe4c2a}{SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS}(heap\_\-type, elem\_\-type, afield, ifield, dim, comparator, elem\_\-exchanger)
+\item 
+\#define \hyperlink{sglib_8h_a47232e99bf53c06db36421aedaab5584}{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES}(type, dim, hash\_\-function, comparator)
+\item 
+\#define \hyperlink{sglib_8h_aa93fd52ab44d077e488b131f42cd46f0}{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS}(type, dim, hash\_\-function, comparator)
+\item 
+\#define \hyperlink{sglib_8h_a65a4a83319726e984fb1ffa686224ba3}{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}(type, dim, hash\_\-function)
+\item 
+\#define \hyperlink{sglib_8h_a76ef78f2d1228f81624adeed23e8e3b1}{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS}(type, dim, hash\_\-function)
+\item 
+\#define \hyperlink{sglib_8h_a1731018c1421efacfb550db23480b574}{SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES}(type, comparator, next)
+\item 
+\#define \hyperlink{sglib_8h_a4836a1b7ceb8edd4443fcc144465c069}{SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS}(type, comparator, next)
+\item 
+\#define \hyperlink{sglib_8h_a789f6d65111e5faa05e9b80d44cf9a53}{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES}(type, comparator, next)
+\item 
+\#define \hyperlink{sglib_8h_a45d71d54b077a2bd49f5bff90e224783}{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS}(type, comparator, next)
+\item 
+\#define \hyperlink{sglib_8h_a6c891597d7673a940316032d2a1ffba2}{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES}(type, comparator, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_ab68ec584539f65e752f5d16be4b16f46}{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS}(type, comparator, previous, next)
+\item 
+\#define \hyperlink{sglib_8h_a3f38288f3c6ec3036a04d5a2082933fc}{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY}(type, tree, leftt, rightt, bits, RED, BLACK)
+\item 
+\#define \hyperlink{sglib_8h_a77f665697f41b956348f5414530f564e}{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY}(type, tree, leftt, rightt, bits, RED, BLACK, res)
+\item 
+\#define \hyperlink{sglib_8h_a7f3b7df4a90fa3b59c219a64c4ae2994}{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL}(type, left, right, bits, comparator, RED, BLACK)
+\item 
+\#define \hyperlink{sglib_8h_ad1e32aca3b7277661dc118b9fd895ecd}{SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES}(type, left, right, colorbit, comparator)
+\item 
+\#define \hyperlink{sglib_8h_ad203066a6afe8fbe5e65a9d31960afa3}{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS}(type, left, right, colorbit, comparator)~SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL(type, left, right, colorbit, comparator, 1, 0)
+\item 
+\#define \hyperlink{sglib_8h_aa9e4f7da4b5678e03377ceac64db547e}{SGLIB\_\-\_\-\_\-GET\_\-VALUE}(x)~(x)
+\item 
+\#define \hyperlink{sglib_8h_a3c46e5273bf8750a6a4535366e6ed834}{SGLIB\_\-\_\-\_\-SET\_\-VALUE}(x, value)~\{(x) = (value);\}
+\item 
+\#define \hyperlink{sglib_8h_a44f647767fb7f975a04df3b5c12ba942}{SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER}(type, a, i, j)~\{type \_\-sgl\_\-aee\_\-tmp\_\-; \_\-sgl\_\-aee\_\-tmp\_\-=(a)\mbox{[}(i)\mbox{]}; (a)\mbox{[}(i)\mbox{]}=(a)\mbox{[}(j)\mbox{]}; (a)\mbox{[}(j)\mbox{]}= \_\-sgl\_\-aee\_\-tmp\_\-;\}
+\item 
+\#define \hyperlink{sglib_8h_a9fb57a3d43c9cd2b80d2b4053c183dfa}{SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR}(x, y)~(((x)$>$(y)?1:((x)$<$(y)?-\/1:0)))
+\item 
+\#define \hyperlink{sglib_8h_a30e424c6d8a7aa224626ecc637144ea6}{SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}(x, y)~(((x)$>$(y)?-\/1:((x)$<$(y)?1:0)))
+\item 
+\#define \hyperlink{sglib_8h_aea119bf09ab8677f337b0c0b753da8c4}{SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR}(x, y)~((int)((x) -\/ (y)))
+\item 
+\#define \hyperlink{sglib_8h_a7b7122204b1c4b8a95dcbd43fa83e605}{SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}(x, y)~((int)((y) -\/ (x)))
+\item 
+\#define \hyperlink{sglib_8h_ab4e225f3040a5c16d39053457a4b3c11}{SGLIB\_\-NUMERIC\_\-COMPARATOR}(x, y)~SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR(x, y)
+\item 
+\#define \hyperlink{sglib_8h_a0862a3db77ad4d3951f0d7e4a224ac5f}{SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}(x, y)~SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR(x, y)
+\item 
+\#define \hyperlink{sglib_8h_ad40ad3ce420058f5cc7f2c5c1f3a3c65}{SGLIB\_\-MAX\_\-TREE\_\-DEEP}~128
+\item 
+\#define \hyperlink{sglib_8h_acf9555aa93a79d5a4de955d4564bfbd0}{SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT}~16381
+\end{DoxyCompactItemize}
+
+
+\subsection{Define Documentation}
+\hypertarget{sglib_8h_aad88c3a356bb559f5892dc3522a70e5c}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN@{SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN}}
+\index{SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN@{SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-ARRAY\_\-HEAP\_\-DOWN(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{ind, }
+\item[{}]{max, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aad88c3a356bb559f5892dc3522a70e5c}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type  _t_;\
+  int   _m_, _l_, _r_, _i_;\
+  _i_ = (ind);\
+  _m_ = _i_;\
+  do {\
+    _i_ = _m_;          \
+    _l_ = 2*_i_+1;\
+    _r_ = _l_+1;\
+    if (_l_ < (max)){\
+      if (comparator(((a)[_m_]), ((a)[_l_])) < 0) _m_ = _l_;\
+      if (_r_ < (max)) {\
+        if (comparator(((a)[_m_]), ((a)[_r_])) < 0) _m_ = _r_;\
+      }\
+    }\
+    if (_m_ != _i_) {\
+     elem_exchanger(type, a, _i_, _m_);\
+    }\
+  } while (_m_ != _i_);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a2d70b02cb51f3e23fedc322ddb2fda15}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER@{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER}}
+\index{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER@{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-FIND\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{elem, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{comparator, }
+\item[{}]{res}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a2d70b02cb51f3e23fedc322ddb2fda15}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_s_;\
+  int _c_;\
+  _s_ = (tree);\
+  while (_s_!=NULL) {\
+    _c_ = comparator((elem), _s_);\
+    if (_c_ < 0) _s_ = _s_->left;\
+    else if (_c_ > 0) _s_ = _s_->right;\
+    else break;\
+  }\
+  (res) = _s_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a794995fcebcd3b19265c9c08d88d0ab1}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}}
+\index{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{iteratedVariable, }
+\item[{}]{order, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a794995fcebcd3b19265c9c08d88d0ab1}
+\hypertarget{sglib_8h_a51f24487c1df4980eac3f85c3c2f4c13}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST@{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST}}
+\index{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST@{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-FROM\_\-LIST(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a51f24487c1df4980eac3f85c3c2f4c13}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dlp_, *_dlt_;\
+  _dlp_ = NULL;\
+  for(_dlt_ = (list); _dlt_!=NULL; _dlt_ = _dlt_->next) {\
+    _dlt_->previous = _dlp_;\
+    _dlp_ = _dlt_;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a0d3ecac02a89a855fe857557710fa73a}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON@{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON}}
+\index{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON@{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-CREATE\_\-SINGLETON(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a0d3ecac02a89a855fe857557710fa73a}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  (list) = (elem);\
+  (list)->next = (list)->previous = NULL;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a76db4e94c3d976395084b8631bdbc829}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-DL\_\-LIST\_\-GENERIC\_\-ADD\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{member, }
+\item[{}]{the\_\-add\_\-operation}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a76db4e94c3d976395084b8631bdbc829}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dlp_;\
+  for(_dlp_ = (list); _dlp_!=NULL && comparator(_dlp_, (elem)) != 0; _dlp_= _dlp_
+      ->previous) ;\
+  if (_dlp_ == NULL && (list) != NULL) {\
+    for(_dlp_ = (list)->next; _dlp_!=NULL && comparator(_dlp_, (elem)) != 0; _dlp
+      _= _dlp_->next) ;\
+  }\
+  (member) = _dlp_;\
+  if (_dlp_ == NULL) {\
+    the_add_operation(type, list, elem, previous, next);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_aa9e4f7da4b5678e03377ceac64db547e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-GET\_\-VALUE@{SGLIB\_\-\_\-\_\-GET\_\-VALUE}}
+\index{SGLIB\_\-\_\-\_\-GET\_\-VALUE@{SGLIB\_\-\_\-\_\-GET\_\-VALUE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-GET\_\-VALUE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-GET\_\-VALUE(
+\begin{DoxyParamCaption}
+\item[{}]{x}
+\end{DoxyParamCaption}
+)~(x)}}
+\label{sglib_8h_aa9e4f7da4b5678e03377ceac64db547e}
+\hypertarget{sglib_8h_a77f665697f41b956348f5414530f564e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY@{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY}}
+\index{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY@{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-DELETION\_\-DISCREPANCY(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{leftt, }
+\item[{}]{rightt, }
+\item[{}]{bits, }
+\item[{}]{RED, }
+\item[{}]{BLACK, }
+\item[{}]{res}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a77f665697f41b956348f5414530f564e}
+\hypertarget{sglib_8h_a3f38288f3c6ec3036a04d5a2082933fc}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY@{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY}}
+\index{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY@{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-RBTREE\_\-FIX\_\-INSERTION\_\-DISCREPANCY(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{leftt, }
+\item[{}]{rightt, }
+\item[{}]{bits, }
+\item[{}]{RED, }
+\item[{}]{BLACK}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a3f38288f3c6ec3036a04d5a2082933fc}
+\hypertarget{sglib_8h_a3c46e5273bf8750a6a4535366e6ed834}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-\_\-\_\-SET\_\-VALUE@{SGLIB\_\-\_\-\_\-SET\_\-VALUE}}
+\index{SGLIB\_\-\_\-\_\-SET\_\-VALUE@{SGLIB\_\-\_\-\_\-SET\_\-VALUE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-\_\-\_\-SET\_\-VALUE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-\_\-\_\-SET\_\-VALUE(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{value}
+\end{DoxyParamCaption}
+)~\{(x) = (value);\}}}
+\label{sglib_8h_a3c46e5273bf8750a6a4535366e6ed834}
+\hypertarget{sglib_8h_aefb13ccb9a430a73a77022d44728ef02}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH@{SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH}}
+\index{SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH@{SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-ARRAY\_\-BINARY\_\-SEARCH(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{start\_\-index, }
+\item[{}]{end\_\-index, }
+\item[{}]{key, }
+\item[{}]{comparator, }
+\item[{}]{found, }
+\item[{}]{result\_\-index}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aefb13ccb9a430a73a77022d44728ef02}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  int _kk_, _cc_, _ii_, _jj_, _ff_;\
+  _ii_ = (start_index); \
+  _jj_ = (end_index);\
+  _ff_ = 0;\
+  while (_ii_ <= _jj_ && _ff_==0) {\
+    _kk_ = (_jj_+_ii_)/2;\
+    _cc_ = comparator(((a)[_kk_]), (key));\
+    if (_cc_ == 0) {\
+      (result_index) = _kk_;    \
+      _ff_ = 1;\
+    } else if (_cc_ < 0) {\
+      _ii_ = _kk_+1;\
+    } else {\
+      _jj_ = _kk_-1;\
+    }\
+  }\
+  if (_ff_ == 0) {\
+    /* not found, but set its resulting place in the array */\
+    (result_index) = _jj_+1;\
+  }\
+  (found) = _ff_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a44f647767fb7f975a04df3b5c12ba942}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER@{SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER}}
+\index{SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER@{SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-ARRAY\_\-ELEMENTS\_\-EXCHANGER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j}
+\end{DoxyParamCaption}
+)~\{type \_\-sgl\_\-aee\_\-tmp\_\-; \_\-sgl\_\-aee\_\-tmp\_\-=(a)\mbox{[}(i)\mbox{]}; (a)\mbox{[}(i)\mbox{]}=(a)\mbox{[}(j)\mbox{]}; (a)\mbox{[}(j)\mbox{]}= \_\-sgl\_\-aee\_\-tmp\_\-;\}}}
+\label{sglib_8h_a44f647767fb7f975a04df3b5c12ba942}
+\hypertarget{sglib_8h_a14f6ba9968436b51057f5daee0ca6f02}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-ARRAY\_\-HEAP\_\-SORT@{SGLIB\_\-ARRAY\_\-HEAP\_\-SORT}}
+\index{SGLIB\_\-ARRAY\_\-HEAP\_\-SORT@{SGLIB\_\-ARRAY\_\-HEAP\_\-SORT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-ARRAY\_\-HEAP\_\-SORT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-ARRAY\_\-HEAP\_\-SORT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{max, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a14f6ba9968436b51057f5daee0ca6f02}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  int   _k_;\
+  for(_k_=(max)/2; _k_>=0; _k_--) {\
+    SGLIB___ARRAY_HEAP_DOWN(type, a, _k_, max, comparator, elem_exchanger);\
+  }\
+  for(_k_=(max)-1; _k_>=0; _k_--) {\
+    elem_exchanger(type, a, 0, _k_);\
+    SGLIB___ARRAY_HEAP_DOWN(type, a, 0, _k_, comparator, elem_exchanger);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a5aa93980506b9d607186def431a3de1e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-ARRAY\_\-QUICK\_\-SORT@{SGLIB\_\-ARRAY\_\-QUICK\_\-SORT}}
+\index{SGLIB\_\-ARRAY\_\-QUICK\_\-SORT@{SGLIB\_\-ARRAY\_\-QUICK\_\-SORT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-ARRAY\_\-QUICK\_\-SORT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-ARRAY\_\-QUICK\_\-SORT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{max, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a5aa93980506b9d607186def431a3de1e}
+\hypertarget{sglib_8h_a953a633a9e124eba916299fbd74dbb2e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT@{SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT}}
+\index{SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT@{SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-ARRAY\_\-SINGLE\_\-HEAP\_\-SORT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{max, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a953a633a9e124eba916299fbd74dbb2e}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_ARRAY_HEAP_SORT(type, a, max, comparator, SGLIB_ARRAY_ELEMENTS_EXCHANGER)
+      ;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_af74a67c2b4f7e159cc88e3e1bfa05388}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT@{SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT}}
+\index{SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT@{SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-ARRAY\_\-SINGLE\_\-QUICK\_\-SORT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{max, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_af74a67c2b4f7e159cc88e3e1bfa05388}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_ARRAY_QUICK_SORT(type, a, max, comparator, 
+      SGLIB_ARRAY_ELEMENTS_EXCHANGER);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a7c72c18b0df38006f47af45efcdc6006}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}}
+\index{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{\_\-current\_\-element\_\-, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a7c72c18b0df38006f47af45efcdc6006}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB___BIN_TREE_MAP_ON_ELEMENTS(type, tree, _current_element_, 1, left, right,
+       command);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_ad2194ce552812c5a27649b31db67ee5c}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER@{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER}}
+\index{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER@{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-POSTORDER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{\_\-current\_\-element\_\-, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ad2194ce552812c5a27649b31db67ee5c}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB___BIN_TREE_MAP_ON_ELEMENTS(type, tree, _current_element_, 2, left, right,
+       command);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_aec801d7bc87443cee7d683f2e9901d73}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER@{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER}}
+\index{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER@{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-BIN\_\-TREE\_\-MAP\_\-ON\_\-ELEMENTS\_\-PREORDER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{tree, }
+\item[{}]{\_\-current\_\-element\_\-, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aec801d7bc87443cee7d683f2e9901d73}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB___BIN_TREE_MAP_ON_ELEMENTS(type, tree, _current_element_, 0, left, right,
+       command);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a8544b7afca8e35b958142c380bbddff3}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a8544b7afca8e35b958142c380bbddff3}
+{\bfseries Value:}
+\begin{DoxyCode}
+void sglib_##type##_array_quick_sort(type *a, int max) {\
+   SGLIB_ARRAY_SINGLE_QUICK_SORT(type, a, max, comparator);\
+ }\
+ void sglib_##type##_array_heap_sort(type *a, int max) {\
+   SGLIB_ARRAY_SINGLE_HEAP_SORT(type, a, max, comparator);\
+ }\
+\end{DoxyCode}
+\hypertarget{sglib_8h_a4fd420b923edccba76ab8979399fc016}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-ARRAY\_\-SORTING\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a4fd420b923edccba76ab8979399fc016}
+{\bfseries Value:}
+\begin{DoxyCode}
+extern void sglib_##type##_array_quick_sort(type *a, int max);\
+ extern void sglib_##type##_array_heap_sort(type *a, int max);\
+\end{DoxyCode}
+\hypertarget{sglib_8h_ab68ec584539f65e752f5d16be4b16f46}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ab68ec584539f65e752f5d16be4b16f46}
+\hypertarget{sglib_8h_a6c891597d7673a940316032d2a1ffba2}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-DL\_\-LIST\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a6c891597d7673a940316032d2a1ffba2}
+{\bfseries Value:}
+\begin{DoxyCode}
+struct sglib_##type##_iterator {\
+   type *currentelem;\
+   type *prevelem;\
+   type *nextelem;\
+   int (*subcomparator)(type *, type *);\
+   type *equalto;\
+ };\
+ extern void sglib_##type##_add(type **list, type *elem);\
+ extern void sglib_##type##_add_before(type **list, type *elem);\
+ extern void sglib_##type##_add_after(type **list, type *elem);\
+ extern int sglib_##type##_add_if_not_member(type **list, type *elem, type **memb
+      er);\
+ extern int sglib_##type##_add_before_if_not_member(type **list, type *elem, type
+       **member);\
+ extern int sglib_##type##_add_after_if_not_member(type **list, type *elem, type 
+      **member);\
+ extern void sglib_##type##_concat(type **first, type *second);\
+ extern void sglib_##type##_delete(type **list, type *elem);\
+ extern int sglib_##type##_delete_if_member(type **list, type *elem, type **membe
+      r);\
+ extern int sglib_##type##_is_member(type *list, type *elem);\
+ extern type *sglib_##type##_find_member(type *list, type *elem);\
+ extern type *sglib_##type##_get_first(type *list);\
+ extern type *sglib_##type##_get_last(type *list);\
+ extern void sglib_##type##_sort(type **list);\
+ extern int sglib_##type##_len(type *list);\
+ extern void sglib_##type##_reverse(type **list);\
+ extern type *sglib_##type##_it_init(struct sglib_##type##_iterator *it, type *li
+      st); \
+ extern type *sglib_##type##_it_init_on_equal(struct sglib_##type##_iterator *it,
+       type *list, int (*subcomparator)(type *, type *), type *equalto); \
+ extern type *sglib_##type##_it_current(struct sglib_##type##_iterator *it); \
+ extern type *sglib_##type##_it_next(struct sglib_##type##_iterator *it);
+\end{DoxyCode}
+\hypertarget{sglib_8h_a76ef78f2d1228f81624adeed23e8e3b1}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{dim, }
+\item[{}]{hash\_\-function}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a76ef78f2d1228f81624adeed23e8e3b1}
+\hypertarget{sglib_8h_a65a4a83319726e984fb1ffa686224ba3}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-HASHED\_\-CONTAINER\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{dim, }
+\item[{}]{hash\_\-function}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a65a4a83319726e984fb1ffa686224ba3}
+{\bfseries Value:}
+\begin{DoxyCode}
+struct sglib_hashed_##type##_iterator {\
+    struct sglib_##type##_iterator containerIt;\
+    type **table;\
+    int currentIndex;\
+    int (*subcomparator)(type *, type *);\
+    type *equalto;\
+  };\
+  extern void sglib_hashed_##type##_init(type *table[dim]);\
+  extern void sglib_hashed_##type##_add(type *table[dim], type *elem);\
+  extern int sglib_hashed_##type##_add_if_not_member(type *table[dim], type *elem
+      , type **member);\
+  extern void sglib_hashed_##type##_delete(type *table[dim], type *elem);\
+  extern int sglib_hashed_##type##_delete_if_member(type *table[dim], type *elem,
+       type **memb);\
+  extern int sglib_hashed_##type##_is_member(type *table[dim], type *elem);\
+  extern type * sglib_hashed_##type##_find_member(type *table[dim], type *elem);\
+      
+  extern type *sglib_hashed_##type##_it_init(struct sglib_hashed_##type##_iterato
+      r *it, type *table[dim]); \
+  extern type *sglib_hashed_##type##_it_init_on_equal(struct sglib_hashed_##type#
+      #_iterator *it, type *table[dim], int (*subcomparator)(type *, type *), type *equ
+      alto); \
+  extern type *sglib_hashed_##type##_it_current(struct sglib_hashed_##type##_iter
+      ator *it); \
+  extern type *sglib_hashed_##type##_it_next(struct sglib_hashed_##type##_iterato
+      r *it);
+\end{DoxyCode}
+\hypertarget{sglib_8h_aa93fd52ab44d077e488b131f42cd46f0}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{dim, }
+\item[{}]{hash\_\-function, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aa93fd52ab44d077e488b131f42cd46f0}
+\hypertarget{sglib_8h_a47232e99bf53c06db36421aedaab5584}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-HASHED\_\-TABLE\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{dim, }
+\item[{}]{hash\_\-function, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a47232e99bf53c06db36421aedaab5584}
+{\bfseries Value:}
+\begin{DoxyCode}
+struct sglib_hashed_##type##_iterator {\
+    int currentIndex;\
+    int (*subcomparator)(type *, type *);\
+    type *equalto;\
+  };\
+  extern void sglib_hashed_##type##_init(type *table[dim]);\
+  extern int sglib_hashed_##type##_add_if_not_member(type *table[dim], type *elem
+      , type **member);\
+  extern int sglib_hashed_##type##_is_member(type *table[dim], type *elem);\
+  extern type * sglib_hashed_##type##_find_member(type *table[dim], type *elem);\
+      
+  extern type *sglib_hashed_##type##_it_init(struct sglib_hashed_##type##_iterato
+      r *it, type *table[dim]); \
+  extern type *sglib_hashed_##type##_it_init_on_equal(struct sglib_hashed_##type#
+      #_iterator *it, type *table[dim], int (*subcomparator)(type *, type *), type *equ
+      alto); \
+  extern type *sglib_hashed_##type##_it_current(struct sglib_hashed_##type##_iter
+      ator *it); \
+  extern type *sglib_hashed_##type##_it_next(struct sglib_hashed_##type##_iterato
+      r *it);
+\end{DoxyCode}
+\hypertarget{sglib_8h_a27d37a41f06bbf14c0d3361064fe4c2a}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-HEAP\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{heap\_\-type, }
+\item[{}]{elem\_\-type, }
+\item[{}]{afield, }
+\item[{}]{ifield, }
+\item[{}]{dim, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a27d37a41f06bbf14c0d3361064fe4c2a}
+{\bfseries Value:}
+\begin{DoxyCode}
+void sglib_##heap_type##_init(heap_type *q) {\
+  SGLIB_HEAP_INIT(elem_type, q->afield, q->ifield);\
+ }\
+ int sglib_##heap_type##_is_empty(heap_type *q) {\
+  return(SGLIB_HEAP_IS_EMPTY(elem_type, q->afield, q->ifield));\
+ }\
+ int sglib_##heap_type##_is_full(heap_type *q) {\
+  return(SGLIB_HEAP_IS_FULL(elem_type, q->afield, q->ifield));\
+ }\
+ elem_type sglib_##heap_type##_first_element(heap_type *q) {\
+  return(SGLIB_HEAP_FIRST_ELEMENT(elem_type, q->afield, q->ifield));\
+ }\
+ elem_type *sglib_##heap_type##_first_element_ptr(heap_type *q) {\
+  return(& SGLIB_HEAP_FIRST_ELEMENT(elem_type, q->afield, q->ifield));\
+ }\
+ void sglib_##heap_type##_add_next(heap_type *q) {\
+  SGLIB_HEAP_ADD_NEXT(elem_type, q->afield, q->ifield, dim, comparator, elem_exch
+      anger);\
+ }\
+ void sglib_##heap_type##_add(heap_type *q, elem_type elem) {\
+  SGLIB_HEAP_ADD(elem_type, q->afield, elem, q->ifield, dim, comparator, elem_exc
+      hanger);\
+ }\
+ void sglib_##heap_type##_delete_first(heap_type *q) {\
+  SGLIB_HEAP_DELETE_FIRST(elem_type, q->afield, q->ifield, dim, comparator, elem_
+      exchanger);\
+ }\
+ void sglib_##heap_type##_delete(heap_type *q) {\
+  SGLIB_HEAP_DELETE_FIRST(elem_type, q->afield, q->ifield, dim, comparator, elem_
+      exchanger);\
+ }
+\end{DoxyCode}
+\hypertarget{sglib_8h_aa127809a74ad030875ece0e412663722}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-HEAP\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{heap\_\-type, }
+\item[{}]{elem\_\-type, }
+\item[{}]{afield, }
+\item[{}]{ifield, }
+\item[{}]{dim, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aa127809a74ad030875ece0e412663722}
+{\bfseries Value:}
+\begin{DoxyCode}
+extern void sglib_##heap_type##_init(heap_type *q); \
+ extern int sglib_##heap_type##_is_empty(heap_type *q); \
+ extern int sglib_##heap_type##_is_full(heap_type *q); \
+ extern elem_type sglib_##heap_type##_first_element(heap_type *q); \
+ extern elem_type *sglib_##heap_type##_first_element_ptr(heap_type *q); \
+ extern void sglib_##heap_type##_add_next(heap_type *q); \
+ extern void sglib_##heap_type##_add(heap_type *q, elem_type elem); \
+ extern void sglib_##heap_type##_delete_first(heap_type *q); \
+ extern void sglib_##heap_type##_delete(heap_type *q)
+\end{DoxyCode}
+\hypertarget{sglib_8h_a4836a1b7ceb8edd4443fcc144465c069}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-LIST\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a4836a1b7ceb8edd4443fcc144465c069}
+\hypertarget{sglib_8h_a1731018c1421efacfb550db23480b574}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-LIST\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a1731018c1421efacfb550db23480b574}
+{\bfseries Value:}
+\begin{DoxyCode}
+struct sglib_##type##_iterator {\
+   type *currentelem;\
+   type *nextelem;\
+   int (*subcomparator)(type *, type *);\
+   type *equalto;\
+ };\
+ extern void sglib_##type##_add(type **list, type *elem);\
+ extern int sglib_##type##_add_if_not_member(type **list, type *elem, type **memb
+      er);\
+ extern void sglib_##type##_concat(type **first, type *second);\
+ extern void sglib_##type##_delete(type **list, type *elem);\
+ extern int sglib_##type##_delete_if_member(type **list, type *elem, type **membe
+      r);\
+ extern int sglib_##type##_is_member(type *list, type *elem);\
+ extern type *sglib_##type##_find_member(type *list, type *elem);\
+ extern void sglib_##type##_sort(type **list);\
+ extern int sglib_##type##_len(type *list);\
+ extern void sglib_##type##_reverse(type **list);\
+ extern type *sglib_##type##_it_init(struct sglib_##type##_iterator *it, type *li
+      st); \
+ extern type *sglib_##type##_it_init_on_equal(struct sglib_##type##_iterator *it,
+       type *list, int (*subcomparator)(type *, type *), type *equalto); \
+ extern type *sglib_##type##_it_current(struct sglib_##type##_iterator *it); \
+ extern type *sglib_##type##_it_next(struct sglib_##type##_iterator *it);
+\end{DoxyCode}
+\hypertarget{sglib_8h_a896d701c138f43db0e6c3f2378c7b19c}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-QUEUE\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{queue\_\-type, }
+\item[{}]{elem\_\-type, }
+\item[{}]{afield, }
+\item[{}]{ifield, }
+\item[{}]{jfield, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a896d701c138f43db0e6c3f2378c7b19c}
+{\bfseries Value:}
+\begin{DoxyCode}
+void sglib_##queue_type##_init(queue_type *q) {\
+  SGLIB_QUEUE_INIT(elem_type, q->afield, q->ifield, q->jfield);\
+ }\
+ int sglib_##queue_type##_is_empty(queue_type *q) {\
+  return(SGLIB_QUEUE_IS_EMPTY(elem_type, q->afield, q->ifield, q->jfield));\
+ }\
+ int sglib_##queue_type##_is_full(queue_type *q) {\
+  return(SGLIB_QUEUE_IS_FULL(elem_type, q->afield, q->ifield, q->jfield));\
+ }\
+ elem_type sglib_##queue_type##_first_element(queue_type *q) {\
+  return(SGLIB_QUEUE_FIRST_ELEMENT(elem_type, q->afield, q->ifield, q->jfield));\
+      
+ }\
+ elem_type *sglib_##queue_type##_first_element_ptr(queue_type *q) {\
+  return(& SGLIB_QUEUE_FIRST_ELEMENT(elem_type, q->afield, q->ifield, q->jfield))
+      ;\
+ }\
+ void sglib_##queue_type##_add_next(queue_type *q) {\
+  SGLIB_QUEUE_ADD_NEXT(elem_type, q->afield, q->ifield, q->jfield, dim);\
+ }\
+ void sglib_##queue_type##_add(queue_type *q, elem_type elem) {\
+  SGLIB_QUEUE_ADD(elem_type, q->afield, elem, q->ifield, q->jfield, dim);\
+ }\
+ void sglib_##queue_type##_delete_first(queue_type *q) {\
+  SGLIB_QUEUE_DELETE_FIRST(elem_type, q->afield, q->ifield, q->jfield, dim);\
+ }\
+ void sglib_##queue_type##_delete(queue_type *q) {\
+  SGLIB_QUEUE_DELETE_FIRST(elem_type, q->afield, q->ifield, q->jfield, dim);\
+ }
+\end{DoxyCode}
+\hypertarget{sglib_8h_a393bab863f0a562d5eddb29894c6e086}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-QUEUE\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{queue\_\-type, }
+\item[{}]{elem\_\-type, }
+\item[{}]{afield, }
+\item[{}]{ifield, }
+\item[{}]{jfield, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a393bab863f0a562d5eddb29894c6e086}
+{\bfseries Value:}
+\begin{DoxyCode}
+extern void sglib_##queue_type##_init(queue_type *q); \
+ extern int sglib_##queue_type##_is_empty(queue_type *q); \
+ extern int sglib_##queue_type##_is_full(queue_type *q); \
+ extern elem_type sglib_##queue_type##_first_element(queue_type *q); \
+ extern elem_type *sglib_##queue_type##_first_element_ptr(queue_type *q); \
+ extern void sglib_##queue_type##_add_next(queue_type *q); \
+ extern void sglib_##queue_type##_add(queue_type *q, elem_type elem); \
+ extern void sglib_##queue_type##_delete_first(queue_type *q); \
+ extern void sglib_##queue_type##_delete(queue_type *q);
+\end{DoxyCode}
+\hypertarget{sglib_8h_ad203066a6afe8fbe5e65a9d31960afa3}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{colorbit, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)~SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL(type, left, right, colorbit, comparator, 1, 0)}}
+\label{sglib_8h_ad203066a6afe8fbe5e65a9d31960afa3}
+\hypertarget{sglib_8h_a7f3b7df4a90fa3b59c219a64c4ae2994}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL@{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL}}
+\index{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL@{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-RBTREE\_\-FUNCTIONS\_\-GENERAL(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{bits, }
+\item[{}]{comparator, }
+\item[{}]{RED, }
+\item[{}]{BLACK}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a7f3b7df4a90fa3b59c219a64c4ae2994}
+\hypertarget{sglib_8h_ad1e32aca3b7277661dc118b9fd895ecd}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-RBTREE\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{left, }
+\item[{}]{right, }
+\item[{}]{colorbit, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ad1e32aca3b7277661dc118b9fd895ecd}
+{\bfseries Value:}
+\begin{DoxyCode}
+struct sglib_##type##_iterator {\
+    type *currentelem;\
+    char pass[SGLIB_MAX_TREE_DEEP];\
+    type *path[SGLIB_MAX_TREE_DEEP];\
+    short int pathi;\
+    short int order;\
+    type *equalto;\
+    int (*subcomparator)(type *, type *);\
+ };\
+ extern void sglib___##type##_consistency_check(type *t); \
+ extern void sglib_##type##_add(type **tree, type *elem); \
+ extern int sglib_##type##_add_if_not_member(type **tree, type *elem, type **memb
+      ); \
+ extern void sglib_##type##_delete(type **tree, type *elem); \
+ extern int sglib_##type##_delete_if_member(type **tree, type *elem, type **memb)
+      ; \
+ extern int sglib_##type##_is_member(type *t, type *elem); \
+ extern type *sglib_##type##_find_member(type *t, type *elem); \
+ extern int sglib_##type##_len(type *t); \
+ extern type *sglib_##type##_it_init(struct sglib_##type##_iterator *it, type *tr
+      ee); \
+ extern type *sglib_##type##_it_init_preorder(struct sglib_##type##_iterator *it,
+       type *tree); \
+ extern type *sglib_##type##_it_init_inorder(struct sglib_##type##_iterator *it, 
+      type *tree); \
+ extern type *sglib_##type##_it_init_postorder(struct sglib_##type##_iterator *it
+      , type *tree); \
+ extern type *sglib_##type##_it_init_on_equal(struct sglib_##type##_iterator *it,
+       type *tree, int (*subcomparator)(type *, type *), type *equalto); \
+ extern type *sglib_##type##_it_current(struct sglib_##type##_iterator *it); \
+ extern type *sglib_##type##_it_next(struct sglib_##type##_iterator *it); \
+\end{DoxyCode}
+\hypertarget{sglib_8h_a45d71d54b077a2bd49f5bff90e224783}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS}}
+\index{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS@{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-FUNCTIONS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a45d71d54b077a2bd49f5bff90e224783}
+\hypertarget{sglib_8h_a789f6d65111e5faa05e9b80d44cf9a53}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES}}
+\index{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES@{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DEFINE\_\-SORTED\_\-LIST\_\-PROTOTYPES(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{comparator, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a789f6d65111e5faa05e9b80d44cf9a53}
+{\bfseries Value:}
+\begin{DoxyCode}
+struct sglib_##type##_iterator {\
+   type *currentelem;\
+   type *nextelem;\
+   int (*subcomparator)(type *, type *);\
+   type *equalto;\
+ };\
+ extern void sglib_##type##_add(type **list, type *elem);\
+ extern int sglib_##type##_add_if_not_member(type **list, type *elem, type **memb
+      er);\
+ extern void sglib_##type##_delete(type **list, type *elem);\
+ extern int sglib_##type##_delete_if_member(type **list, type *elem, type **membe
+      r);\
+ extern int sglib_##type##_is_member(type *list, type *elem);\
+ extern type *sglib_##type##_find_member(type *list, type *elem);\
+ extern int sglib_##type##_len(type *list);\
+ extern void sglib_##type##_sort(type **list);\
+ extern type *sglib_##type##_it_init(struct sglib_##type##_iterator *it, type *li
+      st); \
+ extern type *sglib_##type##_it_init_on_equal(struct sglib_##type##_iterator *it,
+       type *list, int (*subcomparator)(type *, type *), type *equalto); \
+ extern type *sglib_##type##_it_current(struct sglib_##type##_iterator *it); \
+ extern type *sglib_##type##_it_next(struct sglib_##type##_iterator *it);
+\end{DoxyCode}
+\hypertarget{sglib_8h_aaeaf4929250279a39e52ddeb07736b3f}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-ADD@{SGLIB\_\-DL\_\-LIST\_\-ADD}}
+\index{SGLIB\_\-DL\_\-LIST\_\-ADD@{SGLIB\_\-DL\_\-LIST\_\-ADD}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-ADD}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-ADD(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aaeaf4929250279a39e52ddeb07736b3f}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_DL_LIST_ADD_BEFORE(type, list, elem, previous, next)\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a7c0ee161cbc61e5e0f482e6dfc3f8e2e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{place, }
+\item[{}]{elem, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a7c0ee161cbc61e5e0f482e6dfc3f8e2e}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if ((place) == NULL) {\
+    SGLIB___DL_LIST_CREATE_SINGLETON(type, place, elem, previous, next);\
+  } else {\
+    (elem)->next = (place)->next;\
+    (elem)->previous = (place);\
+    (place)->next = (elem);\
+    if ((elem)->next != NULL) (elem)->next->previous = (elem);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a7cb4c4fafc699699a2d408f26ad3c431}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-ADD\_\-AFTER\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a7cb4c4fafc699699a2d408f26ad3c431}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB___DL_LIST_GENERIC_ADD_IF_NOT_MEMBER(type, list, elem, comparator, previou
+      s, next, member, SGLIB_DL_LIST_ADD_AFTER);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a3d2217ac905e801f3b97569ed7dddc4d}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE}}
+\index{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{place, }
+\item[{}]{elem, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a3d2217ac905e801f3b97569ed7dddc4d}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if ((place) == NULL) {\
+    SGLIB___DL_LIST_CREATE_SINGLETON(type, place, elem, previous, next);\
+  } else {\
+    (elem)->next = (place);\
+    (elem)->previous = (place)->previous;\
+    (place)->previous = (elem);\
+    if ((elem)->previous != NULL) (elem)->previous->next = (elem);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a500a61603bdc830b52ede2894cf241c9}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-ADD\_\-BEFORE\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a500a61603bdc830b52ede2894cf241c9}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB___DL_LIST_GENERIC_ADD_IF_NOT_MEMBER(type, list, elem, comparator, previou
+      s, next, member, SGLIB_DL_LIST_ADD_BEFORE);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a6ee3c838dad7f88ea776f4383d4a2d86}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a6ee3c838dad7f88ea776f4383d4a2d86}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB___DL_LIST_GENERIC_ADD_IF_NOT_MEMBER(type, list, elem, comparator, previou
+      s, next, member, SGLIB_DL_LIST_ADD);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_adb07d1602ea8ab3358e2d58c8b7aeef4}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-CONCAT@{SGLIB\_\-DL\_\-LIST\_\-CONCAT}}
+\index{SGLIB\_\-DL\_\-LIST\_\-CONCAT@{SGLIB\_\-DL\_\-LIST\_\-CONCAT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-CONCAT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-CONCAT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{first, }
+\item[{}]{second, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_adb07d1602ea8ab3358e2d58c8b7aeef4}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if ((first)==NULL) {\
+    (first) = (second);\
+  } else if ((second)!=NULL) {\
+    type *_dlp_;\
+    for(_dlp_ = (first); _dlp_->next!=NULL; _dlp_=_dlp_->next) ;\
+    SGLIB_DL_LIST_ADD_AFTER(type, _dlp_, second, previous, next);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_accff5b5538ec1687ca95b0b1b0ac77f7}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-DELETE@{SGLIB\_\-DL\_\-LIST\_\-DELETE}}
+\index{SGLIB\_\-DL\_\-LIST\_\-DELETE@{SGLIB\_\-DL\_\-LIST\_\-DELETE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-DELETE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-DELETE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_accff5b5538ec1687ca95b0b1b0ac77f7}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_l_;\
+  _l_ = (list);\
+  if (_l_ == (elem)) {\
+    if ((elem)->previous != NULL) _l_ = (elem)->previous;\
+    else _l_ = (elem)->next;\
+  }\
+  if ((elem)->next != NULL) (elem)->next->previous = (elem)->previous;\
+  if ((elem)->previous != NULL) (elem)->previous->next = (elem)->next;\
+  (list) = _l_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a87c589aef6eb57daa331e649f45c631f}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a87c589aef6eb57daa331e649f45c631f}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dlp_;\
+  for(_dlp_ = (list); _dlp_!=NULL && comparator(_dlp_, (elem)) != 0; _dlp_= _dlp_
+      ->previous) ;\
+  if (_dlp_ == NULL && (list) != NULL) {\
+    for(_dlp_ = (list)->next; _dlp_!=NULL && comparator(_dlp_, (elem)) != 0; _dlp
+      _= _dlp_->next) ;\
+  }\
+  (member) = _dlp_;\
+  if (_dlp_ != NULL) {\
+    SGLIB_DL_LIST_DELETE(type, list, _dlp_, previous, next);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a07e358c310d2827835d70039f5c7b4d6}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-FIND\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a07e358c310d2827835d70039f5c7b4d6}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dlp_;\
+  SGLIB_LIST_FIND_MEMBER(type, list, elem, comparator, previous, member);\
+  if ((member) == NULL && (list) != NULL) {\
+    _dlp_ = (list)->next;\
+    SGLIB_LIST_FIND_MEMBER(type, _dlp_, elem, comparator, next, member);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a7c1047a14a18bdc442abd11ae0e456ac}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST@{SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST}}
+\index{SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST@{SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-GET\_\-FIRST(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a7c1047a14a18bdc442abd11ae0e456ac}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dll_;\
+  _dll_ = (list);\
+  if (_dll_ != NULL) {\
+    for(; _dll_->previous!=NULL; _dll_=_dll_->previous) ;\
+  }\
+  (result) = _dll_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_ac78cc10117a3a40c27ddc1a4eef5c0f8}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST@{SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST}}
+\index{SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST@{SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-GET\_\-LAST(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ac78cc10117a3a40c27ddc1a4eef5c0f8}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dll_;\
+  _dll_ = (list);\
+  if (_dll_ != NULL) {\
+    for(; _dll_->next!=NULL; _dll_=_dll_->next) ;\
+  }\
+  (result) = _dll_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a52d8f2864bcf828ef2a4553938edecba}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER}}
+\index{SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER@{SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-IS\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a52d8f2864bcf828ef2a4553938edecba}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dlp_;\
+  SGLIB_LIST_IS_MEMBER(type, list, elem, previous, result);\
+  if (result == 0 && (list) != NULL) {\
+    _dlp_ = (list)->next;\
+    SGLIB_LIST_IS_MEMBER(type, _dlp_, elem, next, result);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a84ef609d360c6b1f504a6891e4bedb54}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-LEN@{SGLIB\_\-DL\_\-LIST\_\-LEN}}
+\index{SGLIB\_\-DL\_\-LIST\_\-LEN@{SGLIB\_\-DL\_\-LIST\_\-LEN}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-LEN}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-LEN(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a84ef609d360c6b1f504a6891e4bedb54}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dl_;\
+  int _r1_, _r2_;\
+  if ((list)==NULL) {\
+    (result) = 0;\
+  } else {\
+    SGLIB_LIST_LEN(type, list, previous, _r1_);\
+    _dl_ = (list)->next;\
+    SGLIB_LIST_LEN(type, _dl_, next, _r2_);\
+    (result) = _r1_ + _r2_;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a4efe7b2f21e55775da88edf0625685e9}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}}
+\index{SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{iteratedVariable, }
+\item[{}]{previous, }
+\item[{}]{next, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a4efe7b2f21e55775da88edf0625685e9}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dl_;\
+  type *iteratedVariable;\
+  if ((list)!=NULL) {\
+    _dl_ = (list)->next;\
+    SGLIB_LIST_MAP_ON_ELEMENTS(type, list, iteratedVariable, previous, command);\
+      
+    SGLIB_LIST_MAP_ON_ELEMENTS(type, _dl_, iteratedVariable, next, command);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a23554fa453cc5fd66e13be64b3497ddf}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-REVERSE@{SGLIB\_\-DL\_\-LIST\_\-REVERSE}}
+\index{SGLIB\_\-DL\_\-LIST\_\-REVERSE@{SGLIB\_\-DL\_\-LIST\_\-REVERSE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-REVERSE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-REVERSE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a23554fa453cc5fd66e13be64b3497ddf}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_list_,*_nlist_,*_dlp_,*_dln_;\
+  _list_ = (list);\
+  if (_list_!=NULL) {\
+    _nlist_ = _list_->next;\
+    while (_list_!=NULL) {\
+      _dln_ = _list_->next; \
+      _dlp_ = _list_->previous; \
+      _list_->next = _dlp_;\
+      _list_->previous = _dln_;\
+      _list_ = _dlp_;\
+    }\
+    while (_nlist_!=NULL) {\
+      _dln_ = _nlist_->next; \
+      _dlp_ = _nlist_->previous; \
+      _nlist_->next = _dlp_;\
+      _nlist_->previous = _dln_;\
+      _nlist_ = _dln_;\
+    }\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_ace392dc2a8867af17c5f6ed1cd0114c0}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-DL\_\-LIST\_\-SORT@{SGLIB\_\-DL\_\-LIST\_\-SORT}}
+\index{SGLIB\_\-DL\_\-LIST\_\-SORT@{SGLIB\_\-DL\_\-LIST\_\-SORT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-DL\_\-LIST\_\-SORT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-DL\_\-LIST\_\-SORT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{comparator, }
+\item[{}]{previous, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ace392dc2a8867af17c5f6ed1cd0114c0}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_dll_, *_dlp_, *_dlt_;\
+  _dll_ = (list);\
+  if (_dll_ != NULL) {\
+    for(; _dll_->previous!=NULL; _dll_=_dll_->previous) ;\
+    SGLIB_LIST_SORT(type, _dll_, comparator, next);\
+    SGLIB___DL_LIST_CREATE_FROM_LIST(type, _dll_, previous, next);\
+    (list) = _dll_;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_aea119bf09ab8677f337b0c0b753da8c4}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR}}
+\index{SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-FAST\_\-NUMERIC\_\-COMPARATOR(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{y}
+\end{DoxyParamCaption}
+)~((int)((x) -\/ (y)))}}
+\label{sglib_8h_aea119bf09ab8677f337b0c0b753da8c4}
+\hypertarget{sglib_8h_a7b7122204b1c4b8a95dcbd43fa83e605}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}}
+\index{SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-FAST\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{y}
+\end{DoxyParamCaption}
+)~((int)((y) -\/ (x)))}}
+\label{sglib_8h_a7b7122204b1c4b8a95dcbd43fa83e605}
+\hypertarget{sglib_8h_a4b79311593c7f5c33e58347aed91e8f1}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HASH\_\-TAB\_\-ADD\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{table, }
+\item[{}]{dim, }
+\item[{}]{elem, }
+\item[{}]{hash\_\-function, }
+\item[{}]{comparator, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a4b79311593c7f5c33e58347aed91e8f1}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  unsigned _pos_;\
+  type     *_elem_;\
+  SGLIB_HASH_TAB_FIND_MEMBER(type, table, dim, elem, _pos_, _elem_);\
+  (member) = (table)[_pos_];\
+  if (_elem_ == NULL) {\
+    if ((table)[_pos_] != NULL) assert(0 && "the hash table is full");\
+    (table)[_pos_] = (elem);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a575df2ec1b27780223f07b59b96dd526}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER@{SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER}}
+\index{SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER@{SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HASH\_\-TAB\_\-FIND\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{table, }
+\item[{}]{dim, }
+\item[{}]{elem, }
+\item[{}]{hash\_\-function, }
+\item[{}]{comparator, }
+\item[{}]{resultIndex, }
+\item[{}]{resultMember}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a575df2ec1b27780223f07b59b96dd526}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  unsigned _i_;\
+  int      _count_;\
+  type     *_e_;\
+  _count = 0;\
+  _i_ = hash_function(elem);\
+  _i_ %= (dim);\
+  while ((_e_=(table)[_i_])!=NULL && comparator(_e_, (elem))!=0 && _count_<(dim))
+       {\
+    _count_ ++;\
+    _i_ = (_i_ + SGLIB_HASH_TAB_SHIFT_CONSTANT) % (dim);\
+  }\
+  (resultIndex) = _i_;\
+  if (_count_ < (dim)) (resultMember) = _e_;\
+  else (resultMember) = NULL;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_aaae9b5fe80577dcd406614655405391a}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HASH\_\-TAB\_\-INIT@{SGLIB\_\-HASH\_\-TAB\_\-INIT}}
+\index{SGLIB\_\-HASH\_\-TAB\_\-INIT@{SGLIB\_\-HASH\_\-TAB\_\-INIT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HASH\_\-TAB\_\-INIT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HASH\_\-TAB\_\-INIT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{table, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aaae9b5fe80577dcd406614655405391a}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  int _i_;\
+  for(_i_ = 0; _i_ < (dim); _i_++) (table)[_i_] = NULL;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a2ec0586733a2de9db8aad88f5b1a793c}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER@{SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER}}
+\index{SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER@{SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HASH\_\-TAB\_\-IS\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{table, }
+\item[{}]{dim, }
+\item[{}]{elem, }
+\item[{}]{hash\_\-function, }
+\item[{}]{resultIndex}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a2ec0586733a2de9db8aad88f5b1a793c}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  unsigned _i_;\
+  int      _c_;\
+  type     *_e_;\
+  _count = 0;\
+  _i_ = hash_function(elem);\
+  _i_ %= (dim);\
+  while ((_e_=(table)[_i_])!=NULL && _e_!=(elem) && _c_<(dim)) {\
+    _c_ ++;\
+    _i_ = (_i_ + SGLIB_HASH_TAB_SHIFT_CONSTANT) % (dim);\
+  }\
+  if (_e_==(elem)) (resultIndex) = _i_;\
+  else (resultIndex) = -1;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a13882695a6ee8bbc293dff621d0b9759}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS}}
+\index{SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HASH\_\-TAB\_\-MAP\_\-ON\_\-ELEMENTS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{table, }
+\item[{}]{dim, }
+\item[{}]{iteratedIndex, }
+\item[{}]{iteratedVariable, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a13882695a6ee8bbc293dff621d0b9759}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  unsigned  iteratedIndex;\
+  type      *iteratedVariable;\
+  for(iteratedIndex=0; iteratedIndex < (dim); iteratedIndex++) {\
+    iteratedVariable = (table)[iteratedIndex];\
+    if (iteratedVariable != NULL) {command;}\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_acf9555aa93a79d5a4de955d4564bfbd0}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT@{SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT}}
+\index{SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT@{SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HASH\_\-TAB\_\-SHIFT\_\-CONSTANT~16381}}
+\label{sglib_8h_acf9555aa93a79d5a4de955d4564bfbd0}
+\hypertarget{sglib_8h_aa4e1253e2eeaa66a9529fa363d8080c1}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-ADD@{SGLIB\_\-HEAP\_\-ADD}}
+\index{SGLIB\_\-HEAP\_\-ADD@{SGLIB\_\-HEAP\_\-ADD}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-ADD}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-ADD(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{elem, }
+\item[{}]{i, }
+\item[{}]{dim, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aa4e1253e2eeaa66a9529fa363d8080c1}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if (SGLIB_HEAP_IS_FULL(type, a, i, dim)) assert(0 && "the heap is full");\
+  a[i] = (elem);\
+  SGLIB_HEAP_ADD_NEXT(type, a, i, dim, comparator, 
+      SGLIB_ARRAY_ELEMENTS_EXCHANGER);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_ae3fcd58623595b1734a0003344925f22}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-ADD\_\-NEXT@{SGLIB\_\-HEAP\_\-ADD\_\-NEXT}}
+\index{SGLIB\_\-HEAP\_\-ADD\_\-NEXT@{SGLIB\_\-HEAP\_\-ADD\_\-NEXT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-ADD\_\-NEXT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-ADD\_\-NEXT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{dim, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ae3fcd58623595b1734a0003344925f22}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  int _i_;\
+  if (SGLIB_HEAP_IS_FULL(type, a, i, dim)) assert(0 && "the heap is full");\
+  _i_ = (i)++;\
+  while (_i_ > 0 && comparator(a[_i_/2], a[_i_]) < 0) {\
+    elem_exchanger(type, a, (_i_/2), _i_);\
+    _i_ = _i_/2;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a15341e93a1cdf3b433a9670f8941ce10}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-DELETE@{SGLIB\_\-HEAP\_\-DELETE}}
+\index{SGLIB\_\-HEAP\_\-DELETE@{SGLIB\_\-HEAP\_\-DELETE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-DELETE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-DELETE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{dim, }
+\item[{}]{comparator}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a15341e93a1cdf3b433a9670f8941ce10}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_HEAP_DELETE_FIRST(type, a, i, dim, comparator, 
+      SGLIB_ARRAY_ELEMENTS_EXCHANGER);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a0d4c82038a880cd0917d4b24f58fc4a5}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-DELETE\_\-FIRST@{SGLIB\_\-HEAP\_\-DELETE\_\-FIRST}}
+\index{SGLIB\_\-HEAP\_\-DELETE\_\-FIRST@{SGLIB\_\-HEAP\_\-DELETE\_\-FIRST}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-DELETE\_\-FIRST}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-DELETE\_\-FIRST(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{dim, }
+\item[{}]{comparator, }
+\item[{}]{elem\_\-exchanger}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a0d4c82038a880cd0917d4b24f58fc4a5}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if (SGLIB_HEAP_IS_EMPTY(type, a, i)) assert(0 && "the heap is empty");\
+  (i)--;\
+  a[0] = a[i];\
+  SGLIB___ARRAY_HEAP_DOWN(type, a, 0, i, comparator, elem_exchanger);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a9990ea8c1254a5d265c3b4f41b329947}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT@{SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT}}
+\index{SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT@{SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-FIRST\_\-ELEMENT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i}
+\end{DoxyParamCaption}
+)~(a\mbox{[}0\mbox{]})}}
+\label{sglib_8h_a9990ea8c1254a5d265c3b4f41b329947}
+\hypertarget{sglib_8h_aad18911507497915980a3ea68adb05ca}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-INIT@{SGLIB\_\-HEAP\_\-INIT}}
+\index{SGLIB\_\-HEAP\_\-INIT@{SGLIB\_\-HEAP\_\-INIT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-INIT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-INIT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i}
+\end{DoxyParamCaption}
+)~\{ i = 0; \}}}
+\label{sglib_8h_aad18911507497915980a3ea68adb05ca}
+\hypertarget{sglib_8h_a672833f0d0ffff52239d3d3b394b7757}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-IS\_\-EMPTY@{SGLIB\_\-HEAP\_\-IS\_\-EMPTY}}
+\index{SGLIB\_\-HEAP\_\-IS\_\-EMPTY@{SGLIB\_\-HEAP\_\-IS\_\-EMPTY}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-IS\_\-EMPTY}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-IS\_\-EMPTY(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i}
+\end{DoxyParamCaption}
+)~((i)==0)}}
+\label{sglib_8h_a672833f0d0ffff52239d3d3b394b7757}
+\hypertarget{sglib_8h_aae85af330774c295bc2a8401bdae7c11}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-HEAP\_\-IS\_\-FULL@{SGLIB\_\-HEAP\_\-IS\_\-FULL}}
+\index{SGLIB\_\-HEAP\_\-IS\_\-FULL@{SGLIB\_\-HEAP\_\-IS\_\-FULL}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-HEAP\_\-IS\_\-FULL}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-HEAP\_\-IS\_\-FULL(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)~((i)==(dim))}}
+\label{sglib_8h_aae85af330774c295bc2a8401bdae7c11}
+\hypertarget{sglib_8h_a13470d68a246673359f700d5048c1f63}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-ADD@{SGLIB\_\-LIST\_\-ADD}}
+\index{SGLIB\_\-LIST\_\-ADD@{SGLIB\_\-LIST\_\-ADD}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-ADD}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-ADD(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a13470d68a246673359f700d5048c1f63}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  (elem)->next = (list);\
+  (list) = (elem);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a28873343d9a9ba74708870c487d3cf21}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a28873343d9a9ba74708870c487d3cf21}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_p_;\
+  for(_p_ = (list); _p_!=NULL && comparator(_p_, (elem)) != 0; _p_= _p_->next) ;\
+      
+  (member) = _p_;\
+  if (_p_ == NULL) {\
+    SGLIB_LIST_ADD(type, list, elem, next);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a32bf818aaad42da8f5fb53c0ae245ea7}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-CONCAT@{SGLIB\_\-LIST\_\-CONCAT}}
+\index{SGLIB\_\-LIST\_\-CONCAT@{SGLIB\_\-LIST\_\-CONCAT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-CONCAT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-CONCAT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{first, }
+\item[{}]{second, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a32bf818aaad42da8f5fb53c0ae245ea7}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if ((first)==NULL) {\
+    (first) = (second);\
+  } else {\
+    type *_p_;\
+    for(_p_ = (first); _p_->next!=NULL; _p_=_p_->next) ;\
+    _p_->next = (second);\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a9ff1d5aeeb8056f9e7fd43cf33b8e6f3}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-DELETE@{SGLIB\_\-LIST\_\-DELETE}}
+\index{SGLIB\_\-LIST\_\-DELETE@{SGLIB\_\-LIST\_\-DELETE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-DELETE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-DELETE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a9ff1d5aeeb8056f9e7fd43cf33b8e6f3}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type **_p_;\
+  for(_p_ = &(list); *_p_!=NULL && *_p_!=(elem); _p_= &(*_p_)->next) ;\
+  assert(*_p_!=NULL && "element is not member of the container, use DELETE_IF_MEM
+      BER instead"!=NULL);\
+  *_p_ = (*_p_)->next;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a658ad3b2c43c1a68ee89d046cc50616a}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER@{SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}}
+\index{SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER@{SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a658ad3b2c43c1a68ee89d046cc50616a}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type **_p_;\
+  for(_p_ = &(list); *_p_!=NULL && comparator((*_p_), (elem)) != 0; _p_= &(*_p_)-
+      >next) ;\
+  (member) = *_p_;\
+  if (*_p_ != NULL) {\
+    *_p_ = (*_p_)->next;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a6cfff147d2292fe0296e0222b926c87f}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-FIND\_\-MEMBER@{SGLIB\_\-LIST\_\-FIND\_\-MEMBER}}
+\index{SGLIB\_\-LIST\_\-FIND\_\-MEMBER@{SGLIB\_\-LIST\_\-FIND\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-FIND\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-FIND\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a6cfff147d2292fe0296e0222b926c87f}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_p_;\
+  for(_p_ = (list); _p_!=NULL && comparator(_p_, (elem)) != 0; _p_= _p_->next) ;\
+      
+  (member) = _p_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a682c41735c3c5e97cd476048e15315dc}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-IS\_\-MEMBER@{SGLIB\_\-LIST\_\-IS\_\-MEMBER}}
+\index{SGLIB\_\-LIST\_\-IS\_\-MEMBER@{SGLIB\_\-LIST\_\-IS\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-IS\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-IS\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a682c41735c3c5e97cd476048e15315dc}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_p_;\
+  for(_p_ = (list); _p_!=NULL && _p_ != (elem); _p_= _p_->next) ;\
+  (result) = (_p_!=NULL);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a570290fcd5df667989fe62422cd619e9}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-LEN@{SGLIB\_\-LIST\_\-LEN}}
+\index{SGLIB\_\-LIST\_\-LEN@{SGLIB\_\-LIST\_\-LEN}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-LEN}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-LEN(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a570290fcd5df667989fe62422cd619e9}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_ce_;\
+  (result) = 0;\
+  SGLIB_LIST_MAP_ON_ELEMENTS(type, list, _ce_, next, (result)++);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a07db852f66b8188dbf03f16acce25da6}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}}
+\index{SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{iteratedVariable, }
+\item[{}]{next, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a07db852f66b8188dbf03f16acce25da6}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_ne_;\
+  type *iteratedVariable;\
+  (iteratedVariable) = (list); \
+  while ((iteratedVariable)!=NULL) {\
+    _ne_ = (iteratedVariable)->next;\
+    {command;};\
+    (iteratedVariable) = _ne_;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a21beac59d30883b2b32fe9f9992275a8}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-REVERSE@{SGLIB\_\-LIST\_\-REVERSE}}
+\index{SGLIB\_\-LIST\_\-REVERSE@{SGLIB\_\-LIST\_\-REVERSE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-REVERSE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-REVERSE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a21beac59d30883b2b32fe9f9992275a8}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_list_,*_tmp_,*_res_;\
+  _list_ = (list);\
+  _res_ = NULL;\
+  while (_list_!=NULL) {\
+    _tmp_ = _list_->next; _list_->next = _res_;\
+    _res_ = _list_;   _list_ = _tmp_;\
+  }\
+  (list) = _res_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a9f05583c9e09433760fa41f18550d593}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-LIST\_\-SORT@{SGLIB\_\-LIST\_\-SORT}}
+\index{SGLIB\_\-LIST\_\-SORT@{SGLIB\_\-LIST\_\-SORT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-LIST\_\-SORT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-LIST\_\-SORT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{comparator, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a9f05583c9e09433760fa41f18550d593}
+\hypertarget{sglib_8h_ad40ad3ce420058f5cc7f2c5c1f3a3c65}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-MAX\_\-TREE\_\-DEEP@{SGLIB\_\-MAX\_\-TREE\_\-DEEP}}
+\index{SGLIB\_\-MAX\_\-TREE\_\-DEEP@{SGLIB\_\-MAX\_\-TREE\_\-DEEP}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-MAX\_\-TREE\_\-DEEP}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-MAX\_\-TREE\_\-DEEP~128}}
+\label{sglib_8h_ad40ad3ce420058f5cc7f2c5c1f3a3c65}
+\hypertarget{sglib_8h_ab4e225f3040a5c16d39053457a4b3c11}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-NUMERIC\_\-COMPARATOR}}
+\index{SGLIB\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-NUMERIC\_\-COMPARATOR}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-NUMERIC\_\-COMPARATOR}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-NUMERIC\_\-COMPARATOR(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{y}
+\end{DoxyParamCaption}
+)~SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR(x, y)}}
+\label{sglib_8h_ab4e225f3040a5c16d39053457a4b3c11}
+\hypertarget{sglib_8h_a90feb4404f82991be1aa8e41b37c6109}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-ADD@{SGLIB\_\-QUEUE\_\-ADD}}
+\index{SGLIB\_\-QUEUE\_\-ADD@{SGLIB\_\-QUEUE\_\-ADD}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-ADD}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-ADD(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{elem, }
+\item[{}]{i, }
+\item[{}]{j, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a90feb4404f82991be1aa8e41b37c6109}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  a[j] = (elem);\
+  SGLIB_QUEUE_ADD_NEXT(type, a, i, j, dim);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a9dd61a7d0d6a2cc3b1dff94dcc217b54}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-ADD\_\-NEXT@{SGLIB\_\-QUEUE\_\-ADD\_\-NEXT}}
+\index{SGLIB\_\-QUEUE\_\-ADD\_\-NEXT@{SGLIB\_\-QUEUE\_\-ADD\_\-NEXT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-ADD\_\-NEXT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-ADD\_\-NEXT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a9dd61a7d0d6a2cc3b1dff94dcc217b54}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if (SGLIB_QUEUE_IS_FULL(type, a, i, j, dim)) assert(0 && "the queue is full");\
+      
+  (j) = ((j)+1) % (dim);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_aafe5558c8b3b346649171182ea9c74c6}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-DELETE@{SGLIB\_\-QUEUE\_\-DELETE}}
+\index{SGLIB\_\-QUEUE\_\-DELETE@{SGLIB\_\-QUEUE\_\-DELETE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-DELETE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-DELETE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aafe5558c8b3b346649171182ea9c74c6}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_QUEUE_DELETE_FIRST(type, a, i, j, dim);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a8bdf7433a96bb09883ca94a7d4aca04a}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST@{SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST}}
+\index{SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST@{SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-DELETE\_\-FIRST(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a8bdf7433a96bb09883ca94a7d4aca04a}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  if (SGLIB_QUEUE_IS_EMPTY(type, a, i, j)) assert(0 && "the queue is empty");\
+  (i) = ((i)+1) % (dim);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a096c8241b87e77bd92b6d5af580d133e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT@{SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT}}
+\index{SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT@{SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-FIRST\_\-ELEMENT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j}
+\end{DoxyParamCaption}
+)~(a\mbox{[}i\mbox{]})}}
+\label{sglib_8h_a096c8241b87e77bd92b6d5af580d133e}
+\hypertarget{sglib_8h_a0441fcf931c1313a1720c36082fd9bd7}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-INIT@{SGLIB\_\-QUEUE\_\-INIT}}
+\index{SGLIB\_\-QUEUE\_\-INIT@{SGLIB\_\-QUEUE\_\-INIT}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-INIT}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-INIT(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j}
+\end{DoxyParamCaption}
+)~\{ i = j = 0; \}}}
+\label{sglib_8h_a0441fcf931c1313a1720c36082fd9bd7}
+\hypertarget{sglib_8h_aa81398404b3f381aa2e085a2af6ecf82}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-IS\_\-EMPTY@{SGLIB\_\-QUEUE\_\-IS\_\-EMPTY}}
+\index{SGLIB\_\-QUEUE\_\-IS\_\-EMPTY@{SGLIB\_\-QUEUE\_\-IS\_\-EMPTY}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-IS\_\-EMPTY}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-IS\_\-EMPTY(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j}
+\end{DoxyParamCaption}
+)~((i)==(j))}}
+\label{sglib_8h_aa81398404b3f381aa2e085a2af6ecf82}
+\hypertarget{sglib_8h_a25f3f52c289eaab83d0189f97478b18a}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-QUEUE\_\-IS\_\-FULL@{SGLIB\_\-QUEUE\_\-IS\_\-FULL}}
+\index{SGLIB\_\-QUEUE\_\-IS\_\-FULL@{SGLIB\_\-QUEUE\_\-IS\_\-FULL}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-QUEUE\_\-IS\_\-FULL}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-QUEUE\_\-IS\_\-FULL(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{a, }
+\item[{}]{i, }
+\item[{}]{j, }
+\item[{}]{dim}
+\end{DoxyParamCaption}
+)~((i)==((j)+1)\%(dim))}}
+\label{sglib_8h_a25f3f52c289eaab83d0189f97478b18a}
+\hypertarget{sglib_8h_a0862a3db77ad4d3951f0d7e4a224ac5f}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}}
+\index{SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{y}
+\end{DoxyParamCaption}
+)~SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR(x, y)}}
+\label{sglib_8h_a0862a3db77ad4d3951f0d7e4a224ac5f}
+\hypertarget{sglib_8h_a9fb57a3d43c9cd2b80d2b4053c183dfa}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR}}
+\index{SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SAFE\_\-NUMERIC\_\-COMPARATOR(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{y}
+\end{DoxyParamCaption}
+)~(((x)$>$(y)?1:((x)$<$(y)?-\/1:0)))}}
+\label{sglib_8h_a9fb57a3d43c9cd2b80d2b4053c183dfa}
+\hypertarget{sglib_8h_a30e424c6d8a7aa224626ecc637144ea6}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}}
+\index{SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR@{SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SAFE\_\-REVERSE\_\-NUMERIC\_\-COMPARATOR(
+\begin{DoxyParamCaption}
+\item[{}]{x, }
+\item[{}]{y}
+\end{DoxyParamCaption}
+)~(((x)$>$(y)?-\/1:((x)$<$(y)?1:0)))}}
+\label{sglib_8h_a30e424c6d8a7aa224626ecc637144ea6}
+\hypertarget{sglib_8h_ac3d8f1a4b44c4733195cb85dc3e8ff0d}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-ADD@{SGLIB\_\-SORTED\_\-LIST\_\-ADD}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-ADD@{SGLIB\_\-SORTED\_\-LIST\_\-ADD}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-ADD}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-ADD(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ac3d8f1a4b44c4733195cb85dc3e8ff0d}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type **_e_;\
+  int  _cmpres_;\
+  SGLIB_SORTED_LIST_FIND_MEMBER_OR_PLACE(type, list, elem, comparator, next, _cmp
+      res_, _e_);\
+  (elem)->next = *_e_;\
+  *_e_ = (elem);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_abbeee3ca1881e9df523e5d9e8b97709e}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-ADD\_\-IF\_\-NOT\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_abbeee3ca1881e9df523e5d9e8b97709e}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type **_e_;\
+  int _cmp_res_;\
+  SGLIB_SORTED_LIST_FIND_MEMBER_OR_PLACE(type, list, elem, comparator, next, _cmp
+      _res_, _e_);\
+  if (_cmp_res_ != 0) {\
+    (elem)->next = *_e_;\
+    *_e_ = (elem);\
+    (member) = NULL;\
+  } else {\
+    (member) = *_e_;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a2158071cf487499d7b03e046f26ae05c}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-DELETE@{SGLIB\_\-SORTED\_\-LIST\_\-DELETE}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-DELETE@{SGLIB\_\-SORTED\_\-LIST\_\-DELETE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-DELETE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-DELETE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{next}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a2158071cf487499d7b03e046f26ae05c}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_LIST_DELETE(type, list, elem, next);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a96d801fbaa32bfed4a3258ee3a561ed3}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-DELETE\_\-IF\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a96d801fbaa32bfed4a3258ee3a561ed3}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type **_e_;\
+  int _cmp_res_;\
+  SGLIB_SORTED_LIST_FIND_MEMBER_OR_PLACE(type, list, elem, comparator, next, _cmp
+      _res_, _e_);\
+  if (_cmp_res_ == 0) {\
+    (member) = *_e_;\
+    *_e_ = (*_e_)->next;\
+  } else {\
+    (member) = NULL;\
+  }\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_aec044e933c83d0a27a5282ed17b8df39}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{member}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_aec044e933c83d0a27a5282ed17b8df39}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_p_;\
+  int _cmpres_ = 1;\
+  for(_p_ = (list); _p_!=NULL && (_cmpres_=comparator(_p_, (elem))) < 0; _p_=_p_-
+      >next) ;\
+  if (_cmpres_ != 0) (member) = NULL;\
+  else (member) = _p_;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a2b84471ef55d31058fcb1865e6356340}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE@{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE@{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-FIND\_\-MEMBER\_\-OR\_\-PLACE(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{comparator\_\-result, }
+\item[{}]{member\_\-ptr}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a2b84471ef55d31058fcb1865e6356340}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  (comparator_result) = -1;\
+  for((member_ptr) = &(list); \
+      *(member_ptr)!=NULL && ((comparator_result)=comparator((*member_ptr), (elem
+      ))) < 0; \
+      (member_ptr) = &(*(member_ptr))->next) ;\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a6ffcf54f53fe89dd2edeac9f18431798}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER@{SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-IS\_\-MEMBER(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{elem, }
+\item[{}]{comparator, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a6ffcf54f53fe89dd2edeac9f18431798}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  type *_p_;\
+  for(_p_ = (list); _p_!=NULL && comparator(_p_, (elem)) < 0; _p_=_p_->next) ;\
+  while (_p_ != NULL && _p_ != (elem) && comparator(_p_, (elem)) == 0) _p_=_p_->n
+      ext;\
+  (result) = (_p_ == (elem));\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_a5aa716a9bd9252dcf048641e794cf9ad}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-LEN@{SGLIB\_\-SORTED\_\-LIST\_\-LEN}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-LEN@{SGLIB\_\-SORTED\_\-LIST\_\-LEN}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-LEN}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-LEN(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{next, }
+\item[{}]{result}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_a5aa716a9bd9252dcf048641e794cf9ad}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_LIST_LEN(type, list, next, result);\
+}
+\end{DoxyCode}
+\hypertarget{sglib_8h_ae3afd184f726440638d65608205e5f2c}{
+\index{sglib.h@{sglib.h}!SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}}
+\index{SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS@{SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}!sglib.h@{sglib.h}}
+\subsubsection[{SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS}]{\setlength{\rightskip}{0pt plus 5cm}\#define SGLIB\_\-SORTED\_\-LIST\_\-MAP\_\-ON\_\-ELEMENTS(
+\begin{DoxyParamCaption}
+\item[{}]{type, }
+\item[{}]{list, }
+\item[{}]{iteratedVariable, }
+\item[{}]{next, }
+\item[{}]{command}
+\end{DoxyParamCaption}
+)}}
+\label{sglib_8h_ae3afd184f726440638d65608205e5f2c}
+{\bfseries Value:}
+\begin{DoxyCode}
+{\
+  SGLIB_LIST_MAP_ON_ELEMENTS(type, list, iteratedVariable, next, command);\
+}
+\end{DoxyCode}

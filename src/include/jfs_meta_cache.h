@@ -1,3 +1,6 @@
+#ifndef JOINFS_JFS_META_CACHE_H
+#define JOINFS_JFS_META_CACHE_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -17,27 +20,44 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_JFS_META_CACHE_H
-#define JOINFS_JFS_META_CACHE_H
-
-/*
+/*!
  * Initialize the jfs_meta_cache.
  *
  * Called when joinFS gets mounted.
  */
 void jfs_meta_cache_init();
 
-/*
+/*!
  * Destroy the jfs_meta_cache.
  *
  * Called when joinFS gets dismount.
  */
 void jfs_meta_cache_destroy();
 
+/*!
+ * Get metadata stored in the metadata cache.
+ * \param path The file system path.
+ * \param keyid The metadata tag id.
+ * \param value The value returned.
+ * \return Error code or 0.
+ */
 int jfs_meta_cache_get_value(const char *path, int keyid, char **value);
 
+/*!
+ * Add metadata to the metadata cache.
+ * \param path The file system path.
+ * \param keyid The metadata tag id.
+ * \param value The metadata value.
+ * \return Error code or 0.
+ */
 int jfs_meta_cache_add(const char *path, int keyid, const char *value);
 
+/*!
+ * Remove an item the metadata cache.
+ * \param path The file system path.
+ * \param keyid The metadata tag id.
+ * \return Error code or 0.
+ */
 int jfs_meta_cache_remove(const char *path, int keyid);
 
 #endif

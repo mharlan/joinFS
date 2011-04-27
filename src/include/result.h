@@ -1,3 +1,6 @@
+#ifndef JOINFS_RESULT_H
+#define JOINFS_RESULT_H
+
 /********************************************************************
  * Copyright 2010, 2011 Matthew Harlan <mharlan@gwmail.gwu.edu>
  *
@@ -17,18 +20,17 @@
  * along with joinFS.  If not, see <http://www.gnu.org/licenses/>.
  ********************************************************************/
 
-#ifndef JOINFS_RESULT_H
-#define JOINFS_RESULT_H
-
 #include "sqlitedb.h"
 
 #define JFS_FILENAME_MAX 1024
 #define JFS_KEY_MAX      1024
 #define JFS_VALUE_MAX    1024
 
-/*
+/*!
  * Function to return the result of a query.
- * The result will be set based on the jfs_t.
+ * The result will be set based on the jfs_db_op enum value.
+ * \param db_op The database operation.
+ * \return Error code or 0.
  */
 int jfs_db_result(struct jfs_db_op *db_op);
 
