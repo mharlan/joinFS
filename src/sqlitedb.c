@@ -25,6 +25,7 @@
 #include "error_log.h"
 #include "sqlitedb.h"
 #include "result.h"
+#include "joinfs.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -33,8 +34,8 @@
 #include <errno.h>
 #include <sqlite3.h>
 #include <pthread.h>
+#include <fuse.h>
 
-#define JFSDB   "/home/joinfs/git/joinFS/demo/joinfs.db"
 #define ERR_MAX 256
 
 //does not need to be public, prepares queries
@@ -354,10 +355,10 @@ jfs_open_db(sqlite3 **db, int sqlite_attr)
   sqlite3 *new_db;
 
   int rc;
-
-  rc = sqlite3_open_v2(JFSDB, &new_db, sqlite_attr, NULL);
+  
+  rc = sqlite3_open_v2(joinfs_context.dbpath, &new_db, sqlite_attr, NULL);
   if(rc) {
-    log_error("Failed to open database file at: %s\n", JFSDB);
+    log_error("Failed to open database file at: %s\n", joinfs_context.dbpath);
     if(new_db) {
       sqlite3_close(new_db);
     }

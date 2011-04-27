@@ -58,6 +58,8 @@
 #include <sys/time.h>
 #include <sys/xattr.h>
 
+struct jfs_context joinfs_context;
+
 static thr_pool_t *jfs_read_pool;
 static thr_pool_t *jfs_write_pool;
 
@@ -75,20 +77,20 @@ jfs_realpath(const char *path)
 
   size_t path_len;
   
-  path_len = strlen(path) + JFS_CONTEXT->querypath_len + 2;
+  path_len = strlen(path) + joinfs_context.querypath_len + 2;
   jfs_path = malloc(sizeof(*jfs_path) * path_len);
   if(!jfs_path) {
 	return NULL;
   }
 
   if(path[0] == '/') {
-	snprintf(jfs_path, path_len, "%s%s", JFS_CONTEXT->querypath, path);
+	snprintf(jfs_path, path_len, "%s%s", joinfs_context.querypath, path);
   }
   else if(path == NULL) {
-	snprintf(jfs_path, path_len, "%s/", JFS_CONTEXT->querypath);
+	snprintf(jfs_path, path_len, "%s/", joinfs_context.querypath);
   }
   else {
-	snprintf(jfs_path, path_len, "%s/%s", JFS_CONTEXT->querypath, path);
+	snprintf(jfs_path, path_len, "%s/%s", joinfs_context.querypath, path);
   }
   
   return jfs_path;
@@ -159,7 +161,7 @@ jfs_init(struct fuse_conn_info *conn)
   
   log_msg("joinFS Thread pools started.\n");
   
-  return JFS_CONTEXT;
+  return NULL;
 }
 
 static void 
@@ -184,9 +186,10 @@ jfs_destroy(void *arg)
   jfs_meta_cache_destroy();
   jfs_dynamic_hierarchy_destroy();
 
-  free(JFS_CONTEXT->querypath);
-  free(JFS_CONTEXT->mountpath);
-  free(JFS_CONTEXT);
+  free(joinfs_context.querypath);
+  free(joinfs_context.mountpath);
+  free(joinfs_context.logpath);
+  free(joinfs_context.dbpath);
 
   log_msg("joinFS shutdown completed successfully.\n", arg);
   log_destroy();
@@ -419,16 +422,12 @@ jfs_symlink(const char *from, const char *to)
   
   int rc;
   
-  //jfs_path_from = jfs_lrealpath(from);
   jfs_path_to = jfs_realpath(to);
   rc = jfs_file_symlink(from, jfs_path_to);
 
   if(jfs_path_to) {
     free(jfs_path_to);
   }
-  //if(jfs_path_from) {
-  //  free(jfs_path_from);
-  //}
 
   if(rc) {
     log_error("jfs_symlink---from:%s, to:%s, error:%d\n", from, to, rc);
@@ -846,54 +845,48 @@ static struct fuse_operations jfs_oper = {
 int 
 main(int argc, char *argv[])
 {
-  struct jfs_context *jfs_context;
+  size_t length;
 
   int i;
   int rc;
-
-  jfs_context = malloc(sizeof(*jfs_context));
-  if(!jfs_context) {
-	printf("Failed to allocate space for jfs_context.\n");
-	exit(EXIT_FAILURE);
-  }
   
   for(i = 1; (i < argc) && (argv[i][0] == '-'); i++);
 
-  if((argc - i) < 2) {
-	printf("format: joinfs querydir mountdir\n");
+  if((argc - i) < 4) {
+	printf("format: joinfs querypath mountpath logpath dbpath\n");
     exit(EXIT_FAILURE);
   }
 
-  jfs_context->querypath = realpath(argv[i], NULL);
-  jfs_context->querypath_len = strlen(jfs_context->querypath);
+  joinfs_context.querypath = realpath(argv[i], NULL);
+  joinfs_context.querypath_len = strlen(joinfs_context.querypath);
   
-  jfs_context->mountpath = realpath(argv[i + 1], NULL);
-  jfs_context->mountpath_len = strlen(jfs_context->mountpath);
+  joinfs_context.mountpath = realpath(argv[i + 1], NULL);
+  joinfs_context.mountpath_len = strlen(joinfs_context.mountpath);
+
+  length = strlen(argv[i + 2]) + 1;
+  joinfs_context.logpath = malloc(sizeof(*joinfs_context.logpath) * length);
+  if(!joinfs_context.logpath) {
+    printf("joinFS failed to start because the system is out of memory.\n");
+    exit(EXIT_FAILURE);
+  }
+  strncpy(joinfs_context.logpath, argv[i + 2], length);
+
+  length = strlen(argv[i + 3]) + 1;
+  joinfs_context.dbpath = malloc(sizeof(*joinfs_context.dbpath) * length);
+  if(!joinfs_context.dbpath) {
+    printf("joinFS failed to start because the system is out of memory.\n");
+    exit(EXIT_FAILURE);
+  }
+  strncpy(joinfs_context.dbpath, argv[i + 3], length);
   
-  printf("querydir:%s\n", jfs_context->querypath);
-  printf("mountdir:%s\n", jfs_context->mountpath);
-
-  /*
-  argc = 4;
-  argv[1] = "-d";
-  argv[2] = "-s";
-  argv[3] = jfs_context->mountpath;
-  */
-
-  /*
-  argc = 3;
-  argv[1] = "-d";
-  argv[2] = jfs_context->mountpath;
-  */
-
   argc = 2;
-  argv[1] = jfs_context->mountpath;
+  argv[1] = joinfs_context.mountpath;
   
-  printf("Starting joinFS, mountpath:%s\n", argv[1]);
-  rc = fuse_main(argc, argv, &jfs_oper, jfs_context);;
+  printf("Starting joinFS, mounted at: %s\n", argv[1]);
+  rc = fuse_main(argc, argv, &jfs_oper, NULL);;
 
   if(rc) {
-    printf("joinFS start up failed. Return code=%d.\n", rc);
+    printf("joinFS start up failed. FUSE error code=%d.\n", rc);
   }
 
   return rc;

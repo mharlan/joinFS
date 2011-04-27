@@ -22,6 +22,7 @@
 #endif
 
 #include "error_log.h"
+#include "joinfs.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -29,14 +30,13 @@
 #include <pthread.h>
 
 static FILE *log;
-static const char *log_path = "/home/joinfs/git/joinFS/demo/error_log.txt";
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void log_init(void)
 {
-  log = fopen(log_path, "w+");
+  log = fopen(joinfs_context.logpath, "w+");
   if(!log) {
-	printf("---ERROR---Open log file failed, path:%s\n", log_path);
+	printf("---ERROR---Open log file failed, path:%s\n", joinfs_context.logpath);
     exit(EXIT_FAILURE);
   }
 }

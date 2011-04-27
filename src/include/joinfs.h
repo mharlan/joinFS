@@ -31,6 +31,8 @@ struct jfs_context {
 
   char *querypath;
   char *mountpath;
+  char *logpath;
+  char *dbpath;
 
   int querypath_len;
   int mountpath_len;
@@ -39,7 +41,7 @@ struct jfs_context {
   thr_pool_t *write_pool;
 };
 
-#define JFS_CONTEXT ((struct jfs_context *) fuse_get_context()->private_data)
+extern struct jfs_context joinfs_context;
 
 /*
  * Queue a database read operation.
