@@ -34,7 +34,6 @@
 #include <errno.h>
 #include <sqlite3.h>
 #include <pthread.h>
-#include <fuse.h>
 
 #define ERR_MAX 256
 
