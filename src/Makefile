@@ -5,6 +5,8 @@ CFLAGS=-g -D_FILE_OFFSET_BITS=64 -Wall -O3
 FUSELIB=`pkg-config fuse --cflags --libs` -lfuse
 LIBS=-lpthread -lulockmgr -lrt -lsqlite3 $(FUSELIB)
 
+TARGET=../demo
+
 SRC=error_log.c \
     sqlitedb.c \
     thr_pool.c \
@@ -40,7 +42,7 @@ TESTOBJS=obj/error_log.o \
 TESTS=$(TESTSRC:%.c=%)
 
 all: $(OBJS)
-	$(CC) -ggdb $(CFLAGS) $(LIBS) $(OBJS) -o ../demo/joinfs
+	$(CC) -ggdb $(CFLAGS) $(LIBS) $(OBJS) -o $(TARGET)/joinfs
 
 nullFS: ../demo/nullFS
 
